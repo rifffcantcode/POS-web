@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistem Kasir POS Profesional</title>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="login-overlay" class="login-container">
+      <div class="login-card">
+        <h2>Login Kasir</h2>
+        <p>Silakan masuk untuk mengakses sistem</p>
+        <div class="input-group">
+          <input type="text" id="username" placeholder="Username (admin)" />
+        </div>
+        <div class="input-group">
+          <input type="password" id="password" placeholder="Password (123)" />
+        </div>
+        <button onclick="handleLogin()" class="btn-primary">
+          Masuk Sekarang
+        </button>
+        <p
+          id="login-error"
+          style="color: red; font-size: 12px; margin-top: 10px; display: none"
+        >
+          Username atau Password salah!
+        </p>
+      </div>
+    </div>
+    <header>
+      <div class="header-content">
+        <div>
+          <h1>Sistem Kasir POS</h1>
+          <p id="current-date"></p>
+        </div>
+        <button onclick="handleLogout()" class="btn-logout">Logout</button>
+      </div>
+    </header>
+    <main class="dashboard-container">
+      <div class="product-section">
+        <div class="search-wrapper">
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Cari nama produk atau furniture..."
+          />
+        </div>
+
+        <div class="category-filter">
+          <button onclick="filterCategory('Semua')" class="btn-filter">
+            Semua
+          </button>
+          <button onclick="filterCategory('Furniture')" class="btn-filter">
+            Furniture
+          </button>
+          <button onclick="filterCategory('Elektronik')" class="btn-filter">
+            Elektronik
+          </button>
+          <button onclick="filterCategory('Dekorasi')" class="btn-filter">
+            Dekorasi
+          </button>
+        </div>
+
+        <div class="section-title">
+          <h2>Daftar Produk</h2>
+        </div>
+        <section id="product-list" class="product-grid"></section>
+      </div>
+
+      <aside id="cart-sidebar">
+        <div class="cart-sticky-content">
+          <div class="cart-header">
+            <h2>Keranjang Belanja</h2>
+          </div>
+
+          <ul id="cart-items" class="cart-list"></ul>
+
+          <div class="cart-footer">
+            <div class="total-section">
+              <span>Total Bayar:</span>
+              <h3 id="total-display">Rp <span id="total-price">0</span></h3>
+            </div>
+            <button id="checkout-btn" class="btn-primary">
+              Bayar Sekarang
+            </button>
+          </div>
+
+          <div class="sales-report-summary">
+            <h3>Laporan Hari Ini</h3>
+            <div class="revenue-box">
+              <small>Total Pendapatan:</small>
+              <p>Rp <span id="revenue-total">0</span></p>
+            </div>
+            <div id="sales-list" class="mini-sales-list"></div>
+            <button onclick="clearSales()" class="btn-danger-outline">
+              Bersihkan Laporan
+            </button>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <div id="receipt-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="receipt-paper">
+          <h2 class="receipt-title">STRUK BELANJA</h2>
+          <p id="receipt-date" class="receipt-info"></p>
+          <div class="receipt-divider"></div>
+
+          <div id="receipt-content" class="receipt-items"></div>
+
+          <div class="receipt-divider"></div>
+          <div class="receipt-footer">
+            <h3 id="receipt-total"></h3>
+          </div>
+          <p class="receipt-thank-you">Terima Kasih Atas Kunjungan Anda</p>
+        </div>
+
+        <div class="modal-actions">
+          <button onclick="printReceipt()" class="btn-print">
+            Cetak Struk
+          </button>
+          <button onclick="closeReceipt()" class="btn-close">Tutup</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script src="script.js"></script>
+
+    <script>
+      // Menampilkan tanggal di header
+      document.getElementById("current-date").innerText =
+        new Date().toLocaleDateString("id-ID", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+    </script>
+  </body>
+</html>
