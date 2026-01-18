@@ -1,11 +1,22 @@
 // ==========================================
-// 1. SISTEM LOGIN & AUTHENTICATION
+// 1. KONFIGURASI FIREBASE (AMBIL DARI WINDOW)
 // ==========================================
+const { collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy } = window.fs;
+const db = window.db;
+const productsCol = collection(db, "products");
 
+// State Global
+let products = [];
+let salesHistory = JSON.parse(localStorage.getItem('pos_sales_history')) || [];
+let cart = JSON.parse(localStorage.getItem('pos_cart')) || [];
+let total = 0;
+
+// ==========================================
+// 2. SISTEM LOGIN & AUTHENTICATION
+// ==========================================
 function checkLoginStatus() {
     const overlay = document.getElementById('login-overlay');
-    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
-    if (isLoggedIn === 'true') {
+    if (sessionStorage.getItem('isLoggedIn') === 'true') {
         overlay.style.display = 'none';
     } else {
         overlay.style.display = 'flex';
@@ -15,71 +26,175 @@ function checkLoginStatus() {
 function handleLogin() {
     const user = document.getElementById('username').value;
     const pass = document.getElementById('password').value;
-    const errorMsg = document.getElementById('login-error');
-
-    // Kredensial default (bisa kamu ganti)
     if (user === 'admin' && pass === '123') {
         sessionStorage.setItem('isLoggedIn', 'true');
         sessionStorage.setItem('activeUser', user);
         checkLoginStatus();
         showToast(`Selamat bekerja, ${user}!`);
     } else {
-        errorMsg.style.display = 'block';
+        document.getElementById('login-error').style.display = 'block';
         showToast("Login Gagal!", "error");
     }
 }
 
 function handleLogout() {
     if (confirm("Apakah anda yakin ingin keluar?")) {
-        sessionStorage.removeItem('isLoggedIn');
-        sessionStorage.removeItem('activeUser');
+        sessionStorage.clear();
         location.reload();
     }
 }
 
 // ==========================================
-// 2. DATA PRODUK & STATE APLIKASI
+// 3. LOGIKA DATABASE (REAL-TIME)
 // ==========================================
-
-let salesHistory = JSON.parse(localStorage.getItem('pos_sales_history')) || [];
-let cart = JSON.parse(localStorage.getItem('pos_cart')) || [];
-let total = 0;
-
-const products = [
-    { id: 1, name: "Meja Kayu Minimalis", price: 500000, image: "img/meja.jpg", category: "Furniture", stock: 10 },
-    { id: 2, name: "Kursi Kantor", price: 750000, image: "img/kursi_kantor.webp", category: "Furniture", stock: 5 },
-    { id: 3, name: "Lampu Belajar", price: 150000, image: "img/lampu_belajar.jpg", category: "Elektronik", stock: 8 },
-    { id: 4, name: "Rak Buku", price: 300000, image: "img/rak_buku.jpg", category: "Furniture", stock: 12 },
-    { id: 5, name: "Kursi Tamu", price: 600000, image: "img/kursi_tamu.jpg", category: "Furniture", stock: 7 },
-    { id: 6, name: "Speaker Bluetooth", price: 250000, image: "img/speaker_bluetooth.jpg", category: "Elektronik", stock: 6 },
-    { id: 7, name: "Jam Dinding Modern", price: 120000, image: "img/jamdinding_modern.jpg", category: "Dekorasi", stock: 15 },
-    { id: 8, name: "Vas Bunga Keramik", price: 80000, image: "img/vas_bunga.jpg", category: "Dekorasi", stock: 20 },
-    { id: 9, name: "Karpet Lantai", price: 200000, image: "img/karpet_lantai.jpg", category: "Dekorasi", stock: 18 },
-    { id: 10, name: "Meja Belajar Anak", price: 450000, image: "img/meja_belajar.jpg", category: "Furniture", stock: 9 }
-];
+function listenToProducts() {
+    onSnapshot(query(productsCol, orderBy("createdAt", "desc")), (snapshot) => {
+        products = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        displayProducts(products); 
+        renderAdminTable(products);
+    });
+}
 
 // ==========================================
-// 3. UI FEEDBACK (TOAST)
+// 4. UI FEEDBACK & ADMIN LOGIC (CRUD CLOUD)
 // ==========================================
-
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
+    if(!container) return;
     const toast = document.createElement('div');
     toast.className = `toast ${type === 'error' ? 'error' : ''}`;
-    const icon = type === 'success' ? '✅' : '❌';
-    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+    toast.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> <span>${message}</span>`;
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
 }
 
-// ==========================================
-// 4. LOGIKA KASIR (KERANJANG & STOK)
-// ==========================================
+function openAdmin() {
+    document.getElementById('admin-modal').style.display = 'flex';
+    renderAdminTable();
+}
 
+function closeAdmin() {
+    document.getElementById('admin-modal').style.display = 'none';
+    resetAdminForm();
+}
+
+function renderAdminTable(dataToRender = products) {
+    const tableBody = document.getElementById('admin-product-table');
+    if(!tableBody) return;
+    tableBody.innerHTML = '';
+    
+    dataToRender.forEach(p => {
+        const rowStyle = p.isDeleted ? 'style="background: #ffeaea; opacity: 0.7;"' : '';
+        const actionButtons = p.isDeleted 
+            ? `<button onclick="restoreProduct('${p.id}')" style="background:#28a745; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Pulihkan</button>`
+            : `<button onclick="editProduct('${p.id}')" style="background:#ffc107; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
+               <button onclick="deleteProduct('${p.id}')" style="background:#dc3545; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Hapus</button>`;
+
+        tableBody.innerHTML += `
+            <tr ${rowStyle} style="border-bottom: 1px solid #ddd;">
+                <td style="padding:10px">${p.name} ${p.isDeleted ? '<br><small>(Terhapus)</small>' : ''}</td>
+                <td>${p.category}</td>
+                <td>Rp ${p.price.toLocaleString()}</td>
+                <td>${p.stock}</td>
+                <td>${actionButtons}</td>
+            </tr>`;
+    });
+}
+
+async function handleSaveProduct() {
+    // FIX: Ambil element input ID agar variabel 'id' terdefinisi
+    const idInput = document.getElementById('edit-id');
+    const id = idInput ? idInput.value : ''; 
+
+    const name = document.getElementById('prod-name').value;
+    const price = parseInt(document.getElementById('prod-price').value);
+    const stock = parseInt(document.getElementById('prod-stock').value);
+    const category = document.getElementById('prod-category').value;
+    const image = document.getElementById('prod-image').value || "img/meja.jpg";
+
+    if (!name || isNaN(price)) return showToast("Nama dan Harga wajib diisi!", "error");
+
+    const productData = { 
+        name, price, stock, category, image, 
+        isDeleted: false, 
+        createdAt: new Date() 
+    };
+
+    try {
+        console.log("Mengirim ke Cloud...");
+        if (id && id !== "") {
+            // Update Produk
+            const docRef = doc(db, "products", id);
+            await updateDoc(docRef, productData);
+            showToast("Produk diperbarui!");
+        } else {
+            // Tambah Produk Baru
+            await addDoc(productsCol, productData);
+            showToast("Produk disimpan!");
+        }
+        resetAdminForm();
+        closeAdmin();
+    } catch (e) {
+        console.error("Firebase Error:", e);
+        showToast("Gagal: " + e.message, "error");
+    }
+}
+
+function editProduct(id) {
+    const p = products.find(prod => prod.id === id);
+    if(!p) return;
+
+    document.getElementById('edit-id').value = p.id;
+    document.getElementById('prod-name').value = p.name;
+    document.getElementById('prod-price').value = p.price;
+    document.getElementById('prod-stock').value = p.stock;
+    document.getElementById('prod-category').value = p.category;
+    document.getElementById('prod-image').value = p.image;
+    document.getElementById('save-btn').innerText = "Update Produk";
+}
+
+async function deleteProduct(id) {
+    if (confirm("Pindahkan ke tempat sampah?")) {
+        try {
+            const docRef = doc(db, "products", id);
+            await updateDoc(docRef, { isDeleted: true });
+            showToast("Produk dihapus", "error");
+        } catch (e) { console.error(e); }
+    }
+}
+
+async function restoreProduct(id) {
+    try {
+        const docRef = doc(db, "products", id);
+        await updateDoc(docRef, { isDeleted: false });
+        showToast("Produk dipulihkan!");
+    } catch (e) { console.error(e); }
+}
+
+function resetAdminForm() {
+    const idInput = document.getElementById('edit-id');
+    if(idInput) idInput.value = '';
+    document.getElementById('prod-name').value = '';
+    document.getElementById('prod-price').value = '';
+    document.getElementById('prod-stock').value = '';
+    document.getElementById('prod-image').value = '';
+    document.getElementById('save-btn').innerText = "Simpan Produk";
+}
+
+// ==========================================
+// 5. LOGIKA KASIR (TRANSAKSIONAL)
+// ==========================================
 function displayProducts(productsToDisplay) {
     const productContainer = document.getElementById('product-list');
+    if(!productContainer) return;
     productContainer.innerHTML = '';
-    productsToDisplay.forEach(product => {
+    
+    const activeProducts = productsToDisplay.filter(p => !p.isDeleted);
+
+    activeProducts.forEach(product => {
         const isOutOfStock = product.stock <= 0;
         const productDiv = document.createElement('div');
         productDiv.className = 'product-item';
@@ -88,211 +203,171 @@ function displayProducts(productsToDisplay) {
             <h3>${product.name}</h3>
             <p>Harga: Rp ${product.price.toLocaleString()}</p>
             <p style="color: ${isOutOfStock ? 'red' : 'green'}; font-weight: bold;">Stok: ${product.stock}</p>
-            <button onclick="addToCart(${product.id})" ${isOutOfStock ? 'disabled' : ''}>
+            <button onclick="addToCart('${product.id}')" ${isOutOfStock ? 'disabled' : ''}>
                 ${isOutOfStock ? 'Habis' : 'Tambah ke Keranjang'}
-            </button>
-        `;
+            </button>`;
         productContainer.appendChild(productDiv);
     });
 }
 
 function addToCart(productId) {
     const product = products.find(p => p.id === productId);
-    if (product.stock > 0) {
+    if (product && product.stock > 0) {
         product.stock--;
         const item = cart.find(c => c.id === productId);
         if (item) item.quantity++;
         else cart.push({ ...product, quantity: 1 });
         saveAndRender();
         showToast(`${product.name} masuk keranjang`);
-    } else {
-        showToast("Stok Habis!", "error");
     }
 }
 
 function decreaseQuantity(productId) {
     const itemIndex = cart.findIndex(item => item.id === productId);
-    
     if (itemIndex > -1) {
-        const cartItem = cart[itemIndex];
         const product = products.find(p => p.id === productId);
-        
-        // Kembalikan stok ke daftar produk
-        if (product) product.stock += 1;
-        
-        // Kurangi jumlah di keranjang
-        cartItem.quantity -= 1;
-        
-        // Jika jumlah jadi 0, hapus dari keranjang
-        if (cartItem.quantity === 0) {
-            cart.splice(itemIndex, 1);
-            showToast("Barang dihapus dari keranjang", "error");
-        } else {
-            showToast("Jumlah barang dikurangi");
-        }
+        if (product) product.stock++;
+        cart[itemIndex].quantity--;
+        if (cart[itemIndex].quantity === 0) cart.splice(itemIndex, 1);
+        saveAndRender();
     }
-    saveAndRender();
 }
 
-function removeItem(productName) {
-    const itemIndex = cart.findIndex(item => item.name === productName);
+function removeItem(productId) {
+    const itemIndex = cart.findIndex(item => item.id === productId);
     if (itemIndex > -1) {
-        const cartItem = cart[itemIndex];
-        const product = products.find(p => p.name === productName);
-        
-        // Kembalikan semua stok yang sempat diambil oleh item ini
-        if (product) {
-            product.stock += cartItem.quantity;
-        }
-        
+        const product = products.find(p => p.id === productId);
+        if (product) product.stock += cart[itemIndex].quantity;
         cart.splice(itemIndex, 1);
         saveAndRender();
-        showToast(`Semua ${productName} dihapus`, "error");
     }
 }
 
 function saveAndRender() {
     localStorage.setItem('pos_cart', JSON.stringify(cart));
     total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
-    // Update UI Keranjang
     const cartList = document.getElementById('cart-items');
+    if(!cartList) return;
+
     cartList.innerHTML = cart.length === 0 ? '<li>Belum ada barang.</li>' : '';
     
     cart.forEach(item => {
         const li = document.createElement('li');
         li.style.marginBottom = "15px";
-        li.style.paddingBottom = "10px";
-        li.style.borderBottom = "1px solid #eee";
-        
         li.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:start;">
-                <div style="flex:1;">
-                    <strong style="display:block; font-size:14px;">${item.name}</strong>
-                    <small style="color:var(--text-muted);">
-                        ${item.quantity} x Rp ${item.price.toLocaleString()}
-                    </small>
+            <div style="display:flex; justify-content:space-between;">
+                <div><strong>${item.name}</strong><br><small>${item.quantity} x Rp ${item.price.toLocaleString()}</small></div>
+                <div>
+                    <button onclick="decreaseQuantity('${item.id}')" style="padding:2px 8px; background:#ffc107; border:none; border-radius:4px;">-</button>
+                    <button onclick="removeItem('${item.id}')" style="padding:2px 8px; background:#dc3545; color:white; border:none; border-radius:4px;">Hapus</button>
                 </div>
-                <div style="display:flex; gap:5px; align-items:center;">
-                    <button onclick="decreaseQuantity(${item.id})" 
-                        style="width:30px; height:30px; padding:0; background:var(--warning-color); color:#333; border-radius:5px;">
-                        -
-                    </button>
-                    
-                    <button onclick="removeItem('${item.name}')" 
-                        style="width:auto; height:30px; padding:0 10px; background:var(--danger-color); color:white; border-radius:5px; font-size:12px;">
-                        Hapus
-                    </button>
-                </div>
-            </div>
-            <div style="text-align:right; font-weight:600; font-size:14px; margin-top:5px;">
-                Rp ${(item.price * item.quantity).toLocaleString()}
-            </div>
-        `;
+            </div>`;
         cartList.appendChild(li);
     });
-    
     document.getElementById('total-price').textContent = total.toLocaleString();
-    displayProducts(products); // Render ulang daftar produk untuk update stok
-}
-// ==========================================
-// 5. TRANSAKSI & STRUK
-// ==========================================
-
-function showReceipt(transaction) {
-    const receiptDate = document.getElementById('receipt-date');
-    const receiptContent = document.getElementById('receipt-content');
-    const receiptTotal = document.getElementById('receipt-total');
-    const modal = document.getElementById('receipt-modal');
-
-    // Isi tanggal
-    receiptDate.innerText = transaction.date;
-
-    // Isi daftar barang
-    receiptContent.innerHTML = transaction.items.map(item => `
-        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-            <span>${item.name} x${item.quantity}</span>
-            <span>Rp ${(item.price * item.quantity).toLocaleString()}</span>
-        </div>
-    `).join('');
-
-    // Isi total harga
-    receiptTotal.innerText = "TOTAL: Rp " + transaction.totalAmount.toLocaleString();
-
-    // Tampilkan modal
-    modal.style.display = 'flex';
+    displayProducts(products);
 }
 
-document.getElementById('checkout-btn').addEventListener('click', () => {
-    if (cart.length === 0) {
-        showToast("Keranjang masih kosong!", "error");
-        return;
-    }
-
-    // 1. Buat Objek Transaksi
-    const transaction = {
-        id: "TRX-" + Date.now(),
-        date: new Date().toLocaleString('id-ID'),
-        totalAmount: total,
-        items: [...cart]
+// ==========================================
+// 6. TRANSAKSI & LAPORAN
+// ==========================================
+document.getElementById('checkout-btn').addEventListener('click', async () => {
+    if (cart.length === 0) return showToast("Keranjang kosong!", "error");
+    
+    const transaction = { 
+        id: "TRX-" + Date.now(), 
+        date: new Date().toLocaleString('id-ID'), 
+        totalAmount: total, 
+        items: [...cart] 
     };
 
-    // 2. Simpan ke riwayat
-    salesHistory.push(transaction);
-    localStorage.setItem('pos_sales_history', JSON.stringify(salesHistory));
+    try {
+        // Sync Stok ke Firebase Cloud
+        for (const item of cart) {
+            const docRef = doc(db, "products", item.id);
+            // Ambil stok terbaru dari array produk global
+            const currentProd = products.find(p => p.id === item.id);
+            await updateDoc(docRef, { stock: currentProd.stock });
+        }
 
-    // 3. Tampilkan Struk (Panggil fungsi yang dibuat di atas)
-    showReceipt(transaction); 
-
-    // 4. Update tampilan Laporan
-    displaySalesReport();
-
-    // 5. Kosongkan Keranjang & Reset State
-    cart = [];
-    localStorage.removeItem('pos_cart'); // Hapus dari memori browser
-    saveAndRender(); // Sinkronkan UI (Keranjang akan otomatis kosong di layar)
-    
-    showToast("Transaksi Berhasil!");
+        salesHistory.push(transaction);
+        localStorage.setItem('pos_sales_history', JSON.stringify(salesHistory));
+        
+        showReceipt(transaction);
+        displaySalesReport();
+        
+        cart = [];
+        localStorage.removeItem('pos_cart');
+        saveAndRender();
+        showToast("Transaksi Berhasil!");
+    } catch (e) {
+        console.error(e);
+        showToast("Gagal checkout", "error");
+    }
 });
 
 function displaySalesReport() {
     const salesList = document.getElementById('sales-list');
     const revenueDisplay = document.getElementById('revenue-total');
-    
-    if (!salesList || !revenueDisplay) return;
+    if(!salesList || !revenueDisplay) return;
 
-    salesList.innerHTML = ''; // Bersihkan list lama
+    salesList.innerHTML = '';
     let totalRevenue = 0;
-
-    // Urutkan dari yang terbaru (paling atas)
-    const sortedHistory = [...salesHistory].reverse();
-
-    sortedHistory.forEach(sale => {
+    [...salesHistory].reverse().forEach(sale => {
         totalRevenue += sale.totalAmount;
-        const div = document.createElement('div');
-        div.className = 'sale-entry'; // Tambahkan class untuk styling CSS jika perlu
-        div.style.padding = "8px 0";
-        div.style.borderBottom = "1px solid #eee";
-        div.innerHTML = `
-            <div style="font-weight:bold; font-size:12px;">${sale.id}</div>
-            <div style="font-size:11px; color:#666;">${sale.date}</div>
-            <div style="color:var(--accent-color); font-weight:bold;">Rp ${sale.totalAmount.toLocaleString()}</div>
-        `;
-        salesList.appendChild(div);
+        salesList.innerHTML += `
+            <div style="border-bottom:1px solid #eee; padding:5px 0; font-size:12px">
+                <b>${sale.id}</b><br>${sale.date}<br><span style="color:blue">Rp ${sale.totalAmount.toLocaleString()}</span>
+            </div>`;
     });
-
     revenueDisplay.textContent = totalRevenue.toLocaleString();
 }
 
-// Fungsi Modal
+function showReceipt(transaction) {
+    document.getElementById('receipt-date').innerText = transaction.date;
+    document.getElementById('receipt-content').innerHTML = transaction.items.map(item => `
+        <div style="display:flex; justify-content:space-between">
+            <span>${item.name} x${item.quantity}</span>
+            <span>Rp ${(item.price * item.quantity).toLocaleString()}</span>
+        </div>`).join('');
+    document.getElementById('receipt-total').innerText = "TOTAL: Rp " + transaction.totalAmount.toLocaleString();
+    document.getElementById('receipt-modal').style.display = 'flex';
+}
+
 function closeReceipt() { document.getElementById('receipt-modal').style.display = 'none'; }
 function printReceipt() { window.print(); }
-function clearSales() { if(confirm("Hapus semua?")) { salesHistory=[]; localStorage.removeItem('pos_sales_history'); displaySalesReport(); } }
+function clearSales() { if(confirm("Hapus semua laporan?")) { salesHistory=[]; localStorage.removeItem('pos_sales_history'); displaySalesReport(); } }
 
 // ==========================================
-// 6. INIT
+// 7. FILTER & SEARCH
+// ==========================================
+function filterCategory(categoryName) {
+    const filtered = categoryName === 'Semua' ? products : products.filter(p => p.category === categoryName);
+    displayProducts(filtered);
+}
+
+document.getElementById('search-input').addEventListener('input', (e) => {
+    const keyword = e.target.value.toLowerCase();
+    const filtered = products.filter(p => p.name.toLowerCase().includes(keyword));
+    displayProducts(filtered);
+});
+
+const adminSearch = document.getElementById('admin-search-input');
+if(adminSearch) {
+    adminSearch.addEventListener('input', function(e) {
+        const keyword = e.target.value.toLowerCase();
+        const filteredForAdmin = products.filter(p => 
+            p.name.toLowerCase().includes(keyword) || 
+            p.category.toLowerCase().includes(keyword)
+        );
+        renderAdminTable(filteredForAdmin);
+    });
+}
+
+// ==========================================
+// 8. INITIALIZATION
 // ==========================================
 checkLoginStatus();
-displayProducts(products);
+listenToProducts(); 
 saveAndRender();
 displaySalesReport();
