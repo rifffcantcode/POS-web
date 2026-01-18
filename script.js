@@ -89,13 +89,11 @@ function renderAdminTable(dataToRender = products) {
     dataToRender.forEach(p => {
         const rowStyle = p.isDeleted ? 'style="background: #ffeaea; opacity: 0.7;"' : '';
         
-        // --- DI SINI PERUBAHANNYA (Langkah 3) ---
         const actionButtons = p.isDeleted 
             ? `<button onclick="restoreProduct('${p.id}')" style="background:#28a745; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Pulihkan</button>`
             : `<button onclick="editProduct('${p.id}')" style="background:#ffc107; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
                <button onclick="printBarcode('${p.id}')" style="background:#6c757d; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; margin-right:5px;">Barcode</button>
                <button onclick="deleteProduct('${p.id}')" style="background:#dc3545; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Hapus</button>`;
-        // ----------------------------------------
 
         tableBody.innerHTML += `
             <tr ${rowStyle} style="border-bottom: 1px solid #ddd;">
@@ -108,6 +106,58 @@ function renderAdminTable(dataToRender = products) {
     });
 }
 
+// FIX: Menambahkan fungsi printBarcode yang hilang
+function printBarcode(productId) {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
+    // Buat canvas sementara untuk generate barcode
+    const canvas = document.createElement('canvas');
+    JsBarcode(canvas, productId, {
+        format: "CODE128",
+        width: 2,
+        height: 60,
+        displayValue: true,
+        fontSize: 14
+    });
+
+    const barcodeImg = canvas.toDataURL("image/png");
+
+    // Buka jendela cetak dengan CSS ukuran label kecil (50x30mm)
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Print Barcode - ${product.name}</title>
+                <style>
+                    @page { size: 50mm 30mm; margin: 0; }
+                    body { 
+                        width: 50mm; height: 30mm; margin: 0; 
+                        display: flex; flex-direction: column; 
+                        align-items: center; justify-content: center; 
+                        font-family: Arial, sans-serif; text-align: center;
+                    }
+                    h4 { margin: 0; font-size: 10px; text-transform: uppercase; }
+                    img { width: 90%; height: auto; margin: 2px 0; }
+                    p { margin: 0; font-size: 10px; font-weight: bold; }
+                </style>
+            </head>
+            <body>
+                <h4>${product.name}</h4>
+                <img src="${barcodeImg}">
+                <p>Rp ${product.price.toLocaleString()}</p>
+                <script>
+                    window.onload = function() { 
+                        window.print(); 
+                        setTimeout(() => window.close(), 100); 
+                    }
+                </script>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
+
 async function handleSaveProduct() {
     const idInput = document.getElementById('edit-id');
     const id = idInput ? idInput.value : ''; 
@@ -116,7 +166,7 @@ async function handleSaveProduct() {
     const price = parseInt(document.getElementById('prod-price').value);
     const stock = parseInt(document.getElementById('prod-stock').value);
     const category = document.getElementById('prod-category').value;
-    const imageUrl = document.getElementById('prod-image').value; // Langsung ambil URL
+    const imageUrl = document.getElementById('prod-image').value;
 
     if (!name || isNaN(price)) return showToast("Nama dan Harga wajib diisi!", "error");
 
@@ -364,51 +414,64 @@ if(adminSearch) {
     });
 }
 
-//barcode scanner
-
-let barcodeBuffer = ""; // Tempat menampung ketikan cepat dari alat scanner
-
+// ==========================================
+// 8. BARCODE SCANNER (ALAT FISIK)
+// ==========================================
+let barcodeBuffer = ""; 
 window.addEventListener("keydown", (e) => {
-    // Alat scanner biasanya mengetik sangat cepat
-    // Kita tangkap setiap karakter yang masuk
     if (e.key === "Enter") {
-        // Jika scanner mengirim sinyal 'Enter', proses ID yang terkumpul
-        if (barcodeBuffer.length > 5) { // ID Firebase biasanya panjang
+        if (barcodeBuffer.length > 5) { 
             handleScanSuccess(barcodeBuffer);
         }
-        barcodeBuffer = ""; // Kosongkan lagi untuk barang berikutnya
+        barcodeBuffer = ""; 
     } else {
-        // Tambahkan karakter ke buffer (abaikan tombol Shift dll)
         if (e.key.length === 1) {
             barcodeBuffer += e.key;
         }
     }
-
-    // Reset buffer jika user tidak mengetik/scan selama 200ms 
-    // (Membedakan ketikan manusia vs scanner cepat)
-    setTimeout(() => {
-        barcodeBuffer = "";
-    }, 200);
+    // Timeout buffer 200ms untuk menangkap ketikan cepat scanner
+    setTimeout(() => { barcodeBuffer = ""; }, 200);
 });
 
 function handleScanSuccess(productId) {
     const product = products.find(p => p.id === productId);
-
     if (product) {
         if (product.stock > 0) {
             addToCart(productId);
+            
+            // --- MAIN KAN SUARA DISINI ---
+            playBeep(); 
+            // -----------------------------
+            
             showToast(`Scan Berhasil: ${product.name}`);
         } else {
             showToast("Stok Habis!", "error");
         }
     } else {
-        // Jika tidak ketemu, mungkin sedang fokus di input pencarian
-        console.log("Barcode tidak terdaftar di produk.");
+        console.log("Barcode tidak terdaftar.");
     }
 }
 
+// Fungsi untuk menghasilkan suara Bip (Web Audio API)
+function playBeep() {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.type = 'sine'; // Jenis gelombang suara
+    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // Frekuensi tinggi (bip)
+    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Volume (0.1 agar tidak terlalu keras)
+
+    oscillator.start();
+    // Berhenti setelah 0.1 detik (bip pendek)
+    oscillator.stop(audioCtx.currentTime + 0.1);
+}
+
 // ==========================================
-// 8. INITIALIZATION
+// 9. INITIALIZATION
 // ==========================================
 checkLoginStatus();
 listenToProducts(); 
