@@ -188,10 +188,9 @@ header {
 }
 
 .product-item img {
-    width: 100%;
-    height: 150px;
+    background-color: white; /* Memberi dasar putih */
+    mix-blend-mode: multiply; /* Mencoba menyatukan background putih gambar dengan card */
     object-fit: contain;
-    margin-bottom: 15px;
 }
 
 /* ==========================================

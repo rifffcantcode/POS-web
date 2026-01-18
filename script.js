@@ -88,10 +88,14 @@ function renderAdminTable(dataToRender = products) {
     
     dataToRender.forEach(p => {
         const rowStyle = p.isDeleted ? 'style="background: #ffeaea; opacity: 0.7;"' : '';
+        
+        // --- DI SINI PERUBAHANNYA (Langkah 3) ---
         const actionButtons = p.isDeleted 
             ? `<button onclick="restoreProduct('${p.id}')" style="background:#28a745; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Pulihkan</button>`
             : `<button onclick="editProduct('${p.id}')" style="background:#ffc107; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
+               <button onclick="printBarcode('${p.id}')" style="background:#6c757d; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; margin-right:5px;">Barcode</button>
                <button onclick="deleteProduct('${p.id}')" style="background:#dc3545; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Hapus</button>`;
+        // ----------------------------------------
 
         tableBody.innerHTML += `
             <tr ${rowStyle} style="border-bottom: 1px solid #ddd;">
@@ -105,7 +109,6 @@ function renderAdminTable(dataToRender = products) {
 }
 
 async function handleSaveProduct() {
-    // FIX: Ambil element input ID agar variabel 'id' terdefinisi
     const idInput = document.getElementById('edit-id');
     const id = idInput ? idInput.value : ''; 
 
@@ -113,33 +116,32 @@ async function handleSaveProduct() {
     const price = parseInt(document.getElementById('prod-price').value);
     const stock = parseInt(document.getElementById('prod-stock').value);
     const category = document.getElementById('prod-category').value;
-    const image = document.getElementById('prod-image').value || "img/meja.jpg";
+    const imageUrl = document.getElementById('prod-image').value; // Langsung ambil URL
 
     if (!name || isNaN(price)) return showToast("Nama dan Harga wajib diisi!", "error");
 
     const productData = { 
-        name, price, stock, category, image, 
+        name, 
+        price, 
+        stock, 
+        category, 
+        image: imageUrl || "img/default.jpg", 
         isDeleted: false, 
         createdAt: new Date() 
     };
 
     try {
-        console.log("Mengirim ke Cloud...");
         if (id && id !== "") {
-            // Update Produk
-            const docRef = doc(db, "products", id);
-            await updateDoc(docRef, productData);
+            await updateDoc(doc(db, "products", id), productData);
             showToast("Produk diperbarui!");
         } else {
-            // Tambah Produk Baru
             await addDoc(productsCol, productData);
             showToast("Produk disimpan!");
         }
         resetAdminForm();
         closeAdmin();
     } catch (e) {
-        console.error("Firebase Error:", e);
-        showToast("Gagal: " + e.message, "error");
+        showToast("Gagal simpan: " + e.message, "error");
     }
 }
 
@@ -282,10 +284,8 @@ document.getElementById('checkout-btn').addEventListener('click', async () => {
     };
 
     try {
-        // Sync Stok ke Firebase Cloud
         for (const item of cart) {
             const docRef = doc(db, "products", item.id);
-            // Ambil stok terbaru dari array produk global
             const currentProd = products.find(p => p.id === item.id);
             await updateDoc(docRef, { stock: currentProd.stock });
         }
@@ -362,6 +362,49 @@ if(adminSearch) {
         );
         renderAdminTable(filteredForAdmin);
     });
+}
+
+//barcode scanner
+
+let barcodeBuffer = ""; // Tempat menampung ketikan cepat dari alat scanner
+
+window.addEventListener("keydown", (e) => {
+    // Alat scanner biasanya mengetik sangat cepat
+    // Kita tangkap setiap karakter yang masuk
+    if (e.key === "Enter") {
+        // Jika scanner mengirim sinyal 'Enter', proses ID yang terkumpul
+        if (barcodeBuffer.length > 5) { // ID Firebase biasanya panjang
+            handleScanSuccess(barcodeBuffer);
+        }
+        barcodeBuffer = ""; // Kosongkan lagi untuk barang berikutnya
+    } else {
+        // Tambahkan karakter ke buffer (abaikan tombol Shift dll)
+        if (e.key.length === 1) {
+            barcodeBuffer += e.key;
+        }
+    }
+
+    // Reset buffer jika user tidak mengetik/scan selama 200ms 
+    // (Membedakan ketikan manusia vs scanner cepat)
+    setTimeout(() => {
+        barcodeBuffer = "";
+    }, 200);
+});
+
+function handleScanSuccess(productId) {
+    const product = products.find(p => p.id === productId);
+
+    if (product) {
+        if (product.stock > 0) {
+            addToCart(productId);
+            showToast(`Scan Berhasil: ${product.name}`);
+        } else {
+            showToast("Stok Habis!", "error");
+        }
+    } else {
+        // Jika tidak ketemu, mungkin sedang fokus di input pencarian
+        console.log("Barcode tidak terdaftar di produk.");
+    }
 }
 
 // ==========================================
