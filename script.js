@@ -64,11 +64,27 @@ function listenToProducts() {
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     if(!container) return;
+
+    // --- LOGIKA PEMBATASAN (MAKSIMAL 3) ---
+    // Jika jumlah notifikasi sudah 3 atau lebih, hapus yang paling lama (paling atas)
+    const existingToasts = container.getElementsByClassName('toast');
+    if (existingToasts.length >= 3) {
+        container.removeChild(existingToasts[0]);
+    }
+    // --------------------------------------
+
     const toast = document.createElement('div');
     toast.className = `toast ${type === 'error' ? 'error' : ''}`;
     toast.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> <span>${message}</span>`;
+    
     container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+
+    // Tetap hapus otomatis setelah 3 detik jika tidak dihapus oleh logika di atas
+    setTimeout(() => {
+        if (toast.parentNode === container) {
+            toast.remove();
+        }
+    }, 3000);
 }
 
 function openAdmin() {
