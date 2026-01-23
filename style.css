@@ -469,3 +469,22 @@ header {
         opacity: 0.7;
     }
 }
+
+/* --- TAMBAHAN UNTUK ANIMASI TOAST KELUAR --- */
+
+/* Kelas ini akan ditambahkan via JS saat toast mau dihapus */
+.toast.hiding {
+    animation: fadeOut 0.4s ease forwards; /* Durasi 0.4 detik */
+}
+
+/* Keyframes: dari terlihat jelas menjadi transparan dan naik sedikit */
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(20px) translateY(-10px); /* Geser sedikit ke kanan atas saat hilang */
+    }
+}
