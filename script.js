@@ -1,4 +1,30 @@
 // ==========================================
+// 0. FUNGSI SUARA (WAJIB ADA AGAR TIDAK ERROR)
+// ==========================================
+function playBeep() {
+    // Mencegah error jika browser memblokir audio
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        
+        const context = new AudioContext();
+        const oscillator = context.createOscillator();
+        const gainNode = context.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(1200, context.currentTime); // Nada tinggi
+        oscillator.connect(gainNode);
+        gainNode.connect(context.destination);
+
+        gainNode.gain.setValueAtTime(0.1, context.currentTime);
+        oscillator.start();
+        oscillator.stop(context.currentTime + 0.1);
+    } catch (e) {
+        console.log("Audio tidak dapat diputar (diabaikan)");
+    }
+}
+
+// ==========================================
 // 1. KONFIGURASI FIREBASE (AMBIL DARI WINDOW)
 // ==========================================
 const { collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy } = window.fs;
@@ -59,32 +85,50 @@ function listenToProducts() {
 }
 
 // ==========================================
-// 4. UI FEEDBACK & ADMIN LOGIC (CRUD CLOUD)
+// 4. UI FEEDBACK (DENGAN ANIMASI FADE OUT) - VERSI FIX
 // ==========================================
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     if(!container) return;
 
-    // --- LOGIKA PEMBATASAN (MAKSIMAL 3) ---
-    // Jika jumlah notifikasi sudah 3 atau lebih, hapus yang paling lama (paling atas)
-    const existingToasts = container.getElementsByClassName('toast');
-    if (existingToasts.length >= 3) {
-        container.removeChild(existingToasts[0]);
+    // Batasi maksimal 3 notifikasi
+    const visibleToasts = container.querySelectorAll('.toast:not(.hiding)');
+    if (visibleToasts.length >= 3) {
+        removeToastWithFade(visibleToasts[0]);
     }
-    // --------------------------------------
 
     const toast = document.createElement('div');
     toast.className = `toast ${type === 'error' ? 'error' : ''}`;
     toast.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> <span>${message}</span>`;
-    
     container.appendChild(toast);
 
-    // Tetap hapus otomatis setelah 3 detik jika tidak dihapus oleh logika di atas
     setTimeout(() => {
-        if (toast.parentNode === container) {
-            toast.remove();
+        if (toast.parentNode === container && !toast.classList.contains('hiding')) {
+            removeToastWithFade(toast);
         }
     }, 3000);
+}
+
+function removeToastWithFade(toastElement) {
+    toastElement.classList.add('hiding');
+    setTimeout(() => {
+        if (toastElement.parentNode) {
+            toastElement.remove();
+        }
+    }, 400); 
+}
+
+// FUNGSI HELPER BARU: Menghapus toast dengan menunggu animasi selesai
+function removeToastWithFade(toastElement) {
+    // 1. Tambahkan class 'hiding' untuk memicu animasi CSS fadeOut
+    toastElement.classList.add('hiding');
+
+    // 2. Tunggu durasi animasi selesai (0.4s = 400ms di CSS), baru hapus dari DOM
+    setTimeout(() => {
+        if (toastElement.parentNode) {
+            toastElement.remove();
+        }
+    }, 400); // Pastikan angka ini sama dengan durasi animasi di CSS
 }
 
 function openAdmin() {
@@ -431,61 +475,73 @@ if(adminSearch) {
 }
 
 // ==========================================
-// 8. BARCODE SCANNER (ALAT FISIK)
+// 8. BARCODE SCANNER (ALAT FISIK) - FIXED v2
 // ==========================================
 let barcodeBuffer = ""; 
+let lastKeyTime = Date.now();
+
+// Listener untuk menangkap input scanner
 window.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-        if (barcodeBuffer.length > 5) { 
-            handleScanSuccess(barcodeBuffer);
-        }
-        barcodeBuffer = ""; 
-    } else {
-        if (e.key.length === 1) {
-            barcodeBuffer += e.key;
-        }
+    // 1. Cek apakah kursor sedang di kolom pencarian/input
+    // Jika ya, hentikan scanner agar tidak mengetik di sana
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
+        return; 
     }
-    // Timeout buffer 200ms untuk menangkap ketikan cepat scanner
-    setTimeout(() => { barcodeBuffer = ""; }, 200);
+
+    const currentTime = Date.now();
+    
+    // 2. Deteksi kecepatan ketikan
+    // Scanner mengetik sangat cepat (< 50ms per karakter). 
+    // Jika jeda lama (> 100ms), reset buffer karena itu ketikan manual (keyboard).
+    if (currentTime - lastKeyTime > 100) {
+        barcodeBuffer = "";
+    }
+    lastKeyTime = currentTime;
+
+    // 3. Jika tombol ENTER ditekan (Scanner selalu akhiri dengan Enter)
+    if (e.key === "Enter") {
+        if (barcodeBuffer.length > 3) { // Minimal panjang karakter barcode
+            e.preventDefault(); // Mencegah submit form tidak sengaja
+            handleScanSuccess(barcodeBuffer); // Proses barcode
+            barcodeBuffer = ""; // Reset buffer
+        }
+    } else if (e.key.length === 1) {
+        // Hanya masukkan karakter huruf/angka
+        barcodeBuffer += e.key;
+    }
 });
 
-function handleScanSuccess(productId) {
-    const product = products.find(p => p.id === productId);
+function handleScanSuccess(scannedId) {
+    const cleanId = scannedId.trim(); // Hilangkan spasi
+    console.log("Scanner membaca:", cleanId); // Cek Console browser
+
+    // Pencarian Fleksibel:
+    // Mencari apakah ID di database COCOK dengan hasil scan
+    const product = products.find(p => 
+        p.id === cleanId || 
+        p.id.includes(cleanId) || 
+        cleanId.includes(p.id)
+    );
+    
     if (product) {
         if (product.stock > 0) {
-            addToCart(productId);
+            // URUTAN PENTING: Masukkan keranjang dulu -> Baru bunyi/notif
+            addToCart(product.id); 
             
-            // --- MAIN KAN SUARA DISINI ---
+            // Notifikasi Sukses
+            showToast(`Scan: ${product.name}`);
+            
+            // Bunyikan suara (dibungkus try-catch agar tidak mematikan program)
             playBeep(); 
-            // -----------------------------
-            
-            showToast(`Scan Berhasil: ${product.name}`);
         } else {
-            showToast("Stok Habis!", "error");
+            showToast(`${product.name} Stok Habis!`, "error");
+            playBeep(); // Bunyi error (tetap pakai beep biasa)
         }
     } else {
-        console.log("Barcode tidak terdaftar.");
+        console.error("Produk tidak ditemukan untuk ID:", cleanId);
+        showToast(`Produk tidak dikenal`, "error");
     }
 }
-
-// Fungsi untuk menghasilkan suara Bip (Web Audio API)
-function playBeep() {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-
-    oscillator.type = 'sine'; // Jenis gelombang suara
-    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // Frekuensi tinggi (bip)
-    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Volume (0.1 agar tidak terlalu keras)
-
-    oscillator.start();
-    // Berhenti setelah 0.1 detik (bip pendek)
-    oscillator.stop(audioCtx.currentTime + 0.1);
-}
-
 // ==========================================
 // 9. INITIALIZATION
 // ==========================================
