@@ -488,3 +488,57 @@ header {
         transform: translateX(20px) translateY(-10px); /* Geser sedikit ke kanan atas saat hilang */
     }
 }
+
+/* Styling Header Kasir */
+.main-header {
+    background-color: #2563eb; /* Warna biru */
+    color: white;
+    padding: 15px 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.header-container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between; /* Ini yang bikin judul di kiri & tombol di kanan */
+    align-items: center;
+}
+
+.header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-brand h1 {
+    font-size: 1.25rem;
+    margin: 0;
+    font-weight: 600;
+}
+
+/* Styling Tombol Kembali */
+.btn-back-toko {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-back-toko:hover {
+    background-color: white;
+    color: #2563eb;
+    transform: translateY(-2px);
+}
+
+.btn-back-toko i {
+    font-size: 0.8rem;
+}

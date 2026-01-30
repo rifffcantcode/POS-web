@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Katalog NamaToko - Detail & Keranjang</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      @keyframes slideIn {
+        from {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .animate-slide-in {
+        animation: slideIn 0.4s ease-out;
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-in;
+      }
+
+      /* Custom scrollbar untuk detail modal */
+      .custom-scroll::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scroll::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      .custom-scroll::-webkit-scrollbar-thumb {
+        background: #3b82f6;
+        border-radius: 10px;
+      }
+
+      .product-card:hover {
+        transform: translateY(-8px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 text-gray-800 font-sans">
+    <nav class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
+      <div
+        class="container mx-auto px-6 py-4 flex justify-between items-center"
+      >
+        <h1 class="text-2xl font-black text-blue-600 tracking-tighter">
+          NamaToko.
+        </h1>
+        <div class="flex items-center gap-6">
+          <a
+            href="#"
+            class="hidden md:block font-bold text-gray-600 hover:text-blue-600 transition"
+            >Beranda</a
+          >
+
+          <button
+            onclick="toggleCartModal()"
+            class="relative p-2 text-gray-700 hover:text-blue-600 transition"
+          >
+            <i class="fas fa-shopping-cart text-xl"></i>
+            <span
+              id="cart-count"
+              class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center hidden"
+              >0</span
+            >
+          </button>
+
+          <a
+            href="login.html"
+            class="bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 font-bold transition shadow-lg shadow-blue-100"
+          >
+            Area Kasir
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <header class="bg-blue-600 text-white py-24 px-6 relative overflow-hidden">
+      <div class="absolute inset-0 opacity-10">
+        <div
+          class="absolute top-0 left-0 w-64 h-64 bg-white rounded-full -translate-x-1/2 -translate-y-1/2"
+        ></div>
+      </div>
+      <div class="container mx-auto text-center relative z-10">
+        <h2 class="text-5xl md:text-7xl font-black mb-6 tracking-tight">
+          Koleksi Modern & <br />Berkualitas
+        </h2>
+        <p class="text-xl mb-10 opacity-90 max-w-2xl mx-auto">
+          Dapatkan produk pilihan terbaik untuk rumah dan gaya hidup Anda dengan
+          harga transparan.
+        </p>
+        <a
+          href="#katalog"
+          class="bg-white text-blue-600 font-black py-4 px-10 rounded-2xl shadow-xl hover:scale-105 transition uppercase tracking-widest text-sm"
+          >Mulai Belanja</a
+        >
+      </div>
+    </header>
+
+    <main id="katalog" class="container mx-auto py-16 px-6">
+      <div
+        class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-8"
+      >
+        <div>
+          <h3 class="text-4xl font-black text-gray-900 mb-2">
+            Produk Unggulan
+          </h3>
+          <p
+            id="loading-status"
+            class="text-blue-500 animate-pulse font-medium"
+          >
+            Menghubungkan ke database...
+          </p>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+          <button
+            onclick="filterCategory('Semua')"
+            class="category-btn px-6 py-2.5 rounded-xl border-2 border-blue-600 bg-blue-600 text-white font-bold transition shadow-md"
+          >
+            Semua
+          </button>
+          <button
+            onclick="filterCategory('Furniture')"
+            class="category-btn px-6 py-2.5 rounded-xl border-2 border-blue-600 text-blue-600 font-bold hover:bg-blue-50 transition"
+          >
+            Furniture
+          </button>
+          <button
+            onclick="filterCategory('Elektronik')"
+            class="category-btn px-6 py-2.5 rounded-xl border-2 border-blue-600 text-blue-600 font-bold hover:bg-blue-50 transition"
+          >
+            Elektronik
+          </button>
+          <button
+            onclick="filterCategory('Dekorasi')"
+            class="category-btn px-6 py-2.5 rounded-xl border-2 border-blue-600 text-blue-600 font-bold hover:bg-blue-50 transition"
+          >
+            Dekorasi
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="customer-product-grid"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+      ></div>
+    </main>
+
+    <div
+      id="product-detail-modal"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4 animate-fade-in"
+    >
+      <div
+        class="bg-white w-full max-w-4xl max-h-[90vh] rounded-[2rem] overflow-hidden shadow-2xl relative flex flex-col md:flex-row animate-slide-in"
+      >
+        <button
+          onclick="closeProductDetail()"
+          class="absolute top-6 right-6 bg-gray-100 hover:bg-red-500 hover:text-white w-10 h-10 rounded-full flex items-center justify-center transition-all z-10 shadow-sm"
+        >
+          <i class="fas fa-times"></i>
+        </button>
+
+        <div class="md:w-1/2 bg-gray-50 flex items-center justify-center p-12">
+          <img
+            id="detail-image"
+            src=""
+            class="max-w-full max-h-[450px] object-contain mix-blend-multiply"
+            alt="Product Detail"
+          />
+        </div>
+
+        <div class="md:w-1/2 p-10 flex flex-col overflow-y-auto custom-scroll">
+          <div class="mb-6">
+            <span
+              id="detail-category"
+              class="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] bg-blue-50 px-3 py-1.5 rounded-lg"
+              >Kategori</span
+            >
+            <h2
+              id="detail-name"
+              class="text-3xl font-black text-gray-900 mt-4 leading-tight"
+            >
+              Nama Produk
+            </h2>
+            <p id="detail-price" class="text-3xl font-black text-blue-600 mt-2">
+              Rp 0
+            </p>
+          </div>
+
+          <div class="space-y-4 mb-10">
+            <h5
+              class="font-black text-gray-800 text-sm uppercase tracking-wider"
+            >
+              Deskripsi Produk
+            </h5>
+            <div
+              id="detail-description"
+              class="text-gray-500 leading-relaxed text-sm whitespace-pre-line"
+            >
+              Detail spesifikasi produk akan tampil di sini...
+            </div>
+          </div>
+
+          <div
+            class="mt-auto pt-8 border-t border-gray-100 flex flex-col gap-4"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold text-gray-400"
+                >Status Ketersediaan:</span
+              >
+              <span id="detail-stock" class="font-black text-green-600"
+                >Tersedia 0 Unit</span
+              >
+            </div>
+            <button
+              id="add-to-cart-detail-btn"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-2xl font-black text-lg transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3 active:scale-95"
+            >
+              <i class="fas fa-cart-plus"></i>
+              Tambah ke Keranjang
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="cart-modal"
+      class="fixed inset-0 bg-black/40 z-[80] hidden flex justify-end"
+    >
+      <div
+        class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col p-8 animate-fade-in"
+      >
+        <div class="flex justify-between items-center mb-8 border-b pb-6">
+          <h3 class="text-2xl font-black text-gray-800">Keranjang Belanja</h3>
+          <button
+            onclick="toggleCartModal()"
+            class="text-gray-400 hover:text-red-500 transition"
+          >
+            <i class="fas fa-times text-2xl"></i>
+          </button>
+        </div>
+
+        <div
+          id="cart-items-list"
+          class="flex-grow overflow-y-auto space-y-4 custom-scroll pr-2"
+        ></div>
+
+        <div class="border-t pt-8 mt-4">
+          <div class="flex justify-between items-end mb-6">
+            <span
+              class="text-gray-400 font-bold uppercase text-xs tracking-widest"
+              >Total Bayar</span
+            >
+            <span id="cart-total" class="text-3xl font-black text-blue-600"
+              >Rp 0</span
+            >
+          </div>
+          <button
+            onclick="alert('Langkah berikutnya: Hubungkan ke WhatsApp!')"
+            class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg hover:bg-blue-700 transition shadow-xl shadow-blue-100"
+          >
+            Checkout Sekarang
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="bg-white border-t py-16">
+      <div class="container mx-auto px-6 text-center">
+        <h4 class="text-2xl font-black text-blue-600 mb-2 tracking-tighter">
+          NamaToko.
+        </h4>
+        <p class="text-gray-400 text-sm mb-10">
+          Kualitas mewah, harga ramah, belanja mudah.
+        </p>
+        <div class="flex justify-center gap-8 mb-10">
+          <a
+            href="#"
+            class="text-gray-400 hover:text-blue-500 text-2xl transition"
+            ><i class="fab fa-instagram"></i
+          ></a>
+          <a
+            href="#"
+            class="text-gray-400 hover:text-blue-500 text-2xl transition"
+            ><i class="fab fa-whatsapp"></i
+          ></a>
+        </div>
+        <p
+          class="text-[10px] text-gray-300 font-bold uppercase tracking-[0.3em]"
+        >
+          &copy; 2026 Developer Kasir Pintar. All Rights Reserved.
+        </p>
+      </div>
+    </footer>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import {
+        getFirestore,
+        collection,
+        onSnapshot,
+      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+      // --- GANTI DENGAN CONFIG ASLI KAMU ---
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBMsUhXj-UCLLviXzweS1qXVdSaVgkDcu8",
+        authDomain: "sistemkasirtokocom.firebaseapp.com",
+        projectId: "sistemkasirtokocom",
+        storageBucket: "sistemkasirtokocom.firebasestorage.app",
+        messagingSenderId: "141722200955",
+        appId: "1:141722200955:web:e07952808590aa7f582bde",
+      };
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      // State Global
+      let allProducts = [];
+      let currentCategory = "Semua";
+      let cart = JSON.parse(localStorage.getItem("customer_cart")) || [];
+
+      const productGrid = document.getElementById("customer-product-grid");
+      const loadingStatus = document.getElementById("loading-status");
+
+      // 1. DATA REAL-TIME
+      onSnapshot(collection(db, "products"), (snapshot) => {
+        allProducts = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (!data.isDeleted) {
+            allProducts.push({ id: doc.id, ...data });
+          }
+        });
+        loadingStatus.style.display = "none";
+        renderProducts();
+        updateCartCount();
+      });
+
+      // 2. RENDER PRODUK (FIX STOK & GAMBAR & DETAIL CLICK)
+      window.renderProducts = () => {
+        productGrid.innerHTML = "";
+        const filtered = allProducts.filter(
+          (p) => currentCategory === "Semua" || p.category === currentCategory,
+        );
+
+        if (filtered.length === 0) {
+          productGrid.innerHTML = `<div class="col-span-full text-center py-20 text-gray-300 font-bold uppercase tracking-widest text-xs">Produk tidak ditemukan</div>`;
+          return;
+        }
+
+        filtered.forEach((p) => {
+          // Hitung sisa stok visual
+          const itemInCart = cart.find((item) => item.id === p.id);
+          const availableStock =
+            p.stock - (itemInCart ? itemInCart.quantity : 0);
+
+          productGrid.innerHTML += `
+                    <div class="product-card bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex flex-col transition-all">
+                        <div onclick="openProductDetail('${p.id}')" class="w-full h-64 bg-white p-8 flex items-center justify-center cursor-pointer group">
+                            <img src="${p.image}" alt="${p.name}" class="object-contain w-full h-full mix-blend-multiply group-hover:scale-110 transition-transform duration-500">
+                        </div>
+                        
+                        <div class="p-6 flex-grow flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-[9px] font-black text-blue-500 uppercase tracking-widest bg-blue-50 px-2.5 py-1 rounded-md">${p.category}</span>
+                                <span class="text-[10px] font-bold ${availableStock > 0 ? "text-green-500" : "text-red-400"}">
+                                    ${availableStock > 0 ? "Stok: " + availableStock : "Habis"}
+                                </span>
+                            </div>
+                            
+                            <h4 onclick="openProductDetail('${p.id}')" class="text-base font-black text-gray-800 line-clamp-2 h-12 mb-4 hover:text-blue-600 cursor-pointer transition">
+                                ${p.name}
+                            </h4>
+                            
+                            <div class="mt-auto flex items-center justify-between">
+                                <p class="text-xl font-black text-blue-600 tracking-tight">Rp ${p.price.toLocaleString()}</p>
+                                <button onclick="addToCartCustomer('${p.id}')" 
+                                        ${availableStock <= 0 ? "disabled" : ""}
+                                        class="${availableStock > 0 ? "bg-blue-600 hover:bg-blue-700 shadow-blue-100" : "bg-gray-200 cursor-not-allowed"} text-white w-12 h-12 rounded-2xl transition shadow-lg flex items-center justify-center active:scale-90">
+                                    <i class="fas fa-cart-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+        });
+      };
+
+      // 3. LOGIKA DETAIL MODAL
+      window.openProductDetail = (productId) => {
+        const p = allProducts.find((item) => item.id === productId);
+        if (!p) return;
+
+        document.getElementById("detail-image").src = p.image;
+        document.getElementById("detail-name").innerText = p.name;
+        document.getElementById("detail-category").innerText = p.category;
+        document.getElementById("detail-price").innerText =
+          `Rp ${p.price.toLocaleString()}`;
+        document.getElementById("detail-description").innerText =
+          p.description || "Belum ada deskripsi lengkap untuk produk ini.";
+
+        const itemInCart = cart.find((item) => item.id === p.id);
+        const availableStock = p.stock - (itemInCart ? itemInCart.quantity : 0);
+        const stockEl = document.getElementById("detail-stock");
+        const btnDetail = document.getElementById("add-to-cart-detail-btn");
+
+        if (availableStock > 0) {
+          stockEl.innerText = `Tersedia ${availableStock} Unit`;
+          stockEl.className = "font-black text-green-600";
+          btnDetail.disabled = false;
+          btnDetail.className =
+            "w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-2xl font-black text-lg transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3 active:scale-95";
+          btnDetail.onclick = () => {
+            addToCartCustomer(p.id);
+            openProductDetail(p.id); // Refresh modal view
+          };
+        } else {
+          stockEl.innerText = "Stok Habis";
+          stockEl.className = "font-black text-red-500";
+          btnDetail.disabled = true;
+          btnDetail.className =
+            "w-full bg-gray-200 text-gray-400 py-5 rounded-2xl font-black text-lg cursor-not-allowed flex items-center justify-center gap-3";
+        }
+
+        document
+          .getElementById("product-detail-modal")
+          .classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+      };
+
+      window.closeProductDetail = () => {
+        document.getElementById("product-detail-modal").classList.add("hidden");
+        document.body.style.overflow = "auto";
+      };
+
+      // 4. LOGIKA KERANJANG & FILTER
+      window.addToCartCustomer = (productId) => {
+        const product = allProducts.find((p) => p.id === productId);
+        const itemInCart = cart.find((item) => item.id === productId);
+        const currentQty = itemInCart ? itemInCart.quantity : 0;
+
+        if (currentQty >= product.stock)
+          return alert("Batas stok maksimal tercapai!");
+
+        if (itemInCart) {
+          itemInCart.quantity += 1;
+        } else {
+          cart.push({ ...product, quantity: 1 });
+        }
+        saveAndRefresh();
+      };
+
+      window.removeFromCart = (index) => {
+        cart.splice(index, 1);
+        saveAndRefresh();
+      };
+
+      function saveAndRefresh() {
+        localStorage.setItem("customer_cart", JSON.stringify(cart));
+        updateCartCount();
+        renderCart();
+        renderProducts(); // Update sisa stok di grid
+      }
+
+      function updateCartCount() {
+        const countEl = document.getElementById("cart-count");
+        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+        countEl.innerText = totalItems;
+        countEl.classList.toggle("hidden", totalItems === 0);
+      }
+
+      window.toggleCartModal = () => {
+        document.getElementById("cart-modal").classList.toggle("hidden");
+        renderCart();
+      };
+
+      function renderCart() {
+        const list = document.getElementById("cart-items-list");
+        const totalLabel = document.getElementById("cart-total");
+        list.innerHTML = "";
+        let total = 0;
+
+        if (cart.length === 0) {
+          list.innerHTML = `<div class="text-center py-20 text-gray-300 font-bold uppercase tracking-widest text-[10px]">Keranjang Kosong</div>`;
+        } else {
+          cart.forEach((item, index) => {
+            total += item.price * item.quantity;
+            list.innerHTML += `
+                        <div class="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                            <img src="${item.image}" class="w-16 h-16 object-contain mix-blend-multiply bg-white rounded-xl border">
+                            <div class="flex-grow">
+                                <h5 class="font-black text-xs text-gray-800 line-clamp-1">${item.name}</h5>
+                                <p class="text-[10px] text-blue-600 font-black mt-1 uppercase tracking-wider">Rp ${item.price.toLocaleString()} x ${item.quantity}</p>
+                            </div>
+                            <button onclick="removeFromCart(${index})" class="text-red-300 hover:text-red-500 p-2 transition">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>`;
+          });
+        }
+        totalLabel.innerText = `Rp ${total.toLocaleString()}`;
+      }
+
+      window.filterCategory = (category) => {
+        currentCategory = category;
+        document.querySelectorAll(".category-btn").forEach((btn) => {
+          if (btn.innerText === category) {
+            btn.classList.add("bg-blue-600", "text-white");
+            btn.classList.remove("text-blue-600");
+          } else {
+            btn.classList.remove("bg-blue-600", "text-white");
+            btn.classList.add("text-blue-600");
+          }
+        });
+        renderProducts();
+      };
+
+      updateCartCount();
+    </script>
+  </body>
+</html>

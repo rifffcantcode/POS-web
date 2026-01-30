@@ -35,13 +35,17 @@
       </div>
     </div>
 
-    <header>
-      <div class="header-content">
-        <div>
+    <header class="main-header">
+      <div class="header-container">
+        <div class="header-brand">
+          <i class="fas fa-cash-register"></i>
           <h1>Sistem Kasir POS</h1>
-          <p id="current-date"></p>
         </div>
-        <button onclick="handleLogout()" class="btn-logout">Logout</button>
+
+        <button onclick="backToLanding()" class="btn-back-toko">
+          <i class="fas fa-arrow-left"></i>
+          <span>Kembali ke Toko</span>
+        </button>
       </div>
     </header>
 
@@ -172,8 +176,8 @@
           id="admin-form"
           style="
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
             background: #f8f9fa;
             padding: 20px;
             border-radius: 12px;
@@ -182,6 +186,7 @@
           "
         >
           <input type="hidden" id="edit-id" />
+
           <input
             type="text"
             id="prod-name"
@@ -208,17 +213,25 @@
             <option value="Elektronik">Elektronik</option>
             <option value="Dekorasi">Dekorasi</option>
           </select>
+
           <input
             type="text"
             id="prod-image"
             placeholder="URL Gambar"
-            style="padding: 10px; border-radius: 5px; border: 1px solid #ccc"
+            style="
+              grid-column: span 2;
+              padding: 10px;
+              border-radius: 5px;
+              border: 1px solid #ccc;
+            "
           />
+
           <button
             type="button"
             id="save-btn"
             onclick="handleSaveProduct()"
             style="
+              grid-column: span 2;
               background: #28a745;
               color: white;
               border: none;
@@ -230,6 +243,19 @@
           >
             Simpan Produk
           </button>
+
+          <textarea
+            id="prod-desc"
+            placeholder="Masukkan Deskripsi Produk Lengkap..."
+            style="
+              grid-column: 1 / -1;
+              padding: 10px;
+              border-radius: 5px;
+              border: 1px solid #ccc;
+              font-family: inherit;
+              min-height: 80px;
+            "
+          ></textarea>
         </div>
 
         <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee" />
@@ -283,6 +309,23 @@
     </button>
 
     <script type="module">
+      // Letakkan ini di bagian paling atas script index.html
+      (function () {
+        const isLogged = localStorage.getItem("kasir_akses");
+        if (isLogged !== "true") {
+          alert("Anda tidak memiliki akses! Silakan login terlebih dahulu.");
+          window.location.href = "login.html";
+        }
+      })();
+
+      // Update fungsi Logout (seperti permintaanmu sebelumnya)
+      window.backToLanding = () => {
+        if (confirm("Yakin ingin menutup Kasir dan kembali ke Toko?")) {
+          localStorage.removeItem("kasir_akses");
+          window.location.href = "landing.html";
+        }
+      };
+
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
       import {
         getFirestore,
@@ -331,6 +374,15 @@
       const mainScript = document.createElement("script");
       mainScript.src = "script.js";
       document.body.appendChild(mainScript);
+
+      // Tambahkan fungsi ini di bagian script index.html
+      window.backToLanding = () => {
+        // Jika kamu ingin membersihkan data login (jika ada), tambahkan di sini
+        // localStorage.removeItem('isLoggedIn');
+
+        // Alihkan ke landing page
+        window.location.href = "landing.html";
+      };
     </script>
   </body>
 </html>

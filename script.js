@@ -166,7 +166,7 @@ function renderAdminTable(dataToRender = products) {
     });
 }
 
-// FIX: Menambahkan fungsi printBarcode yang hilang
+
 function printBarcode(productId) {
     const product = products.find(p => p.id === productId);
     if (!product) return;
@@ -227,6 +227,8 @@ async function handleSaveProduct() {
     const stock = parseInt(document.getElementById('prod-stock').value);
     const category = document.getElementById('prod-category').value;
     const imageUrl = document.getElementById('prod-image').value;
+    // TAMBAHKAN INI: Mengambil nilai deskripsi
+    const description = document.getElementById('prod-desc').value; 
 
     if (!name || isNaN(price)) return showToast("Nama dan Harga wajib diisi!", "error");
 
@@ -236,23 +238,38 @@ async function handleSaveProduct() {
         stock, 
         category, 
         image: imageUrl || "img/default.jpg", 
+        description: description, // TAMBAHKAN INI: Menyimpan deskripsi ke Firebase
         isDeleted: false, 
         createdAt: new Date() 
     };
 
     try {
         if (id && id !== "") {
+            // Gunakan updateDoc untuk memperbarui data yang sudah ada
             await updateDoc(doc(db, "products", id), productData);
             showToast("Produk diperbarui!");
         } else {
+            // Gunakan addDoc untuk produk baru
             await addDoc(productsCol, productData);
             showToast("Produk disimpan!");
         }
-        resetAdminForm();
+        
+        // Pastikan fungsi reset juga membersihkan deskripsi
+        resetAdminForm(); 
         closeAdmin();
     } catch (e) {
         showToast("Gagal simpan: " + e.message, "error");
     }
+}
+
+// Tambahkan ini di dalam fungsi resetAdminForm() kamu jika ada
+function resetAdminForm() {
+    document.getElementById('edit-id').value = "";
+    document.getElementById('prod-name').value = "";
+    document.getElementById('prod-price').value = "";
+    document.getElementById('prod-stock').value = "";
+    document.getElementById('prod-image').value = "";
+    document.getElementById('prod-desc').value = ""; // Membersihkan deskripsi
 }
 
 function editProduct(id) {
@@ -266,6 +283,7 @@ function editProduct(id) {
     document.getElementById('prod-category').value = p.category;
     document.getElementById('prod-image').value = p.image;
     document.getElementById('save-btn').innerText = "Update Produk";
+    document.getElementById('prod-desc').value = data.description || "";
 }
 
 async function deleteProduct(id) {
@@ -338,9 +356,16 @@ function decreaseQuantity(productId) {
     const itemIndex = cart.findIndex(item => item.id === productId);
     if (itemIndex > -1) {
         const product = products.find(p => p.id === productId);
-        if (product) product.stock++;
+        // Kembalikan stok ke daftar produk secara visual
+        if (product) product.stock++; 
+        
         cart[itemIndex].quantity--;
-        if (cart[itemIndex].quantity === 0) cart.splice(itemIndex, 1);
+        
+        // Jika jumlah mencapai 0, hapus item dari keranjang
+        if (cart[itemIndex].quantity === 0) {
+            cart.splice(itemIndex, 1);
+        }
+        
         saveAndRender();
     }
 }
@@ -349,7 +374,9 @@ function removeItem(productId) {
     const itemIndex = cart.findIndex(item => item.id === productId);
     if (itemIndex > -1) {
         const product = products.find(p => p.id === productId);
+        // Kembalikan semua jumlah stok yang ada di keranjang ke stok produk
         if (product) product.stock += cart[itemIndex].quantity;
+        
         cart.splice(itemIndex, 1);
         saveAndRender();
     }
@@ -367,11 +394,26 @@ function saveAndRender() {
         const li = document.createElement('li');
         li.style.marginBottom = "15px";
         li.innerHTML = `
-            <div style="display:flex; justify-content:space-between;">
-                <div><strong>${item.name}</strong><br><small>${item.quantity} x Rp ${item.price.toLocaleString()}</small></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div>
-                    <button onclick="decreaseQuantity('${item.id}')" style="padding:2px 8px; background:#ffc107; border:none; border-radius:4px;">-</button>
-                    <button onclick="removeItem('${item.id}')" style="padding:2px 8px; background:#dc3545; color:white; border:none; border-radius:4px;">Hapus</button>
+                    <strong>${item.name}</strong><br>
+                    <small>${item.quantity} x Rp ${item.price.toLocaleString()}</small>
+                </div>
+                <div style="display:flex; gap:5px; align-items:center;">
+                    <button onclick="decreaseQuantity('${item.id}')" 
+                            style="padding:2px 10px; background:#ffc107; color:black; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">
+                        -
+                    </button>
+                    
+                    <button onclick="addToCart('${item.id}')" 
+                            style="padding:2px 8px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">
+                        +
+                    </button>
+
+                    <button onclick="removeItem('${item.id}')" 
+                            style="padding:2px 8px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">
+                        Hapus
+                    </button>
                 </div>
             </div>`;
         cartList.appendChild(li);
@@ -474,74 +516,20 @@ if(adminSearch) {
     });
 }
 
+/// ==========================================
+// 8. TESTER SCANNER SEDERHANA
 // ==========================================
-// 8. BARCODE SCANNER (ALAT FISIK) - FIXED v2
-// ==========================================
-let barcodeBuffer = ""; 
-let lastKeyTime = Date.now();
-
-// Listener untuk menangkap input scanner
 window.addEventListener("keydown", (e) => {
-    // 1. Cek apakah kursor sedang di kolom pencarian/input
-    // Jika ya, hentikan scanner agar tidak mengetik di sana
-    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
-        return; 
-    }
-
-    const currentTime = Date.now();
+    // Ini akan memunculkan SETIAP tombol yang ditekan oleh scanner di console
+    console.log("Tombol terdeteksi:", e.key); 
     
-    // 2. Deteksi kecepatan ketikan
-    // Scanner mengetik sangat cepat (< 50ms per karakter). 
-    // Jika jeda lama (> 100ms), reset buffer karena itu ketikan manual (keyboard).
-    if (currentTime - lastKeyTime > 100) {
-        barcodeBuffer = "";
-    }
-    lastKeyTime = currentTime;
-
-    // 3. Jika tombol ENTER ditekan (Scanner selalu akhiri dengan Enter)
+    // Jika scanner berfungsi, kamu akan melihat rentetan karakter muncul di console
     if (e.key === "Enter") {
-        if (barcodeBuffer.length > 3) { // Minimal panjang karakter barcode
-            e.preventDefault(); // Mencegah submit form tidak sengaja
-            handleScanSuccess(barcodeBuffer); // Proses barcode
-            barcodeBuffer = ""; // Reset buffer
-        }
-    } else if (e.key.length === 1) {
-        // Hanya masukkan karakter huruf/angka
-        barcodeBuffer += e.key;
+        console.log("Scanner mengirim sinyal ENTER");
     }
 });
 
-function handleScanSuccess(scannedId) {
-    const cleanId = scannedId.trim(); // Hilangkan spasi
-    console.log("Scanner membaca:", cleanId); // Cek Console browser
 
-    // Pencarian Fleksibel:
-    // Mencari apakah ID di database COCOK dengan hasil scan
-    const product = products.find(p => 
-        p.id === cleanId || 
-        p.id.includes(cleanId) || 
-        cleanId.includes(p.id)
-    );
-    
-    if (product) {
-        if (product.stock > 0) {
-            // URUTAN PENTING: Masukkan keranjang dulu -> Baru bunyi/notif
-            addToCart(product.id); 
-            
-            // Notifikasi Sukses
-            showToast(`Scan: ${product.name}`);
-            
-            // Bunyikan suara (dibungkus try-catch agar tidak mematikan program)
-            playBeep(); 
-        } else {
-            showToast(`${product.name} Stok Habis!`, "error");
-            playBeep(); // Bunyi error (tetap pakai beep biasa)
-        }
-    } else {
-        console.error("Produk tidak ditemukan untuk ID:", cleanId);
-        showToast(`Produk tidak dikenal`, "error");
-    }
-}
 // ==========================================
 // 9. INITIALIZATION
 // ==========================================

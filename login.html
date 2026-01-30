@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Kasir - NamaToko</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+  </head>
+  <body class="bg-gray-50 h-screen flex items-center justify-center p-6">
+    <div
+      class="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl shadow-blue-100 p-10 border border-gray-50 text-center animate-fade-in"
+    >
+      <div
+        class="bg-blue-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-200"
+      >
+        <i class="fas fa-lock text-white text-3xl"></i>
+      </div>
+
+      <h2 class="text-3xl font-black text-gray-900 tracking-tighter mb-2">
+        Akses Terbatas
+      </h2>
+      <p class="text-gray-400 text-sm mb-10">
+        Masukkan password kasir untuk melanjutkan ke sistem POS.
+      </p>
+
+      <form id="login-form" class="space-y-4">
+        <div class="relative">
+          <i
+            class="fas fa-key absolute left-5 top-1/2 -translate-y-1/2 text-gray-300"
+          ></i>
+          <input
+            type="password"
+            id="password"
+            required
+            class="w-full bg-gray-50 border-2 border-transparent focus:border-blue-600 focus:bg-white px-12 py-4 rounded-2xl outline-none transition-all font-bold tracking-widest"
+            placeholder="••••••••"
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black text-lg transition-all shadow-xl shadow-blue-100 active:scale-95"
+        >
+          Masuk Sekarang
+        </button>
+      </form>
+
+      <a
+        href="landing.html"
+        class="inline-block mt-8 text-sm font-bold text-gray-400 hover:text-blue-600 transition"
+      >
+        <i class="fas fa-arrow-left mr-2"></i> Kembali ke Katalog
+      </a>
+    </div>
+
+    <script>
+      const loginForm = document.getElementById("login-form");
+
+      loginForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const password = document.getElementById("password").value;
+
+        // --- SET PASSWORD DISINI ---
+        if (password === "admin123") {
+          // Simpan status login di memori browser
+          localStorage.setItem("kasir_akses", "true");
+          window.location.href = "index.html"; // Pindah ke kasir
+        } else {
+          alert("Password Salah! Akses ditolak.");
+          document.getElementById("password").value = "";
+        }
+      });
+    </script>
+
+    <style>
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.5s ease-out;
+      }
+    </style>
+  </body>
+</html>
