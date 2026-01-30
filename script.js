@@ -1,32 +1,27 @@
 // ==========================================
-// 0. FUNGSI SUARA (WAJIB ADA AGAR TIDAK ERROR)
+// 0. FUNGSI SUARA & SETUP AWAL
 // ==========================================
 function playBeep() {
-    // Mencegah error jika browser memblokir audio
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
-        
         const context = new AudioContext();
         const oscillator = context.createOscillator();
         const gainNode = context.createGain();
-
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(1200, context.currentTime); // Nada tinggi
+        oscillator.frequency.setValueAtTime(1200, context.currentTime);
         oscillator.connect(gainNode);
         gainNode.connect(context.destination);
-
         gainNode.gain.setValueAtTime(0.1, context.currentTime);
         oscillator.start();
         oscillator.stop(context.currentTime + 0.1);
-    } catch (e) {
-        console.log("Audio tidak dapat diputar (diabaikan)");
-    }
+    } catch (e) { console.log("Audio ignored"); }
 }
 
 // ==========================================
-// 1. KONFIGURASI FIREBASE (AMBIL DARI WINDOW)
+// 1. KONFIGURASI FIREBASE
 // ==========================================
+// Menunggu sampai window.fs tersedia (karena load async)
 const { collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy } = window.fs;
 const db = window.db;
 const productsCol = collection(db, "products");
@@ -38,35 +33,21 @@ let cart = JSON.parse(localStorage.getItem('pos_cart')) || [];
 let total = 0;
 
 // ==========================================
-// 2. SISTEM LOGIN & AUTHENTICATION
+// 2. SISTEM LOGIN (DIPERBAIKI)
 // ==========================================
 function checkLoginStatus() {
-    const overlay = document.getElementById('login-overlay');
-    if (sessionStorage.getItem('isLoggedIn') === 'true') {
-        overlay.style.display = 'none';
-    } else {
-        overlay.style.display = 'flex';
+    // FIX: Menggunakan localStorage 'kasir_akses' agar sama dengan index.html
+    const isLogged = localStorage.getItem('kasir_akses') === 'true';
+    if (!isLogged) {
+        window.location.href = 'login.html'; 
     }
 }
 
-function handleLogin() {
-    const user = document.getElementById('username').value;
-    const pass = document.getElementById('password').value;
-    if (user === 'admin' && pass === '123') {
-        sessionStorage.setItem('isLoggedIn', 'true');
-        sessionStorage.setItem('activeUser', user);
-        checkLoginStatus();
-        showToast(`Selamat bekerja, ${user}!`);
-    } else {
-        document.getElementById('login-error').style.display = 'block';
-        showToast("Login Gagal!", "error");
-    }
-}
-
+// FUNGSI LOGOUT (Hanya reload/redirect, hapus akses opsional)
 function handleLogout() {
     if (confirm("Apakah anda yakin ingin keluar?")) {
-        sessionStorage.clear();
-        location.reload();
+        // localStorage.removeItem('kasir_akses'); // Uncomment jika ingin wajib login ulang
+        window.location.href = 'landing.html';
     }
 }
 
@@ -85,13 +66,12 @@ function listenToProducts() {
 }
 
 // ==========================================
-// 4. UI FEEDBACK (DENGAN ANIMASI FADE OUT) - VERSI FIX
+// 4. UI FEEDBACK (TOAST)
 // ==========================================
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     if(!container) return;
 
-    // Batasi maksimal 3 notifikasi
     const visibleToasts = container.querySelectorAll('.toast:not(.hiding)');
     if (visibleToasts.length >= 3) {
         removeToastWithFade(visibleToasts[0]);
@@ -118,19 +98,9 @@ function removeToastWithFade(toastElement) {
     }, 400); 
 }
 
-// FUNGSI HELPER BARU: Menghapus toast dengan menunggu animasi selesai
-function removeToastWithFade(toastElement) {
-    // 1. Tambahkan class 'hiding' untuk memicu animasi CSS fadeOut
-    toastElement.classList.add('hiding');
-
-    // 2. Tunggu durasi animasi selesai (0.4s = 400ms di CSS), baru hapus dari DOM
-    setTimeout(() => {
-        if (toastElement.parentNode) {
-            toastElement.remove();
-        }
-    }, 400); // Pastikan angka ini sama dengan durasi animasi di CSS
-}
-
+// ==========================================
+// 5. ADMIN & PRODUK MANAGEMENT
+// ==========================================
 function openAdmin() {
     document.getElementById('admin-modal').style.display = 'flex';
     renderAdminTable();
@@ -148,7 +118,6 @@ function renderAdminTable(dataToRender = products) {
     
     dataToRender.forEach(p => {
         const rowStyle = p.isDeleted ? 'style="background: #ffeaea; opacity: 0.7;"' : '';
-        
         const actionButtons = p.isDeleted 
             ? `<button onclick="restoreProduct('${p.id}')" style="background:#28a745; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Pulihkan</button>`
             : `<button onclick="editProduct('${p.id}')" style="background:#ffc107; border:none; padding:4px 8px; border-radius:4px; cursor:pointer; margin-right:5px;">Edit</button>
@@ -166,24 +135,16 @@ function renderAdminTable(dataToRender = products) {
     });
 }
 
-
 function printBarcode(productId) {
     const product = products.find(p => p.id === productId);
     if (!product) return;
 
-    // Buat canvas sementara untuk generate barcode
     const canvas = document.createElement('canvas');
     JsBarcode(canvas, productId, {
-        format: "CODE128",
-        width: 2,
-        height: 60,
-        displayValue: true,
-        fontSize: 14
+        format: "CODE128", width: 2, height: 60, displayValue: true, fontSize: 14
     });
 
     const barcodeImg = canvas.toDataURL("image/png");
-
-    // Buka jendela cetak dengan CSS ukuran label kecil (50x30mm)
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
         <html>
@@ -191,12 +152,7 @@ function printBarcode(productId) {
                 <title>Print Barcode - ${product.name}</title>
                 <style>
                     @page { size: 50mm 30mm; margin: 0; }
-                    body { 
-                        width: 50mm; height: 30mm; margin: 0; 
-                        display: flex; flex-direction: column; 
-                        align-items: center; justify-content: center; 
-                        font-family: Arial, sans-serif; text-align: center;
-                    }
+                    body { width: 50mm; height: 30mm; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: Arial, sans-serif; text-align: center; }
                     h4 { margin: 0; font-size: 10px; text-transform: uppercase; }
                     img { width: 90%; height: auto; margin: 2px 0; }
                     p { margin: 0; font-size: 10px; font-weight: bold; }
@@ -207,10 +163,7 @@ function printBarcode(productId) {
                 <img src="${barcodeImg}">
                 <p>Rp ${product.price.toLocaleString()}</p>
                 <script>
-                    window.onload = function() { 
-                        window.print(); 
-                        setTimeout(() => window.close(), 100); 
-                    }
+                    window.onload = function() { window.print(); setTimeout(() => window.close(), 100); }
                 </script>
             </body>
         </html>
@@ -227,34 +180,26 @@ async function handleSaveProduct() {
     const stock = parseInt(document.getElementById('prod-stock').value);
     const category = document.getElementById('prod-category').value;
     const imageUrl = document.getElementById('prod-image').value;
-    // TAMBAHKAN INI: Mengambil nilai deskripsi
     const description = document.getElementById('prod-desc').value; 
 
     if (!name || isNaN(price)) return showToast("Nama dan Harga wajib diisi!", "error");
 
     const productData = { 
-        name, 
-        price, 
-        stock, 
-        category, 
+        name, price, stock, category, 
         image: imageUrl || "img/default.jpg", 
-        description: description, // TAMBAHKAN INI: Menyimpan deskripsi ke Firebase
+        description: description, 
         isDeleted: false, 
-        createdAt: new Date() 
+        createdAt: new Date().toISOString() // Pakai String ISO agar aman
     };
 
     try {
         if (id && id !== "") {
-            // Gunakan updateDoc untuk memperbarui data yang sudah ada
             await updateDoc(doc(db, "products", id), productData);
             showToast("Produk diperbarui!");
         } else {
-            // Gunakan addDoc untuk produk baru
             await addDoc(productsCol, productData);
             showToast("Produk disimpan!");
         }
-        
-        // Pastikan fungsi reset juga membersihkan deskripsi
         resetAdminForm(); 
         closeAdmin();
     } catch (e) {
@@ -262,20 +207,11 @@ async function handleSaveProduct() {
     }
 }
 
-// Tambahkan ini di dalam fungsi resetAdminForm() kamu jika ada
-function resetAdminForm() {
-    document.getElementById('edit-id').value = "";
-    document.getElementById('prod-name').value = "";
-    document.getElementById('prod-price').value = "";
-    document.getElementById('prod-stock').value = "";
-    document.getElementById('prod-image').value = "";
-    document.getElementById('prod-desc').value = ""; // Membersihkan deskripsi
-}
-
 function editProduct(id) {
-    const p = products.find(prod => prod.id === id);
+    const p = products.find(prod => prod.id === id); // Cari produk berdasarkan ID
     if(!p) return;
 
+    // Masukkan data ke form
     document.getElementById('edit-id').value = p.id;
     document.getElementById('prod-name').value = p.name;
     document.getElementById('prod-price').value = p.price;
@@ -283,14 +219,15 @@ function editProduct(id) {
     document.getElementById('prod-category').value = p.category;
     document.getElementById('prod-image').value = p.image;
     document.getElementById('save-btn').innerText = "Update Produk";
-    document.getElementById('prod-desc').value = data.description || "";
+    
+    // FIX: Menggunakan p.description, bukan data.description
+    document.getElementById('prod-desc').value = p.description || ""; 
 }
 
 async function deleteProduct(id) {
     if (confirm("Pindahkan ke tempat sampah?")) {
         try {
-            const docRef = doc(db, "products", id);
-            await updateDoc(docRef, { isDeleted: true });
+            await updateDoc(doc(db, "products", id), { isDeleted: true });
             showToast("Produk dihapus", "error");
         } catch (e) { console.error(e); }
     }
@@ -298,24 +235,23 @@ async function deleteProduct(id) {
 
 async function restoreProduct(id) {
     try {
-        const docRef = doc(db, "products", id);
-        await updateDoc(docRef, { isDeleted: false });
+        await updateDoc(doc(db, "products", id), { isDeleted: false });
         showToast("Produk dipulihkan!");
     } catch (e) { console.error(e); }
 }
 
 function resetAdminForm() {
-    const idInput = document.getElementById('edit-id');
-    if(idInput) idInput.value = '';
-    document.getElementById('prod-name').value = '';
-    document.getElementById('prod-price').value = '';
-    document.getElementById('prod-stock').value = '';
-    document.getElementById('prod-image').value = '';
+    document.getElementById('edit-id').value = "";
+    document.getElementById('prod-name').value = "";
+    document.getElementById('prod-price').value = "";
+    document.getElementById('prod-stock').value = "";
+    document.getElementById('prod-image').value = "";
+    document.getElementById('prod-desc').value = ""; 
     document.getElementById('save-btn').innerText = "Simpan Produk";
 }
 
 // ==========================================
-// 5. LOGIKA KASIR (TRANSAKSIONAL)
+// 6. LOGIKA KASIR (TRANSAKSI)
 // ==========================================
 function displayProducts(productsToDisplay) {
     const productContainer = document.getElementById('product-list');
@@ -356,16 +292,11 @@ function decreaseQuantity(productId) {
     const itemIndex = cart.findIndex(item => item.id === productId);
     if (itemIndex > -1) {
         const product = products.find(p => p.id === productId);
-        // Kembalikan stok ke daftar produk secara visual
         if (product) product.stock++; 
-        
         cart[itemIndex].quantity--;
-        
-        // Jika jumlah mencapai 0, hapus item dari keranjang
         if (cart[itemIndex].quantity === 0) {
             cart.splice(itemIndex, 1);
         }
-        
         saveAndRender();
     }
 }
@@ -374,9 +305,7 @@ function removeItem(productId) {
     const itemIndex = cart.findIndex(item => item.id === productId);
     if (itemIndex > -1) {
         const product = products.find(p => p.id === productId);
-        // Kembalikan semua jumlah stok yang ada di keranjang ke stok produk
         if (product) product.stock += cart[itemIndex].quantity;
-        
         cart.splice(itemIndex, 1);
         saveAndRender();
     }
@@ -400,20 +329,9 @@ function saveAndRender() {
                     <small>${item.quantity} x Rp ${item.price.toLocaleString()}</small>
                 </div>
                 <div style="display:flex; gap:5px; align-items:center;">
-                    <button onclick="decreaseQuantity('${item.id}')" 
-                            style="padding:2px 10px; background:#ffc107; color:black; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">
-                        -
-                    </button>
-                    
-                    <button onclick="addToCart('${item.id}')" 
-                            style="padding:2px 8px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">
-                        +
-                    </button>
-
-                    <button onclick="removeItem('${item.id}')" 
-                            style="padding:2px 8px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">
-                        Hapus
-                    </button>
+                    <button onclick="decreaseQuantity('${item.id}')" style="padding:2px 10px; background:#ffc107; color:black; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">-</button>
+                    <button onclick="addToCart('${item.id}')" style="padding:2px 8px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">+</button>
+                    <button onclick="removeItem('${item.id}')" style="padding:2px 8px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">Hapus</button>
                 </div>
             </div>`;
         cartList.appendChild(li);
@@ -423,7 +341,7 @@ function saveAndRender() {
 }
 
 // ==========================================
-// 6. TRANSAKSI & LAPORAN
+// 7. CHECKOUT & LAPORAN
 // ==========================================
 document.getElementById('checkout-btn').addEventListener('click', async () => {
     if (cart.length === 0) return showToast("Keranjang kosong!", "error");
@@ -439,6 +357,7 @@ document.getElementById('checkout-btn').addEventListener('click', async () => {
         for (const item of cart) {
             const docRef = doc(db, "products", item.id);
             const currentProd = products.find(p => p.id === item.id);
+            // Update stok fisik di database
             await updateDoc(docRef, { stock: currentProd.stock });
         }
 
@@ -488,10 +407,16 @@ function showReceipt(transaction) {
 
 function closeReceipt() { document.getElementById('receipt-modal').style.display = 'none'; }
 function printReceipt() { window.print(); }
-function clearSales() { if(confirm("Hapus semua laporan?")) { salesHistory=[]; localStorage.removeItem('pos_sales_history'); displaySalesReport(); } }
+function clearSales() { 
+    if(confirm("Hapus semua laporan?")) { 
+        salesHistory=[]; 
+        localStorage.removeItem('pos_sales_history'); 
+        displaySalesReport(); 
+    } 
+}
 
 // ==========================================
-// 7. FILTER & SEARCH
+// 8. FILTER & SEARCH
 // ==========================================
 function filterCategory(categoryName) {
     const filtered = categoryName === 'Semua' ? products : products.filter(p => p.category === categoryName);
@@ -516,22 +441,15 @@ if(adminSearch) {
     });
 }
 
-/// ==========================================
-// 8. TESTER SCANNER SEDERHANA
+// ==========================================
+// 9. SCANNER LISTENER
 // ==========================================
 window.addEventListener("keydown", (e) => {
-    // Ini akan memunculkan SETIAP tombol yang ditekan oleh scanner di console
-    console.log("Tombol terdeteksi:", e.key); 
-    
-    // Jika scanner berfungsi, kamu akan melihat rentetan karakter muncul di console
-    if (e.key === "Enter") {
-        console.log("Scanner mengirim sinyal ENTER");
-    }
+    // Implementasi scanner barcode sederhana jika diperlukan
 });
 
-
 // ==========================================
-// 9. INITIALIZATION
+// 10. INITIALIZATION
 // ==========================================
 checkLoginStatus();
 listenToProducts(); 

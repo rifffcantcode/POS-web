@@ -5,43 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sistem Kasir POS Profesional</title>
     <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/index.js"></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div id="login-overlay" class="login-container">
-      <div class="login-card">
-        <h2>Login Kasir</h2>
-        <p>Silakan masuk untuk mengakses sistem</p>
-        <div class="input-group">
-          <input type="text" id="username" placeholder="Username (admin)" />
-        </div>
-        <div class="input-group">
-          <input type="password" id="password" placeholder="Password (123)" />
-        </div>
-        <button onclick="handleLogin()" class="btn-primary">
-          Masuk Sekarang
-        </button>
-        <p
-          id="login-error"
-          style="color: red; font-size: 12px; margin-top: 10px; display: none"
-        >
-          Username atau Password salah!
-        </p>
-      </div>
-    </div>
-
     <header class="main-header">
       <div class="header-container">
         <div class="header-brand">
           <i class="fas fa-cash-register"></i>
           <h1>Sistem Kasir POS</h1>
         </div>
-
         <button onclick="backToLanding()" class="btn-back-toko">
           <i class="fas fa-arrow-left"></i>
           <span>Kembali ke Toko</span>
@@ -52,26 +26,14 @@
     <main class="dashboard-container">
       <div class="product-section">
         <div class="search-wrapper">
-          <input
-            type="text"
-            id="search-input"
-            placeholder="Cari nama produk..."
-          />
+          <input type="text" id="search-input" placeholder="Cari nama produk..." />
         </div>
 
         <div class="category-filter">
-          <button onclick="filterCategory('Semua')" class="btn-filter">
-            Semua
-          </button>
-          <button onclick="filterCategory('Furniture')" class="btn-filter">
-            Furniture
-          </button>
-          <button onclick="filterCategory('Elektronik')" class="btn-filter">
-            Elektronik
-          </button>
-          <button onclick="filterCategory('Dekorasi')" class="btn-filter">
-            Dekorasi
-          </button>
+          <button onclick="filterCategory('Semua')" class="btn-filter">Semua</button>
+          <button onclick="filterCategory('Furniture')" class="btn-filter">Furniture</button>
+          <button onclick="filterCategory('Elektronik')" class="btn-filter">Elektronik</button>
+          <button onclick="filterCategory('Dekorasi')" class="btn-filter">Dekorasi</button>
         </div>
 
         <div class="section-title">
@@ -93,9 +55,7 @@
               <span>Total Bayar:</span>
               <h3 id="total-display">Rp <span id="total-price">0</span></h3>
             </div>
-            <button id="checkout-btn" class="btn-primary">
-              Bayar Sekarang
-            </button>
+            <button id="checkout-btn" class="btn-primary">Bayar Sekarang</button>
           </div>
 
           <div class="sales-report-summary">
@@ -105,9 +65,7 @@
               <p>Rp <span id="revenue-total">0</span></p>
             </div>
             <div id="sales-list" class="mini-sales-list"></div>
-            <button onclick="clearSales()" class="btn-danger-outline">
-              Bersihkan Laporan
-            </button>
+            <button onclick="clearSales()" class="btn-danger-outline">Bersihkan Laporan</button>
           </div>
         </div>
       </aside>
@@ -127,9 +85,7 @@
           <p class="receipt-thank-you">Terima Kasih Atas Kunjungan Anda</p>
         </div>
         <div class="modal-actions">
-          <button onclick="printReceipt()" class="btn-print">
-            Cetak Struk
-          </button>
+          <button onclick="printReceipt()" class="btn-print">Cetak Struk</button>
           <button onclick="closeReceipt()" class="btn-close">Tutup</button>
         </div>
       </div>
@@ -138,140 +94,30 @@
     <div id="toast-container"></div>
 
     <div id="admin-modal" class="modal-overlay">
-      <div
-        class="modal-content"
-        style="width: 95%; max-width: 900px; max-height: 90vh; overflow-y: auto"
-      >
-        <div
-          style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-          "
-        >
+      <div class="modal-content" style="width: 95%; max-width: 900px; max-height: 90vh; overflow-y: auto">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
           <h2 style="margin: 0; font-size: 1.5rem">Panel Manajemen Produk</h2>
-          <button
-            onclick="closeAdmin()"
-            style="
-              width: auto;
-              min-width: 100px;
-              padding: 10px 20px;
-              background: #6c757d;
-              color: white;
-              border: none;
-              border-radius: 8px;
-              cursor: pointer;
-              font-weight: 600;
-              flex-shrink: 0;
-            "
-          >
-            Tutup
-          </button>
+          <button onclick="closeAdmin()" style="width: auto; min-width: 100px; padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Tutup</button>
         </div>
 
-        <div
-          id="admin-form"
-          style="
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 12px;
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            border: 1px solid #ddd;
-          "
-        >
+        <div id="admin-form" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #ddd;">
           <input type="hidden" id="edit-id" />
-
-          <input
-            type="text"
-            id="prod-name"
-            placeholder="Nama Produk"
-            style="padding: 10px; border-radius: 5px; border: 1px solid #ccc"
-          />
-          <input
-            type="number"
-            id="prod-price"
-            placeholder="Harga (Rp)"
-            style="padding: 10px; border-radius: 5px; border: 1px solid #ccc"
-          />
-          <input
-            type="number"
-            id="prod-stock"
-            placeholder="Stok"
-            style="padding: 10px; border-radius: 5px; border: 1px solid #ccc"
-          />
-          <select
-            id="prod-category"
-            style="padding: 10px; border-radius: 5px; border: 1px solid #ccc"
-          >
+          <input type="text" id="prod-name" placeholder="Nama Produk" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc" />
+          <input type="number" id="prod-price" placeholder="Harga (Rp)" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc" />
+          <input type="number" id="prod-stock" placeholder="Stok" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc" />
+          <select id="prod-category" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc">
             <option value="Furniture">Furniture</option>
             <option value="Elektronik">Elektronik</option>
             <option value="Dekorasi">Dekorasi</option>
           </select>
-
-          <input
-            type="text"
-            id="prod-image"
-            placeholder="URL Gambar"
-            style="
-              grid-column: span 2;
-              padding: 10px;
-              border-radius: 5px;
-              border: 1px solid #ccc;
-            "
-          />
-
-          <button
-            type="button"
-            id="save-btn"
-            onclick="handleSaveProduct()"
-            style="
-              grid-column: span 2;
-              background: #28a745;
-              color: white;
-              border: none;
-              border-radius: 5px;
-              padding: 10px;
-              cursor: pointer;
-              font-weight: bold;
-            "
-          >
-            Simpan Produk
-          </button>
-
-          <textarea
-            id="prod-desc"
-            placeholder="Masukkan Deskripsi Produk Lengkap..."
-            style="
-              grid-column: 1 / -1;
-              padding: 10px;
-              border-radius: 5px;
-              border: 1px solid #ccc;
-              font-family: inherit;
-              min-height: 80px;
-            "
-          ></textarea>
+          <input type="text" id="prod-image" placeholder="URL Gambar" style="grid-column: span 2; padding: 10px; border-radius: 5px; border: 1px solid #ccc;" />
+          <button type="button" id="save-btn" onclick="handleSaveProduct()" style="grid-column: span 2; background: #28a745; color: white; border: none; border-radius: 5px; padding: 10px; cursor: pointer; font-weight: bold;">Simpan Produk</button>
+          <textarea id="prod-desc" placeholder="Masukkan Deskripsi Produk Lengkap..." style="grid-column: 1 / -1; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: inherit; min-height: 80px;"></textarea>
         </div>
 
         <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee" />
 
-        <input
-          type="text"
-          id="admin-search-input"
-          placeholder="Cari di inventaris..."
-          style="
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-bottom: 15px;
-          "
-        />
+        <input type="text" id="admin-search-input" placeholder="Cari di inventaris..." style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px;" />
 
         <div style="overflow-x: auto">
           <table style="width: 100%; border-collapse: collapse">
@@ -289,27 +135,13 @@
         </div>
       </div>
     </div>
-    <button
-      onclick="openAdmin()"
-      style="
-        position: fixed;
-        bottom: 20px;
-        left: 20px;
-        z-index: 99;
-        background: #333;
-        color: white;
-        border: none;
-        padding: 12px 20px;
-        border-radius: 50px;
-        cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-      "
-    >
+
+    <button onclick="openAdmin()" style="position: fixed; bottom: 20px; left: 20px; z-index: 99; background: #333; color: white; border: none; padding: 12px 20px; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);">
       ⚙️ Kelola Produk
     </button>
 
     <script type="module">
-      // Letakkan ini di bagian paling atas script index.html
+      // 1. CEK LOGIN (MENGGUNAKAN LOCALSTORAGE "kasir_akses")
       (function () {
         const isLogged = localStorage.getItem("kasir_akses");
         if (isLogged !== "true") {
@@ -318,29 +150,19 @@
         }
       })();
 
-      // Update fungsi Logout (seperti permintaanmu sebelumnya)
+      // 2. FUNGSI LOGOUT / KEMBALI
       window.backToLanding = () => {
         if (confirm("Yakin ingin menutup Kasir dan kembali ke Toko?")) {
-          localStorage.removeItem("kasir_akses");
+          // Opsional: Hapus akses jika ingin user login ulang setiap kali keluar
+          // localStorage.removeItem("kasir_akses"); 
           window.location.href = "landing.html";
         }
       };
 
+      // 3. FIREBASE SETUP
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-      import {
-        getFirestore,
-        collection,
-        addDoc,
-        getDocs,
-        onSnapshot,
-        doc,
-        updateDoc,
-        deleteDoc,
-        query,
-        orderBy,
-      } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+      import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-      // Konfigurasi Firebase Anda
       const firebaseConfig = {
         apiKey: "AIzaSyBMsUhXj-UCLLviXzweS1qXVdSaVgkDcu8",
         authDomain: "sistemkasirtokocom.firebaseapp.com",
@@ -350,39 +172,19 @@
         appId: "1:141722200955:web:e07952808590aa7f582bde",
       };
 
-      // Jalankan Firebase
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
 
-      // Pasang Jembatan agar script.js bisa baca
+      // Jembatan ke script.js
       window.db = db;
-      window.fs = {
-        collection,
-        addDoc,
-        getDocs,
-        onSnapshot,
-        doc,
-        updateDoc,
-        deleteDoc,
-        query,
-        orderBy,
-      };
+      window.fs = { collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy };
 
       console.log("Firebase Connected! Loading script.js...");
 
-      // Load script utama secara dinamis agar aman
+      // Load script utama setelah Firebase siap
       const mainScript = document.createElement("script");
       mainScript.src = "script.js";
       document.body.appendChild(mainScript);
-
-      // Tambahkan fungsi ini di bagian script index.html
-      window.backToLanding = () => {
-        // Jika kamu ingin membersihkan data login (jika ada), tambahkan di sini
-        // localStorage.removeItem('isLoggedIn');
-
-        // Alihkan ke landing page
-        window.location.href = "landing.html";
-      };
     </script>
   </body>
 </html>
