@@ -1,70 +1,109 @@
 /* ==========================================
-   1. GLOBAL & VARIABLES
+   1. GLOBAL & VARIABLES (LUMINA BRAND)
    ========================================== */
 :root {
-    --primary-color: #0055a5;
-    --primary-dark: #003d7a;
-    --accent-color: #28a745;
-    --danger-color: #dc3545;
-    --bg-body: #f4f7f6;
-    --bg-card: #ffffff;
-    --text-main: #333;
-    --text-muted: #777;
-    --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
-    --transition: all 0.3s ease;
-    --warning-color: #ffc107;
-    --warning-dark: #e0a800;
+  /* Palet Warna LUMINA */
+  --primary-color: #1a2a40;    /* Midnight Blue (Warna Utama) */
+  --accent-color: #c5a059;     /* Champagne Gold (Warna Aksen Mewah) */
+  --accent-hover: #b08d4a;     /* Gold lebih gelap */
+  
+  --bg-light: #f4f6f8;         /* Background halaman */
+  --bg-card: #ffffff;          /* Warna kartu */
+  
+  --text-dark: #2d2d2d;
+  --text-muted: #757575;
+  --white: #ffffff;
+  
+  --success: #2ecc71;
+  --danger: #e74c3c;
+  
+  /* Font */
+  --font-main: 'Poppins', sans-serif;
+  
+  /* Utilities */
+  --shadow-soft: 0 5px 15px rgba(0,0,0,0.05);
+  --shadow-hover: 0 15px 30px rgba(0,0,0,0.1);
+  --transition: all 0.3s ease;
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
+    font-family: var(--font-main);
 }
 
 body {
-    background-color: var(--bg-body);
-    color: var(--text-main);
-    line-height: 1.6;
+  font-family: var(--font-main);
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+  margin: 0;
 }
 
 /* ==========================================
-   2. HEADER
+   2. HEADER (PREMIUM LOOK)
    ========================================== */
-header {
+.main-header {
     background: var(--primary-color);
-    color: white;
-    padding: 20px 0;
-    text-align: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    margin-bottom: 30px;
+    color: var(--white);
+    padding: 1rem 0;
+    border-bottom: 4px solid var(--accent-color);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
-.header-content h1 {
-    font-size: 1.8rem;
-    font-weight: 600;
+.header-container {
+    width: 90%;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-#current-date {
-    font-size: 0.9rem;
-    opacity: 0.9;
+.header-brand h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin: 0;
+}
+
+.btn-back-toko, .btn-logout {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--white);
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-back-toko:hover, .btn-logout:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 /* ==========================================
-   3. LAYOUT DASHBOARD (GRID)
+   3. LAYOUT DASHBOARD
    ========================================== */
 .dashboard-container {
     display: grid;
-    grid-template-columns: 1fr 380px; /* Sisi kiri fleksibel, kanan tetap */
+    grid-template-columns: 1fr 380px; 
     gap: 30px;
     max-width: 1400px;
-    margin: 0 auto;
+    margin: 30px auto;
     padding: 0 20px 40px;
     align-items: start;
 }
 
-/* Responsif untuk layar kecil (HP) */
 @media (max-width: 992px) {
     .dashboard-container {
         grid-template-columns: 1fr;
@@ -72,155 +111,234 @@ header {
     #cart-sidebar {
         position: relative !important;
         top: 0 !important;
+        margin-top: 20px;
     }
 }
 
 /* ==========================================
-   4. PRODUK & FILTER
+   4. FILTER & SEARCH
    ========================================== */
-.product-section {
-    min-width: 0; /* Mencegah grid pecah */
-}
-
-.search-wrapper {
-    margin-bottom: 20px;
-}
-
 .search-wrapper input {
     width: 100%;
     padding: 15px 25px;
-    border-radius: 30px;
-    border: 1px solid #ddd;
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.02);
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    background: var(--white);
+    box-shadow: var(--shadow-soft);
     outline: none;
     transition: var(--transition);
+    font-size: 1rem;
 }
 
 .search-wrapper input:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 4px rgba(0, 85, 165, 0.1);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.2);
 }
 
 .category-filter {
     display: flex;
     gap: 10px;
-    margin-bottom: 25px;
+    margin: 25px 0;
     overflow-x: auto;
     padding-bottom: 5px;
 }
 
 .btn-filter {
-    background: white;
-    border: 1px solid var(--primary-color);
-    color: var(--primary-color);
+    background: var(--white);
+    border: 1px solid #ddd;
+    color: var(--text-dark);
     padding: 8px 20px;
-    border-radius: 20px;
+    border-radius: 30px;
     cursor: pointer;
     white-space: nowrap;
     transition: var(--transition);
+    font-weight: 500;
 }
 
-.btn-filter:hover {
+.btn-filter:hover, .btn-filter.active {
     background: var(--primary-color);
-    color: white;
+    color: var(--white);
+    border-color: var(--primary-color);
 }
 
+/* ==========================================
+   5. PRODUK GRID
+   ========================================== */
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 20px;
 }
 
 .product-item {
     background: var(--bg-card);
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: var(--shadow-soft);
+    border-radius: 12px;
+    border: 1px solid #f0f0f0;
+    padding: 15px;
     text-align: center;
     transition: var(--transition);
     display: flex;
     flex-direction: column;
     height: 100%;
+    position: relative;
+    overflow: hidden;
 }
 
-.product-item button {
-    margin-top: auto; /* Trik sakti: mendorong tombol ke paling bawah kartu */
-    background-color: var(--warning-color);
-    color: #333; /* Teks gelap agar kontras dengan kuning */
-    border: none;
-    padding: 12px;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
+.product-item:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--accent-color);
 }
 
-.product-item button:hover {
-    background-color: var(--warning-dark);
-    transform: scale(1.02);
-}
-
-.product-item button:disabled {
-    background-color: #e9ecef;
-    color: #adb5bd;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.product-item p {
-    margin-bottom: 10px;
+.product-item img {
+    width: 100%;
+    height: 160px;
+    object-fit: contain; 
+    margin-bottom: 15px;
+    mix-blend-mode: multiply;
 }
 
 .product-item h3 {
     font-size: 1rem;
-    margin-bottom: 8px;
-    color: #444;
-    /* Memastikan nama produk yang panjang tidak merusak tata letak */
-    min-height: 2.4em; 
+    color: var(--primary-color);
+    margin-bottom: 5px;
+    line-height: 1.3;
+    min-height: 2.6em; /* Agar layout rata */
+}
+
+.product-item p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+.product-item button {
+    margin-top: auto;
+    background-color: var(--white);
+    color: var(--primary-color);
+    border: 2px solid var(--accent-color);
+    padding: 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+.product-item button:hover {
+    background-color: var(--accent-color);
+    color: var(--white);
+}
+
+/* ==========================================
+   6. SIDEBAR KERANJANG & LAPORAN (FIXED)
+   ========================================== */
+#cart-sidebar {
+    position: sticky;
+    top: 100px;
+}
+
+.cart-sticky-content {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow-soft);
+    
+    /* FIX HEIGHT: Agar sidebar tidak memanjang tak terbatas */
+    height: calc(100vh - 120px); 
+    display: flex;
+    flex-direction: column; 
+    border-top: 5px solid var(--primary-color);
+}
+
+.cart-sticky-content h2 {
+    color: var(--primary-color);
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+/* --- FIX LIST KERANJANG --- */
+.cart-list {
+    list-style: none;
+    overflow-y: auto; /* Scroll jika keranjang penuh */
+    flex-grow: 1;     /* Mengisi ruang kosong */
+    margin-bottom: 15px;
+    padding-right: 5px; 
+}
+
+.cart-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* Posisi vertikal tengah */
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+    gap: 10px; /* JARAK PENTING: Agar teks tidak nempel tombol */
+}
+
+.cart-info {
+    flex: 1; /* Mengambil sisa ruang agar tombol terdorong ke kanan */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0; /* Trik agar teks panjang bisa di-truncate (...) */
+}
+
+.cart-info h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--primary-color);
+    font-weight: 600;
+    white-space: nowrap;      /* Teks satu baris */
+    overflow: hidden;         /* Sembunyikan sisa teks */
+    text-overflow: ellipsis;  /* Tambahkan ... jika kepanjangan */
+}
+
+.cart-info span {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.cart-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Jarak antar tombol kecil */
+    flex-shrink: 0; /* Agar tombol tidak gepeng saat layar kecil */
+}
+
+.cart-actions button {
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+    font-size: 0.75rem;
+    transition: var(--transition);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.product-item:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+/* Warna Tombol */
+.btn-decrease { background-color: #f39c12; } /* Kuning (Kurang) */
+.btn-increase { background-color: var(--success); } /* Hijau (Tambah) */
+.btn-remove   { background-color: var(--danger); }  /* Merah (Hapus) */
+
+.cart-actions button:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
 }
 
-.product-item img {
-    background-color: white; /* Memberi dasar putih */
-    mix-blend-mode: multiply; /* Mencoba menyatukan background putih gambar dengan card */
-    object-fit: contain;
-}
-
-/* ==========================================
-   5. STICKY SIDEBAR (KERANJANG)
-   ========================================== */
-#cart-sidebar {
-    position: sticky;
-    top: 20px;
-}
-
-.cart-sticky-content {
-    background: white;
-    border-radius: 20px;
-    padding: 25px;
-    box-shadow: var(--shadow-soft);
-    max-height: calc(100vh - 40px);
-    display: flex;
-    flex-direction: column;
-}
-
-.cart-list {
-    list-style: none;
-    margin: 20px 0;
-    overflow-y: auto;
-    flex-grow: 1;
-}
-
+/* --- CART FOOTER --- */
 .cart-footer {
-    border-top: 2px dashed #eee;
+    border-top: 2px solid #eee;
     padding-top: 15px;
+    margin-bottom: 15px;
 }
 
 .total-section {
@@ -228,72 +346,93 @@ header {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: var(--primary-color);
 }
 
 .btn-primary {
     background: var(--primary-color);
-    color: white;
+    color: var(--white);
     border: none;
     padding: 12px;
-    border-radius: 10px;
+    border-radius: 6px;
     width: 100%;
     font-weight: 600;
     cursor: pointer;
+    text-transform: uppercase;
+    transition: var(--transition);
 }
 
-/* ==========================================
-   6. LAPORAN PENJUALAN MINI
-   ========================================== */
+.btn-primary:hover {
+    background: var(--accent-color);
+}
+
+/* --- FIX LAPORAN HARIAN (YANG HILANG TADI) --- */
 .sales-report-summary {
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    margin-top: auto; /* Trik agar nempel di bawah jika keranjang kosong */
+}
+
+.sales-report-summary h3 {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 5px;
 }
 
 .revenue-box {
-    background: #e7f3ff;
-    padding: 10px;
-    border-radius: 10px;
-    margin: 10px 0;
-}
-
-.mini-sales-list {
-    font-size: 0.85rem;
-    max-height: 120px;
-    overflow-y: auto;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary-color);
     margin-bottom: 10px;
 }
 
-.btn-danger-outline {
-    background: transparent;
-    border: 1px solid var(--danger-color);
-    color: var(--danger-color);
-    width: 100%;
-    padding: 5px;
-    border-radius: 5px;
-    cursor: pointer;
+/* Kunci agar laporan tidak kebablasan */
+.mini-sales-list {
+    max-height: 120px; /* Batas tinggi laporan */
+    overflow-y: auto;  /* Muncul scrollbar kecil jika transaksi banyak */
     font-size: 0.8rem;
+    border-top: 1px dashed #ccc;
+    padding-top: 5px;
+}
+
+.mini-sales-list div {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    color: #555;
 }
 
 /* ==========================================
-   7. MODAL & STRUK
+   7. MODAL, STRUK & TOAST
    ========================================== */
 .modal-overlay {
     display: none;
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(5px);
+    background: rgba(26, 42, 64, 0.8);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
 }
 
 .modal-content {
-    background: #fff;
+    background: var(--white);
     padding: 30px;
-    border-radius: 15px;
-    width: 400px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    animation: zoomIn 0.3s ease;
+}
+
+@keyframes zoomIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
 }
 
 .receipt-paper {
@@ -301,11 +440,7 @@ header {
     border: 1px solid #eee;
     padding: 20px;
     font-family: 'Courier New', Courier, monospace;
-}
-
-.receipt-divider {
-    border-top: 1px dashed #000;
-    margin: 10px 0;
+    font-size: 0.85rem;
 }
 
 .modal-actions {
@@ -314,231 +449,63 @@ header {
     margin-top: 20px;
 }
 
-.btn-print { background: var(--accent-color); color: white; border: none; flex: 1; padding: 10px; border-radius: 5px; cursor: pointer; }
-.btn-close { background: #666; color: white; border: none; flex: 1; padding: 10px; border-radius: 5px; cursor: pointer; }
+.btn-print { background: var(--accent-color); color: white; border: none; flex: 1; padding: 10px; border-radius: 6px; cursor: pointer; }
+.btn-close { background: #e0e0e0; color: #555; border: none; flex: 1; padding: 10px; border-radius: 6px; cursor: pointer; }
 
-/* ==========================================
-   8. TOAST NOTIFICATIONS
-   ========================================== */
+/* TOAST */
 #toast-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 2000;
+    position: fixed; bottom: 30px; right: 30px; z-index: 3000;
 }
 
 .toast {
-    background: white;
-    padding: 15px 25px;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    background: var(--primary-color);
+    color: var(--white);
+    padding: 15px 20px;
+    border-radius: 6px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     margin-top: 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border-left: 6px solid var(--primary-color);
+    display: flex; align-items: center; gap: 10px;
+    border-left: 5px solid var(--accent-color);
     animation: slideIn 0.4s ease forwards;
 }
 
-@keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+.toast.hiding { animation: fadeOut 0.4s ease forwards; }
+
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(50px); } }
+
+/* ==========================================
+   8. LOGIN & ADMIN UTILS
+   ========================================== */
+.login-container {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--primary-color);
+    display: flex; justify-content: center; align-items: center; z-index: 9999;
 }
 
-/* Sembunyikan elemen saat Print */
+.login-card {
+    background: var(--white);
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+    text-align: center; width: 100%; max-width: 350px;
+    border-top: 5px solid var(--accent-color);
+}
+
+.input-group input {
+    width: 100%; padding: 12px; margin-bottom: 15px;
+    border-radius: 6px; border: 1px solid #ddd; outline: none;
+}
+
+/* Scrollbar Cantik */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
+
 @media print {
     body * { visibility: hidden; }
     #receipt-modal, #receipt-modal * { visibility: visible; }
     #receipt-modal { position: absolute; left: 0; top: 0; width: 100%; }
     .modal-actions { display: none; }
-}
-
-#receipt-modal {
-    z-index: 10000; /* Pastikan lebih tinggi dari sidebar */
-}
-
-/* Styling Login Overlay */
-.login-container {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: var(--primary-color);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999; /* Pastikan di atas segalanya */
-}
-
-.login-card {
-    background: white;
-    padding: 40px;
-    border-radius: 20px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-    text-align: center;
-    width: 350px;
-}
-
-.login-card h2 { margin-bottom: 10px; color: var(--primary-color); }
-.login-card p { font-size: 14px; color: var(--text-muted); margin-bottom: 25px; }
-
-.input-group { margin-bottom: 15px; }
-.input-group input {
-    width: 100%;
-    padding: 12px 15px;
-    border-radius: 10px;
-    border: 1px solid #ddd;
-    outline: none;
-}
-
-/* Tambahkan tombol Logout di Header (Update CSS Header) */
-.header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 40px;
-}
-
-.btn-logout {
-    background: rgba(255,255,255,0.2);
-    border: 1px solid white;
-    color: white;
-    padding: 5px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-/* Pastikan modal bisa di-scroll jika kontennya panjang */
-#admin-modal .modal-content {
-    max-width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-    padding: 20px;
-}
-
-/* Responsivitas Tabel untuk Layar Kecil */
-@media screen and (max-width: 600px) {
-    /* 1. Menghilangkan baris header yang tidak rapi */
-    #admin-product-table thead {
-        display: none !important;
-    }
-
-    /* 2. Mengubah baris menjadi kartu yang rapi */
-    #admin-product-table tr {
-        display: block;
-        margin-bottom: 20px;
-        border: 1px solid #e0e0e0;
-        border-radius: 12px;
-        padding: 15px;
-        background: #ffffff;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
-
-    #admin-product-table td {
-        display: flex;
-        justify-content: space-between;
-        padding: 10px 0;
-        border-bottom: 1px solid #f5f5f5;
-        font-size: 14px;
-    }
-
-    #admin-product-table td:last-child {
-        border-bottom: none;
-        flex-direction: column; /* Tombol berjejer vertikal di mobile agar klik lebih akurat */
-        gap: 8px;
-        padding-top: 15px;
-    }
-
-    /* 3. Menambahkan label keterangan di sebelah kiri */
-    #admin-product-table td::before {
-        content: attr(data-label);
-        font-weight: bold;
-        color: #777;
-    }
-
-    /* 4. Styling tombol agar interaktif dan lebar penuh di mobile */
-    .btn-admin {
-        width: 100%;
-        padding: 10px !important;
-        border: none;
-        border-radius: 6px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: opacity 0.2s;
-    }
-    
-    .btn-admin:active {
-        opacity: 0.7;
-    }
-}
-
-/* --- TAMBAHAN UNTUK ANIMASI TOAST KELUAR --- */
-
-/* Kelas ini akan ditambahkan via JS saat toast mau dihapus */
-.toast.hiding {
-    animation: fadeOut 0.4s ease forwards; /* Durasi 0.4 detik */
-}
-
-/* Keyframes: dari terlihat jelas menjadi transparan dan naik sedikit */
-@keyframes fadeOut {
-    from {
-        opacity: 1;
-        transform: translateX(0);
-    }
-    to {
-        opacity: 0;
-        transform: translateX(20px) translateY(-10px); /* Geser sedikit ke kanan atas saat hilang */
-    }
-}
-
-/* Styling Header Kasir */
-.main-header {
-    background-color: #2563eb; /* Warna biru */
-    color: white;
-    padding: 15px 0;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.header-container {
-    width: 90%;
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between; /* Ini yang bikin judul di kiri & tombol di kanan */
-    align-items: center;
-}
-
-.header-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.header-brand h1 {
-    font-size: 1.25rem;
-    margin: 0;
-    font-weight: 600;
-}
-
-/* Styling Tombol Kembali */
-.btn-back-toko {
-    background-color: rgba(255, 255, 255, 0.15);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    padding: 10px 18px;
-    border-radius: 10px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s ease;
-}
-
-.btn-back-toko:hover {
-    background-color: white;
-    color: #2563eb;
-    transform: translateY(-2px);
-}
-
-.btn-back-toko i {
-    font-size: 0.8rem;
 }

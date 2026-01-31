@@ -312,32 +312,66 @@ function removeItem(productId) {
 }
 
 function saveAndRender() {
+    // 1. Simpan ke LocalStorage
     localStorage.setItem('pos_cart', JSON.stringify(cart));
-    total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const cartList = document.getElementById('cart-items');
-    if(!cartList) return;
 
-    cartList.innerHTML = cart.length === 0 ? '<li>Belum ada barang.</li>' : '';
-    
+    // 2. Hitung Total
+    total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    // 3. Ambil Elemen HTML
+    const cartList = document.getElementById('cart-items');
+    const totalPriceEl = document.getElementById('total-price');
+
+    if (!cartList) return;
+
+    // 4. Cek Jika Keranjang Kosong
+    if (cart.length === 0) {
+        cartList.innerHTML = '<li style="text-align:center; color:#999; padding:20px;">Keranjang kosong</li>';
+        if(totalPriceEl) totalPriceEl.textContent = "0";
+        if (typeof displayProducts === 'function') displayProducts(products); // Update stok di grid (opsional)
+        return;
+    }
+
+    // 5. Reset isi list sebelum render ulang
+    cartList.innerHTML = '';
+
+    // 6. Loop (Render) Item Keranjang
     cart.forEach(item => {
         const li = document.createElement('li');
-        li.style.marginBottom = "15px";
+        
         li.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <strong>${item.name}</strong><br>
-                    <small>${item.quantity} x Rp ${item.price.toLocaleString()}</small>
-                </div>
-                <div style="display:flex; gap:5px; align-items:center;">
-                    <button onclick="decreaseQuantity('${item.id}')" style="padding:2px 10px; background:#ffc107; color:black; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">-</button>
-                    <button onclick="addToCart('${item.id}')" style="padding:2px 8px; background:#28a745; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">+</button>
-                    <button onclick="removeItem('${item.id}')" style="padding:2px 8px; background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer;">Hapus</button>
-                </div>
-            </div>`;
+            <div class="cart-info">
+                <h4>${item.name}</h4>
+                <span>${item.quantity} x Rp ${item.price.toLocaleString()}</span>
+            </div>
+
+            <div class="cart-actions">
+                <button class="btn-decrease" onclick="decreaseQuantity('${item.id}')">
+                    -
+                </button>
+                
+                <button class="btn-increase" onclick="addToCart('${item.id}')">
+                    +
+                </button>
+                
+                <button class="btn-remove" onclick="removeItem('${item.id}')">
+                    Hapus
+                </button>
+            </div>
+        `;
+        
         cartList.appendChild(li);
     });
-    document.getElementById('total-price').textContent = total.toLocaleString();
-    displayProducts(products);
+
+    // 7. Update Teks Total Harga
+    if(totalPriceEl) {
+        totalPriceEl.textContent = total.toLocaleString();
+    }
+
+    // 8. Refresh tampilan produk (update stok di kartu produk)
+    if (typeof displayProducts === 'function') {
+        displayProducts(products);
+    }
 }
 
 // ==========================================
