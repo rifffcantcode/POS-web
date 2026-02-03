@@ -4,707 +4,147 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LUMINA | Luxury Furniture & Living</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
               lumina: {
-                dark: "#1a2a40" /* Midnight Blue */,
-                gold: "#d4af37" /* Luxury Gold */,
+                dark: "#1a2a40", // Fallback color jika CSS gagal load
+                gold: "#d4af37",
                 light: "#f8f9fa",
                 text: "#2c3e50",
               },
             },
-            fontFamily: {
-              sans: ["Poppins", "sans-serif"],
-            },
+            fontFamily: { sans: ["Poppins", "sans-serif"] },
           },
         },
       };
     </script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap"
-      rel="stylesheet"
-    />
 
-    <style>
-      body {
-        font-family: "Poppins", sans-serif;
-      }
-
-      @keyframes slideIn {
-        from {
-          transform: translateY(20px);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0);
-          opacity: 1;
-        }
-      }
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
-      }
-      .animate-slide-in {
-        animation: slideIn 0.5s ease-out;
-      }
-      .animate-fade-in {
-        animation: fadeIn 0.3s ease-in;
-      }
-
-      /* Custom Scrollbar */
-      .custom-scroll::-webkit-scrollbar {
-        width: 6px;
-      }
-      .custom-scroll::-webkit-scrollbar-track {
-        background: #f1f1f1;
-      }
-      .custom-scroll::-webkit-scrollbar-thumb {
-        background: #1a2a40;
-        border-radius: 10px;
-      }
-
-      .product-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
-      }
-    </style>
+    <link rel="stylesheet" href="landing.css" />
   </head>
+  
   <body class="bg-gray-50 text-lumina-text font-sans">
+    
     <nav class="bg-lumina-dark text-white shadow-lg sticky top-0 z-50">
-      <div
-        class="container mx-auto px-6 py-4 flex justify-between items-center"
-      >
-        <h1 class="text-2xl font-black tracking-widest text-lumina-gold">
+      <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+        <h1 class="text-2xl font-black tracking-widest text-lumina-gold cursor-pointer" onclick="location.reload()">
           <i class="fas fa-couch mr-2"></i>LUMINA
         </h1>
-
         <div class="flex items-center gap-6">
-          <a
-            href="#"
-            class="hidden md:block font-medium text-gray-300 hover:text-lumina-gold transition"
-            >Beranda</a
-          >
-
-          <button
-            onclick="toggleCartModal()"
-            class="relative p-2 text-white hover:text-lumina-gold transition"
-          >
+          <button onclick="toggleCartModal()" class="relative p-2 text-white hover:text-lumina-gold transition">
             <i class="fas fa-shopping-bag text-xl"></i>
-            <span
-              id="cart-count"
-              class="absolute -top-1 -right-1 bg-lumina-gold text-lumina-dark text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center hidden"
-              >0</span
-            >
+            <span id="cart-count" class="absolute -top-1 -right-1 bg-lumina-gold text-lumina-dark text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
           </button>
-
-          <button
-            onclick="openLoginModal()"
-            class="bg-lumina-gold text-lumina-dark px-5 py-2 rounded-full hover:bg-white font-bold transition shadow-md text-sm"
-          >
+          <button onclick="openLoginModal()" class="bg-lumina-gold text-lumina-dark px-5 py-2 rounded-full hover:bg-white font-bold transition shadow-md text-sm">
             <i class="fas fa-lock mr-2"></i>Area Kasir
           </button>
         </div>
       </div>
     </nav>
 
-    <header
-      class="bg-lumina-dark text-white py-24 px-6 relative overflow-hidden"
-    >
-      <div
-        class="absolute top-0 right-0 opacity-10 transform translate-x-1/3 -translate-y-1/4"
-      >
+    <header class="bg-lumina-dark text-white py-24 px-6 relative overflow-hidden">
+      <div class="absolute top-0 right-0 opacity-10 transform translate-x-1/3 -translate-y-1/4">
         <i class="fas fa-couch text-[400px]"></i>
       </div>
-
-      <div
-        class="container mx-auto relative z-10 flex flex-col md:flex-row items-center"
-      >
-        <div class="md:w-2/3">
-          <span
-            class="text-lumina-gold font-bold tracking-[0.3em] uppercase mb-4 block"
-            >Exclusive Collection</span
-          >
-          <h2 class="text-5xl md:text-7xl font-black mb-6 leading-tight">
-            Elevate Your <br />
-            <span
-              class="text-transparent bg-clip-text bg-gradient-to-r from-lumina-gold to-yellow-200"
-              >Living Space</span
-            >
-          </h2>
-          <p class="text-xl mb-10 opacity-80 max-w-xl font-light">
-            Temukan furnitur dan dekorasi premium untuk kenyamanan hunian modern
-            Anda. Kualitas terbaik dengan sentuhan elegan.
-          </p>
-          <a
-            href="#katalog"
-            class="bg-lumina-gold text-lumina-dark font-bold py-4 px-10 rounded-full shadow-lg hover:bg-white transition uppercase tracking-widest text-sm inline-block"
-          >
-            Lihat Katalog
-          </a>
-        </div>
+      <div class="container mx-auto relative z-10">
+        <span class="text-lumina-gold font-bold tracking-[0.3em] uppercase mb-4 block animate-fade-in">Exclusive Collection</span>
+        <h2 class="text-5xl md:text-7xl font-black mb-6 leading-tight animate-slide-in">
+          Elevate Your <br />
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-lumina-gold to-yellow-200">Living Space</span>
+        </h2>
+        <p class="text-xl mb-10 opacity-80 max-w-xl font-light">
+          Temukan furnitur premium untuk kenyamanan hunian modern Anda.
+        </p>
+        <a href="#katalog" class="bg-lumina-gold text-lumina-dark font-bold py-4 px-10 rounded-full shadow-lg hover:bg-white transition uppercase tracking-widest text-sm inline-block">Lihat Katalog</a>
       </div>
     </header>
 
-    <section class="container mx-auto py-16 px-6">
-  <div class="flex justify-between items-end mb-10">
-    <h3 class="text-3xl font-bold text-lumina-dark">Pilihan Ruangan</h3>
-    <a href="#" class="text-lumina-gold font-bold flex items-center gap-2 hover:underline">
-      Lainnya <i class="fas fa-arrow-right text-sm"></i>
-    </a>
-  </div>
-
-  <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
-    <a href="ruang-tidur.html" class="group overflow-hidden rounded-2xl relative block h-64">
-      <img src="https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=500" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
-      <div class="absolute inset-0 bg-black/30 flex items-end p-6">
-        <span class="text-white font-bold text-xl">Ruang Tidur</span>
-      </div>
-    </a>
-    
-    <a href="ruang-tamu.html" class="group overflow-hidden rounded-2xl relative block h-64">
-      <img src="https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?q=80&w=500" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
-      <div class="absolute inset-0 bg-black/30 flex items-end p-6">
-        <span class="text-white font-bold text-xl">Ruang Tamu</span>
-      </div>
-    </a>
-
-    <a href="ruang-kerja.html" class="group overflow-hidden rounded-2xl relative block h-64">
-      <img src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=500" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
-      <div class="absolute inset-0 bg-black/30 flex items-end p-6">
-        <span class="text-white font-bold text-xl">Ruang Kerja</span>
-      </div>
-    </a>
-  </div>
-</section>
-
     <main id="katalog" class="container mx-auto py-16 px-6">
-      <div
-        class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-8 border-b pb-8 border-gray-200"
-      >
-        <div>
-          <h3 class="text-3xl font-bold text-lumina-dark mb-2">
-            Koleksi Terbaru
-          </h3>
-          <p
-            id="loading-status"
-            class="text-lumina-gold animate-pulse font-medium"
-          >
-            <i class="fas fa-circle-notch fa-spin mr-2"></i>Menghubungkan ke
-            database...
-          </p>
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-8 border-b pb-8 border-gray-200">
+        <div class="flex-grow">
+      <h3 id="katalog-title" class="text-3xl font-bold text-lumina-dark mb-4">Koleksi Terbaru</h3>
+          <div class="relative max-w-md">
+            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="text" oninput="handleSearch(event)" placeholder="Cari furniture idaman..." class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-lumina-gold outline-none transition-all" />
+          </div>
         </div>
-
         <div class="flex flex-wrap gap-3">
-          <button
-            onclick="filterCategory('Semua')"
-            class="category-btn px-6 py-2 rounded-full border border-lumina-dark bg-lumina-dark text-white font-medium transition shadow-md text-sm"
-          >
-            Semua
-          </button>
-          <button
-            onclick="filterCategory('Furniture')"
-            class="category-btn px-6 py-2 rounded-full border border-gray-300 text-gray-500 font-medium hover:border-lumina-dark hover:text-lumina-dark transition text-sm"
-          >
-            Furniture
-          </button>
-          <button
-            onclick="filterCategory('Elektronik')"
-            class="category-btn px-6 py-2 rounded-full border border-gray-300 text-gray-500 font-medium hover:border-lumina-dark hover:text-lumina-dark transition text-sm"
-          >
-            Elektronik
-          </button>
-          <button
-            onclick="filterCategory('Dekorasi')"
-            class="category-btn px-6 py-2 rounded-full border border-gray-300 text-gray-500 font-medium hover:border-lumina-dark hover:text-lumina-dark transition text-sm"
-          >
-            Dekorasi
-          </button>
+          <button onclick="filterCategory('Semua')" class="category-btn px-6 py-2 rounded-full border border-lumina-dark bg-lumina-dark text-white font-medium transition shadow-md text-sm">Semua</button>
+          <button onclick="filterCategory('Furniture')" class="category-btn px-6 py-2 rounded-full border border-gray-300 text-gray-500 font-medium hover:border-lumina-dark hover:text-lumina-dark transition text-sm">Furniture</button>
+          <button onclick="filterCategory('Elektronik')" class="category-btn px-6 py-2 rounded-full border border-gray-300 text-gray-500 font-medium hover:border-lumina-dark hover:text-lumina-dark transition text-sm">Elektronik</button>
+          <button onclick="filterCategory('Dekorasi')" class="category-btn px-6 py-2 rounded-full border border-gray-300 text-gray-500 font-medium hover:border-lumina-dark hover:text-lumina-dark transition text-sm">Dekorasi</button>
         </div>
       </div>
 
-      <div
-        id="customer-product-grid"
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
-      ></div>
+      <p id="loading-status" class="text-lumina-gold animate-pulse font-medium text-center py-10">
+        <i class="fas fa-circle-notch fa-spin mr-2"></i>Menghubungkan ke database...
+      </p>
+
+      <div id="customer-product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"></div>
     </main>
 
-    <div
-      id="product-detail-modal"
-      class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4 animate-fade-in"
-    >
-      <div
-        class="bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row animate-slide-in"
-      >
-        <button
-          onclick="closeProductDetail()"
-          class="absolute top-4 right-4 bg-gray-100 hover:bg-red-500 hover:text-white w-10 h-10 rounded-full flex items-center justify-center transition-all z-10"
-        >
+    <div id="product-detail-modal" class="fixed inset-0 bg-black/80 z-[70] hidden items-center justify-center p-4">
+      <div class="bg-white w-full max-w-4xl rounded-3xl overflow-hidden relative shadow-2xl animate-modal-in">
+        <button onclick="closeProductDetail()" class="absolute top-5 right-5 w-10 h-10 bg-white shadow-md rounded-full flex items-center justify-center text-gray-400 hover:text-lumina-dark z-10 transition">
           <i class="fas fa-times"></i>
         </button>
-
-        <div class="md:w-1/2 bg-gray-100 flex items-center justify-center p-8">
-          <img
-            id="detail-image"
-            src=""
-            class="max-w-full max-h-[400px] object-contain mix-blend-multiply"
-            alt="Product Detail"
-          />
-        </div>
-
-        <div class="md:w-1/2 p-10 flex flex-col overflow-y-auto custom-scroll">
-          <div class="mb-6">
-            <span
-              id="detail-category"
-              class="text-[10px] font-bold text-lumina-gold uppercase tracking-[0.2em] bg-lumina-dark px-3 py-1 rounded"
-              >Kategori</span
-            >
-            <h2
-              id="detail-name"
-              class="text-3xl font-bold text-lumina-dark mt-4 leading-tight"
-            >
-              Nama Produk
-            </h2>
-            <p
-              id="detail-price"
-              class="text-2xl font-medium text-lumina-gold mt-2"
-            >
-              Rp 0
-            </p>
-          </div>
-
-          <div class="space-y-4 mb-10">
-            <h5
-              class="font-bold text-gray-800 text-sm uppercase tracking-wider border-b pb-2"
-            >
-              Deskripsi
-            </h5>
-            <div
-              id="detail-description"
-              class="text-gray-500 leading-relaxed text-sm whitespace-pre-line"
-            >
-              Detail spesifikasi produk akan tampil di sini...
+        <div id="detail-content" class="p-8 md:p-12 max-h-[90vh] overflow-y-auto custom-scroll">
             </div>
-          </div>
-
-          <div
-            class="mt-auto pt-6 border-t border-gray-100 flex flex-col gap-4"
-          >
-            <div class="flex items-center justify-between">
-              <span class="text-sm font-bold text-gray-400">Status Stok:</span>
-              <span id="detail-stock" class="font-bold text-green-600"
-                >Tersedia</span
-              >
-            </div>
-            <button
-              id="add-to-cart-detail-btn"
-              class="w-full bg-lumina-dark hover:bg-gray-800 text-white py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-3"
-            >
-              <i class="fas fa-cart-plus"></i> Tambah ke Keranjang
-            </button>
-          </div>
-        </div>
       </div>
     </div>
 
-    <div
-      id="cart-modal"
-      class="fixed inset-0 bg-black/50 z-[80] hidden flex justify-end"
-    >
-      <div
-        class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col animate-fade-in"
-      >
-        <div
-          class="bg-lumina-dark p-6 flex justify-between items-center text-white"
-        >
-          <h3 class="text-xl font-bold">
-            <i class="fas fa-shopping-cart mr-2"></i>Keranjang
-          </h3>
-          <button
-            onclick="toggleCartModal()"
-            class="text-gray-300 hover:text-white transition"
-          >
+    <div id="cart-modal" class="fixed inset-0 bg-black/50 z-[80] hidden flex justify-end">
+      <div class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col animate-fade-in">
+        <div class="bg-lumina-dark p-6 flex justify-between items-center text-white">
+          <h3 class="text-xl font-bold"><i class="fas fa-shopping-cart mr-2"></i>Keranjang</h3>
+          <button onclick="toggleCartModal()" class="text-gray-300 hover:text-white transition">
             <i class="fas fa-times text-xl"></i>
           </button>
         </div>
-
-        <div
-          id="cart-items-list"
-          class="flex-grow overflow-y-auto space-y-4 custom-scroll p-6 bg-gray-50"
-        ></div>
-
+        <div id="cart-items-list" class="flex-grow overflow-y-auto space-y-4 custom-scroll p-6 bg-gray-50"></div>
         <div class="border-t p-6 bg-white">
           <div class="flex justify-between items-end mb-6">
-            <span
-              class="text-gray-500 font-bold uppercase text-xs tracking-widest"
-              >Total Bayar</span
-            >
-            <span id="cart-total" class="text-2xl font-bold text-lumina-dark"
-              >Rp 0</span
-            >
+            <span class="text-gray-500 font-bold uppercase text-xs tracking-widest">Total Bayar</span>
+            <span id="cart-total" class="text-2xl font-bold text-lumina-dark">Rp 0</span>
           </div>
-          <button
-            onclick="checkoutWhatsApp()"
-            class="w-full bg-green-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-green-700 transition shadow-lg flex items-center justify-center gap-2"
-          >
+          <button onclick="checkoutWhatsApp()" class="w-full bg-green-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-green-700 transition shadow-lg flex items-center justify-center gap-2">
             <i class="fab fa-whatsapp"></i> Checkout via WhatsApp
           </button>
         </div>
       </div>
     </div>
 
-    <footer class="bg-lumina-dark text-white border-t border-gray-800 py-16">
-      <div class="container mx-auto px-6 text-center">
-        <h4 class="text-2xl font-black text-lumina-gold mb-4 tracking-widest">
-          LUMINA
-        </h4>
-        <p class="text-gray-400 text-sm mb-8 max-w-md mx-auto">
-          Menghadirkan kenyamanan dan kemewahan dalam setiap sudut ruangan Anda.
-        </p>
-        <div class="flex justify-center gap-8 mb-8">
-          <a
-            href="#"
-            class="text-gray-400 hover:text-lumina-gold text-2xl transition"
-            ><i class="fab fa-instagram"></i
-          ></a>
-          <a
-            href="#"
-            class="text-gray-400 hover:text-lumina-gold text-2xl transition"
-            ><i class="fab fa-whatsapp"></i
-          ></a>
-        </div>
-        <p
-          class="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]"
-        >
-          &copy; 2026 LUMINA Furniture. All Rights Reserved.
-        </p>
-      </div>
-    </footer>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import {
-    getFirestore,
-    collection,
-    onSnapshot,
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBMsUhXj-UCLLviXzweS1qXVdSaVgkDcu8",
-    authDomain: "sistemkasirtokocom.firebaseapp.com",
-    projectId: "sistemkasirtokocom",
-    storageBucket: "sistemkasirtokocom.firebasestorage.app",
-    messagingSenderId: "141722200955",
-    appId: "1:141722200955:web:e07952808590aa7f582bde",
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  // --- STATE & DATA CLEANING ---
-  let allProducts = [];
-  let currentCategory = "Semua";
-  let cart = [];
-
-  // Proteksi: Bersihkan data localStorage yang rusak/NaN saat pertama buka
-  try {
-    const savedCart = localStorage.getItem("customer_cart");
-    if (savedCart) {
-      cart = JSON.parse(savedCart).map(item => ({
-        ...item,
-        price: Number(item.price) || 0,
-        quantity: Number(item.quantity) || 1
-      }));
-    }
-  } catch (e) {
-    cart = [];
-  }
-
-  const productGrid = document.getElementById("customer-product-grid");
-  const loadingStatus = document.getElementById("loading-status");
-
-  // 1. AMBIL DATA REAL-TIME
-  onSnapshot(collection(db, "products"), (snapshot) => {
-    allProducts = [];
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      if (!data.isDeleted) {
-        allProducts.push({ 
-          id: doc.id, 
-          ...data,
-          price: Number(data.price) || 0, // Pastikan harga adalah angka
-          stock: Number(data.stock) || 0  // Pastikan stok adalah angka
-        });
-      }
-    });
-    if(loadingStatus) loadingStatus.style.display = "none";
-    renderProducts();
-    updateCartCount();
-  });
-
-  // 2. RENDER PRODUK
-  window.renderProducts = () => {
-    if(!productGrid) return;
-    productGrid.innerHTML = "";
-    
-    const filtered = allProducts.filter(
-      (p) => currentCategory === "Semua" || p.category === currentCategory,
-    );
-
-    if (filtered.length === 0) {
-      productGrid.innerHTML = `<div class="col-span-full text-center py-20 text-gray-400 font-bold uppercase tracking-widest text-sm">Produk belum tersedia</div>`;
-      return;
-    }
-
-    filtered.forEach((p) => {
-      const itemInCart = cart.find((item) => item.id === p.id);
-      const inCartQty = itemInCart ? Number(itemInCart.quantity) : 0;
-      const availableStock = p.stock - inCartQty;
-
-      productGrid.innerHTML += `
-        <div class="product-card bg-white rounded-xl overflow-hidden flex flex-col transition-all border border-gray-100 group relative">
-            <div onclick="openProductDetail('${p.id}')" class="w-full h-64 bg-gray-50 p-6 flex items-center justify-center cursor-pointer relative overflow-hidden">
-                <img src="${p.image}" alt="${p.name}" class="object-contain w-full h-full mix-blend-multiply group-hover:scale-110 transition-transform duration-500" onerror="this.src='https://via.placeholder.com/300'">
-                ${availableStock <= 0 ? '<div class="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-bold tracking-widest uppercase text-xs">Stok Habis</div>' : ""}
-            </div>
-            
-            <div class="p-5 flex-grow flex flex-col">
-                <div class="mb-2">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">${p.category}</span>
-                </div>
-                
-                <h4 onclick="openProductDetail('${p.id}')" class="text-lg font-bold text-lumina-dark leading-snug mb-2 hover:text-lumina-gold cursor-pointer transition line-clamp-2">
-                    ${p.name}
-                </h4>
-                
-                <div class="mt-auto flex items-center justify-between pt-4 border-t border-dashed border-gray-200">
-                    <p class="text-xl font-bold text-lumina-dark">Rp ${p.price.toLocaleString('id-ID')}</p>
-                    <button onclick="addToCartCustomer('${p.id}')" 
-                        ${availableStock <= 0 ? "disabled" : ""}
-                        class="${availableStock > 0 ? "bg-lumina-dark hover:bg-lumina-gold text-white" : "bg-gray-200 text-gray-400 cursor-not-allowed"} w-10 h-10 rounded-full transition shadow-md flex items-center justify-center active:scale-90">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
-            </div>
-        </div>`;
-    });
-  };
-
-  // 3. LOGIKA KERANJANG
-  window.addToCartCustomer = (productId) => {
-    const product = allProducts.find((p) => p.id === productId);
-    if (!product) return;
-
-    const itemInCart = cart.find((item) => item.id === productId);
-    const currentQty = itemInCart ? Number(itemInCart.quantity) : 0;
-
-    if (currentQty >= product.stock) {
-      return alert("Maaf, stok barang ini sudah habis!");
-    }
-
-    if (itemInCart) {
-      itemInCart.quantity += 1;
-    } else {
-      // Pastikan hanya data penting yang masuk keranjang untuk hemat memori
-      cart.push({ 
-        id: product.id, 
-        name: product.name, 
-        price: Number(product.price), 
-        image: product.image, 
-        quantity: 1 
-      });
-    }
-    saveAndRefresh();
-  };
-
-  window.removeFromCart = (index) => {
-    cart.splice(index, 1);
-    saveAndRefresh();
-  };
-
-  function saveAndRefresh() {
-    localStorage.setItem("customer_cart", JSON.stringify(cart));
-    updateCartCount();
-    if (!document.getElementById("cart-modal").classList.contains("hidden")) {
-      renderCart();
-    }
-    renderProducts();
-  }
-
-  function updateCartCount() {
-    const countEl = document.getElementById("cart-count");
-    if(!countEl) return;
-    const totalItems = cart.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
-    countEl.innerText = totalItems;
-    countEl.classList.toggle("hidden", totalItems === 0);
-  }
-
-  // 4. RENDER KERANJANG & CHECKOUT
-  window.renderCart = () => {
-    const list = document.getElementById("cart-items-list");
-    const totalLabel = document.getElementById("cart-total");
-    if(!list) return;
-    
-    list.innerHTML = "";
-    let grandTotal = 0;
-
-    if (cart.length === 0) {
-      list.innerHTML = `<div class="text-center py-20 text-gray-400 font-bold uppercase tracking-widest text-[10px]">Keranjang Kosong</div>`;
-    } else {
-      cart.forEach((item, index) => {
-        const subtotal = Number(item.price) * Number(item.quantity);
-        grandTotal += subtotal;
-        list.innerHTML += `
-            <div class="flex items-center gap-4 bg-white p-3 rounded-lg border border-gray-200 shadow-sm mb-3">
-                <img src="${item.image}" class="w-14 h-14 object-contain mix-blend-multiply bg-white rounded border p-1">
-                <div class="flex-grow min-w-0">
-                    <h5 class="font-bold text-sm text-lumina-dark truncate">${item.name}</h5>
-                    <p class="text-xs text-gray-500 mt-1">${item.quantity} x Rp ${Number(item.price).toLocaleString('id-ID')}</p>
-                </div>
-                <button onclick="removeFromCart(${index})" class="text-red-400 hover:text-red-600 p-2 transition">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </div>`;
-      });
-    }
-    if(totalLabel) totalLabel.innerText = `Rp ${grandTotal.toLocaleString('id-ID')}`;
-  };
-
-  window.checkoutWhatsApp = () => {
-    if (cart.length === 0) return alert("Keranjang masih kosong!");
-
-    let message = "*PESANAN BARU - LUMINA*\n--------------------------\n";
-    let total = 0;
-    cart.forEach((item) => {
-      const subtotal = item.price * item.quantity;
-      message += `• ${item.name}\n  ${item.quantity}x Rp ${item.price.toLocaleString('id-ID')} = Rp ${subtotal.toLocaleString('id-ID')}\n`;
-      total += subtotal;
-    });
-    message += `--------------------------\n*Total Bayar: Rp ${total.toLocaleString('id-ID')}*`;
-
-    const phoneNumber = "6281234567890"; // Ganti dengan nomor WA kamu
-    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`, "_blank");
-  };
-
-  // 5. UI MODAL & FILTER
-  window.toggleCartModal = () => {
-    document.getElementById("cart-modal").classList.toggle("hidden");
-    renderCart();
-  };
-
-  window.filterCategory = (category) => {
-    currentCategory = category;
-    document.querySelectorAll(".category-btn").forEach((btn) => {
-      const isSelected = btn.innerText.trim() === category;
-      btn.classList.toggle("border-lumina-dark", isSelected);
-      btn.classList.toggle("bg-lumina-dark", isSelected);
-      btn.classList.toggle("text-white", isSelected);
-      btn.classList.toggle("border-gray-300", !isSelected);
-      btn.classList.toggle("text-gray-500", !isSelected);
-    });
-    renderProducts();
-  };
-
-  // Detail Produk (Disederhanakan agar stabil)
-  window.openProductDetail = (productId) => {
-    const p = allProducts.find((item) => item.id === productId);
-    if (!p) return;
-
-    document.getElementById("detail-image").src = p.image;
-    document.getElementById("detail-name").innerText = p.name;
-    document.getElementById("detail-category").innerText = p.category;
-    document.getElementById("detail-price").innerText = `Rp ${p.price.toLocaleString('id-ID')}`;
-    document.getElementById("detail-description").innerText = p.description || "Tidak ada deskripsi.";
-
-    const itemInCart = cart.find((item) => item.id === p.id);
-    const availableStock = p.stock - (itemInCart ? itemInCart.quantity : 0);
-    
-    const stockEl = document.getElementById("detail-stock");
-    const btnDetail = document.getElementById("add-to-cart-detail-btn");
-
-    stockEl.innerText = availableStock > 0 ? `Tersedia ${availableStock} Unit` : "Stok Habis";
-    stockEl.className = availableStock > 0 ? "font-bold text-green-600" : "font-bold text-red-500";
-    
-    btnDetail.disabled = availableStock <= 0;
-    btnDetail.onclick = () => {
-      addToCartCustomer(p.id);
-      openProductDetail(p.id); // Refresh modal view
-    };
-
-    document.getElementById("product-detail-modal").classList.remove("hidden");
-  };
-
-  window.closeProductDetail = () => document.getElementById("product-detail-modal").classList.add("hidden");
-
-  // Admin Login
-  const ADMIN_PASSWORD = "admin"; 
-  window.openLoginModal = () => document.getElementById("login-modal").classList.remove("hidden");
-  window.closeLoginModal = () => document.getElementById("login-modal").classList.add("hidden");
-  window.checkLogin = () => {
-    const input = document.getElementById("admin-password").value;
-    if (input === ADMIN_PASSWORD) {
-      window.location.href = "index.html";
-    } else {
-      alert("Sandi Salah!");
-    }
-  };
-
-  // Jalankan fungsi awal
-  updateCartCount();
-</script>
-    <div
-      id="login-modal"
-      class="fixed inset-0 bg-lumina-dark/90 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4 animate-fade-in"
-    >
-      <div
-        class="bg-white w-full max-w-sm rounded-2xl p-8 shadow-2xl relative animate-slide-in text-center"
-      >
-        <div
-          class="w-16 h-16 bg-lumina-light rounded-full flex items-center justify-center mx-auto mb-6"
-        >
+    <div id="login-modal" class="fixed inset-0 bg-lumina-dark/90 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4 animate-fade-in">
+      <div class="bg-white w-full max-w-sm rounded-2xl p-8 shadow-2xl relative animate-slide-in text-center">
+        <div class="w-16 h-16 bg-lumina-light rounded-full flex items-center justify-center mx-auto mb-6">
           <i class="fas fa-user-shield text-2xl text-lumina-dark"></i>
         </div>
-
         <h3 class="text-xl font-bold text-lumina-dark mb-2">Akses Terbatas</h3>
-        <p class="text-gray-400 text-xs mb-6">
-          Silakan masukkan sandi administrator untuk mengakses sistem kasir.
-        </p>
-
-        <div class="mb-6 relative">
-          <input
-            type="password"
-            id="admin-password"
-            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center font-bold text-lumina-dark focus:outline-none focus:border-lumina-gold focus:ring-1 focus:ring-lumina-gold transition"
-            placeholder="Masukkan Sandi"
-            onkeyup="if (event.key === 'Enter') checkLogin();"
-          />
-        </div>
-
-        <button
-          onclick="checkLogin()"
-          class="w-full bg-lumina-dark text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition shadow-lg mb-3"
-        >
-          Masuk Sistem
-        </button>
-
-        <button
-          onclick="closeLoginModal()"
-          class="text-gray-400 text-xs hover:text-red-500 font-medium transition"
-        >
-          Batal
-        </button>
+        <p class="text-gray-400 text-xs mb-6">Masukkan sandi administrator untuk mengelola stok.</p>
+        <input type="password" id="admin-password" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center font-bold text-lumina-dark mb-6 focus:ring-1 focus:ring-lumina-gold outline-none" placeholder="Sandi Admin" onkeyup="if (event.key === 'Enter') checkLogin();" />
+        <button onclick="checkLogin()" class="w-full bg-lumina-dark text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition shadow-lg mb-3">Masuk</button>
+        <button onclick="closeLoginModal()" class="text-gray-400 text-xs hover:text-red-500 font-medium transition">Batal</button>
       </div>
     </div>
+
+    <footer class="bg-lumina-dark text-white py-16 text-center">
+      <h4 class="text-2xl font-black text-lumina-gold mb-4 tracking-widest">LUMINA</h4>
+      <p class="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]">&copy; 2026 LUMINA Furniture. All Rights Reserved.</p>
+    </footer>
+
+    <script type="module" src="landing.js"></script>
   </body>
 </html>

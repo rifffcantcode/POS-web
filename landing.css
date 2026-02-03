@@ -1,0 +1,156 @@
+:root {
+  /* Warna Gold yang lebih elegan (Champagne/Soft Gold) */
+  --lumina-gold: #D4AF37; 
+  --lumina-gold-light: #F1E5AC;
+  --lumina-gold-dark: #AA8928;
+  
+  /* Warna Gelap untuk kesan mewah (Deep Charcoal) */
+  --lumina-dark: #1A1A1B;
+  --lumina-gray: #F8F8F8;
+}
+
+/* Update Class Khusus */
+.text-lumina-gold { color: var(--lumina-gold); }
+.bg-lumina-gold { background-color: var(--lumina-gold); }
+.bg-lumina-dark { background-color: var(--lumina-dark); }
+.border-lumina-gold { border-color: var(--lumina-gold); }
+
+/* Efek Hover Button */
+.btn-gold {
+  background: linear-gradient(135deg, var(--lumina-gold), var(--lumina-gold-dark));
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+}
+
+/* Custom Scrollbar */
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #1a2a40;
+  border-radius: 10px;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-slide-in { animation: slideIn 0.5s ease-out; }
+.animate-fade-in { animation: fadeIn 0.3s ease-in; }
+
+/* Product Card Interactions */
+.product-card {
+  transition: all 0.3s ease;
+}
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Toast Styles */
+.toast-notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #1a2a40;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border-left: 4px solid #d4af37;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  z-index: 9999;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Efek Glassmorphism untuk Card */
+.glass-card {
+    background: rgba(255, 255, 255, 0.55); /* Putih transparan */
+    backdrop-filter: blur(12px); /* Efek blur di belakang kartu */
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3); /* Border halus seperti kilatan kaca */
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.glass-card:hover {
+    background: rgba(255, 255, 255, 0.8); /* Sedikit lebih solid saat hover */
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--lumina-gold); /* Highlight emas saat hover */
+}
+
+/* Background gradasi lembut untuk area katalog */
+#katalog {
+    background: radial-gradient(circle at top right, rgba(212, 175, 55, 0.05), transparent);
+}
+
+/* Animasi Base */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Class untuk memicu animasi */
+.reveal-card {
+  opacity: 0; /* Mulai dari tidak terlihat */
+  animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Hilangkan class animasi lama jika ada agar tidak bentrok */
+.animate-slide-in { animation: none; }
+
+.flying-item {
+    position: fixed;
+    z-index: 9999;
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    pointer-events: none;
+    transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+/* Animasi Denyut Skeleton */
+@keyframes skeleton-loading {
+  0% { background-color: rgba(229, 231, 235, 0.5); }
+  50% { background-color: rgba(229, 231, 235, 1); }
+  100% { background-color: rgba(229, 231, 235, 0.5); }
+}
+
+.skeleton {
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 0.75rem;
+}
+
+.skeleton-card {
+  background: white;
+  border-radius: 1.5rem;
+  padding: 1.25rem;
+  height: 400px; /* Sesuaikan dengan tinggi kartu asli */
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
