@@ -79,26 +79,30 @@ window.renderProducts = (withAnimation = true) => {
     const animationClass = withAnimation ? "reveal-card" : "";
     const animationDelay = withAnimation ? `style="animation-delay: ${delay}s"` : "";
 
-    grid.innerHTML += `
-      <div class="glass-card ${animationClass} rounded-2xl overflow-hidden flex flex-col group relative shadow-sm" 
-           ${animationDelay}>
-          <div onclick="openProductDetail('${p.id}')" class="w-full h-64 bg-white/40 p-6 flex items-center justify-center cursor-pointer relative overflow-hidden">
-              <img src="${p.image}" class="object-contain w-full h-full mix-blend-multiply group-hover:scale-110 transition-transform duration-700" onerror="this.src='https://via.placeholder.com/300?text=No+Image'">
-              
-              ${availableStock <= 0 ? 
-                  '<div class="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center text-white font-bold text-xs uppercase tracking-widest">Stok Habis</div>' 
-                  : ''}
-              
-              <div class="absolute top-3 left-3">
-                  <span class="text-[9px] font-bold text-lumina-dark bg-white/80 backdrop-blur-md px-2 py-1 rounded-full uppercase tracking-tighter border border-white/50 shadow-sm">
-                      ${p.category}
-                  </span>
-              </div>
-          </div>
+grid.innerHTML += `
+    <div class="glass-card reveal-card rounded-2xl overflow-hidden flex flex-col group relative shadow-sm" 
+         style="animation-delay: ${delay}s">
+        
+        <div onclick="openProductDetail('${p.id}')" 
+             class="product-image-container w-full h-64 p-6 cursor-pointer">
+            
+            <img src="${p.image}" 
+                 class="object-contain w-full h-full mix-blend-multiply group-hover:scale-110 transition-transform duration-700" 
+                 onerror="this.src='https://via.placeholder.com/300?text=No+Image'">
+            
+            ${availableStock <= 0 ? 
+                '<div class="absolute inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center text-white font-bold text-xs uppercase tracking-widest">Stok Habis</div>' 
+                : ''}
+            
+            <div class="absolute top-3 left-3">
+                <span class="text-[9px] font-bold text-lumina-dark bg-white/90 backdrop-blur-md px-2 py-1 rounded-full uppercase tracking-tighter border border-white/50 shadow-sm">
+                    ${p.category}
+                </span>
+            </div>
+        </div>
 
-          <div class="p-5 flex-grow flex flex-col">
-              <h4 onclick="openProductDetail('${p.id}')" class="text-md font-bold text-lumina-dark mb-1 hover:text-lumina-gold cursor-pointer line-clamp-2 transition-colors">
-                  ${p.name}
+        <div class="p-5 flex-grow flex flex-col bg-white/60"> <h4 onclick="openProductDetail('${p.id}')" class="text-md font-bold text-lumina-dark mb-1 hover:text-lumina-gold cursor-pointer line-clamp-2 transition-colors">
+                ${p.name}
               </h4>
               
               <div class="mt-auto flex items-center justify-between pt-4">
@@ -217,10 +221,19 @@ window.saveAndRefresh = (animate = true) => {
 
 function updateCartCount() {
     const total = cart.reduce((sum, i) => sum + i.quantity, 0);
-    const el = document.getElementById("cart-count");
-    if(el) {
-        el.innerText = total;
-        el.classList.toggle("hidden", total === 0);
+    
+    // Update Badge Desktop
+    const elDesktop = document.getElementById("cart-count");
+    if(elDesktop) {
+        elDesktop.innerText = total;
+        elDesktop.classList.toggle("hidden", total === 0);
+    }
+
+    // Update Badge Mobile (Fitur Baru)
+    const elMobile = document.getElementById("cart-count-mobile");
+    if(elMobile) {
+        elMobile.innerText = total;
+        elMobile.classList.toggle("hidden", total === 0);
     }
 }
 
@@ -339,14 +352,44 @@ window.showToast = (msg, type = "success") => {
 
 window.checkoutWhatsApp = () => {
     if (!cart.length) return alert("Keranjang masih kosong!");
-    let msg = "*PESANAN BARU - LUMINA*\n--------------------------\n";
+    
+    const form = document.getElementById("checkout-form");
+    if (form.classList.contains("hidden")) {
+        form.classList.remove("hidden");
+        form.scrollIntoView({ behavior: 'smooth' });
+        showToast("Silakan isi data pengiriman dulu ya!");
+        return;
+    }
+
+    const name = document.getElementById("cust-name").value;
+    const address = document.getElementById("cust-address").value;
+
+    if (!name || !address) {
+        showToast("Nama dan Alamat harus diisi!", "error");
+        return;
+    }
+
+    let msg = `*PESANAN BARU - LUMINA*\n`;
+    msg += `--------------------------\n`;
+    msg += `👤 *Pembeli:* ${name}\n`;
+    msg += `📍 *Alamat:* ${address}\n`;
+    msg += `--------------------------\n`;
+    
     let total = 0;
     cart.forEach(i => {
         msg += `• ${i.name} (${i.quantity}x) - Rp ${(i.price * i.quantity).toLocaleString()}\n`;
         total += (i.price * i.quantity);
     });
-    msg += `--------------------------\n*Total Bayar: Rp ${total.toLocaleString('id-ID')}*`;
-    window.open(`https://wa.me/6281210680152?text=${encodeURIComponent(msg)}`);
+    
+    msg += `--------------------------\n`;
+    msg += `*Total Bayar: Rp ${total.toLocaleString('id-ID')}*`;
+
+    const waNumber = "6281210680152"; // Ganti dengan nomor tokomu
+    window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`);
+
+    // Simpan data ke localStorage setelah klik checkout agar tidak perlu ngetik ulang besok-besok
+localStorage.setItem("cust_name_saved", name);
+localStorage.setItem("cust_address_saved", address);
 };
 
 // 11. Initializer
@@ -356,6 +399,8 @@ window.addEventListener('DOMContentLoaded', () => {
     if (categoryFromUrl) {
         filterCategory(categoryFromUrl);
     }
+    document.getElementById("cust-name").value = localStorage.getItem("cust_name_saved") || "";
+document.getElementById("cust-address").value = localStorage.getItem("cust_address_saved") || "";
 });
 
 window.onpopstate = () => {

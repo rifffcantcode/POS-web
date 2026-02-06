@@ -60,6 +60,28 @@
   box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
 }
 
+/* Container gambar agar menyatu dengan background foto */
+.product-image-container {
+    background-color: #ffffff; /* Putih murni agar menyatu dengan background foto */
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Trik tambahan: Memberikan sedikit efek fade di bagian bawah gambar */
+.product-image-container::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.8));
+    pointer-events: none;
+}
+
 /* Toast Styles */
 .toast-notification {
   position: fixed;
@@ -92,6 +114,26 @@
     transform: translateY(-8px) scale(1.02);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
     border: 1px solid var(--lumina-gold); /* Highlight emas saat hover */
+}
+
+/* landing.css */
+
+/* Target gambar produk di dalam kartu */
+.glass-card img {
+    filter: brightness(1.05) contrast(1.02);
+    /* Pastikan mix-blend-mode tetap ada (ini sudah ada di JS, tapi bagus juga didefinisikan di CSS) */
+    mix-blend-mode: multiply;
+    /* Opsional: Sedikit mengurangi opasitas gambar agar tidak terlalu "keras" */
+    opacity: 0.95;
+}
+
+/* Saat hover, mungkin filter perlu sedikit disesuaikan atau direset */
+.glass-card:hover img {
+    /* Kembalikan ke kondisi normal saat hover agar warna produk terlihat aslinya */
+    filter: brightness(1) contrast(1);
+    opacity: 1;
+    transform: scale(1.1); /* Efek zoom yang sudah ada */
+    transition: all 0.7s ease; /* Pastikan transisi halus */
 }
 
 /* Background gradasi lembut untuk area katalog */
@@ -153,4 +195,41 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+/* Bottom Navbar Styling */
+.mobile-nav {
+    background: rgba(15, 23, 42, 0.85); /* Dark Lumina with Transparency */
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8; /* Slate 400 */
+    font-size: 0.65rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.nav-item.active {
+    color: #D4AF37; /* Lumina Gold */
+}
+
+.nav-item i {
+    font-size: 1.25rem;
+    margin-bottom: 2px;
+}
+
+/* Badge khusus mobile */
+#cart-count-mobile {
+    top: -5px;
+    right: -10px;
+    background: #D4AF37;
+    color: #0f172a;
+    font-size: 10px;
 }
