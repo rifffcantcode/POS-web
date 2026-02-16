@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Katalog Koleksi | LUMINA</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              lumina: {
+                dark: "#1a2a40",
+                gold: "#d4af37",
+                light: "#f8f9fa",
+              },
+            },
+            fontFamily: { sans: ["Poppins", "sans-serif"] },
+          },
+        },
+      };
+    </script>
+    <style>
+      .custom-scroll::-webkit-scrollbar {
+        width: 5px;
+      }
+      .custom-scroll::-webkit-scrollbar-thumb {
+        background: #d4af37;
+        border-radius: 10px;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 font-sans text-gray-800">
+    <nav class="bg-lumina-dark text-white sticky top-0 z-50 shadow-md">
+      <div
+        class="container mx-auto px-6 py-4 flex justify-between items-center"
+      >
+        <a
+          href="landing.html"
+          class="text-2xl font-black tracking-widest text-lumina-gold flex items-center"
+        >
+          <i class="fas fa-couch mr-2"></i>LUMINA
+        </a>
+        <div class="flex items-center gap-5">
+          <a
+            href="landing.html"
+            class="text-sm hover:text-lumina-gold transition"
+            >Beranda</a
+          >
+          <button
+            onclick="toggleCart()"
+            class="relative p-2 text-white hover:text-lumina-gold"
+          >
+            <i class="fas fa-shopping-bag text-xl"></i>
+            <span
+              id="cart-count"
+              class="absolute -top-1 -right-1 bg-lumina-gold text-lumina-dark text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center"
+              >0</span
+            >
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <header class="bg-white border-b py-12">
+      <div class="container mx-auto px-6">
+        <a
+          href="landing.html"
+          class="text-xs font-bold text-lumina-gold uppercase tracking-widest mb-2 inline-block hover:underline"
+        >
+          <i class="fas fa-arrow-left mr-1"></i> Kembali ke Depan
+        </a>
+        <h1
+          id="category-title"
+          class="text-4xl md:text-5xl font-black text-lumina-dark capitalize"
+        >
+          Koleksi Kami
+        </h1>
+        <p id="category-desc" class="text-gray-500 mt-2">
+          Menampilkan produk terbaik untuk kenyamanan Anda.
+        </p>
+      </div>
+    </header>
+
+    <main class="container mx-auto py-12 px-6">
+      <div
+        id="product-grid"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+      ></div>
+    </main>
+
+    <footer
+      class="bg-lumina-dark text-white py-12 text-center border-t border-white/10"
+    >
+      <p class="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]">
+        &copy; 2026 LUMINA Furniture. All Rights Reserved.
+      </p>
+    </footer>
+
+    <div
+      id="product-modal"
+      class="fixed inset-0 bg-black/80 z-[100] hidden items-center justify-center p-4 backdrop-blur-sm"
+    >
+      <div
+        class="bg-white w-full max-w-4xl rounded-3xl overflow-hidden relative shadow-2xl flex flex-col md:flex-row animate-fade-in"
+      >
+        <button
+          onclick="closeModal()"
+          class="absolute top-5 right-5 w-10 h-10 bg-white/90 shadow-md rounded-full flex items-center justify-center text-gray-400 hover:text-lumina-dark z-10 transition"
+        >
+          <i class="fas fa-times"></i>
+        </button>
+
+        <div class="md:w-1/2 h-[300px] md:h-auto bg-gray-100">
+          <img id="modal-img" src="" class="w-full h-full object-cover" />
+        </div>
+
+        <div class="md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+          <span
+            id="modal-cat"
+            class="text-lumina-gold font-bold tracking-[0.2em] text-xs uppercase mb-2"
+            >Category</span
+          >
+          <h2 id="modal-name" class="text-3xl font-black text-lumina-dark mb-4">
+            Product Name
+          </h2>
+          <p id="modal-price" class="text-2xl font-light text-gray-400 mb-6">
+            Rp 0
+          </p>
+
+          <div class="border-t border-b py-6 mb-6">
+            <h4 class="font-bold text-sm uppercase mb-2">Deskripsi Produk:</h4>
+            <p id="modal-desc" class="text-gray-500 text-sm leading-relaxed">
+              Informasi detail mengenai bahan, dimensi, dan keunggulan produk
+              ini akan muncul di sini secara dinamis.
+            </p>
+          </div>
+
+          <button
+            id="add-to-cart-btn"
+            class="w-full bg-lumina-dark text-white py-4 rounded-xl font-bold hover:bg-lumina-gold hover:text-lumina-dark transition duration-300 flex items-center justify-center gap-3"
+          >
+            <i class="fas fa-shopping-cart"></i> Masukkan ke Keranjang
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="cart-modal"
+      class="fixed inset-0 bg-black/50 z-[110] hidden justify-end transition-opacity"
+    >
+      <div
+        class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col animate-slide-in-right"
+      >
+        <div
+          class="bg-lumina-dark p-6 flex justify-between items-center text-white"
+        >
+          <h3 class="text-xl font-bold">
+            <i class="fas fa-shopping-bag mr-2"></i>Keranjang Anda
+          </h3>
+          <button
+            onclick="toggleCart()"
+            class="text-gray-300 hover:text-white transition"
+          >
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+
+        <div
+          id="cart-items"
+          class="flex-grow overflow-y-auto p-6 space-y-4 bg-gray-50 custom-scroll"
+        >
+          <div class="text-center text-gray-400 mt-10">
+            <i class="fas fa-shopping-cart text-4xl mb-3 opacity-20"></i>
+            <p>Keranjang masih kosong.</p>
+          </div>
+        </div>
+
+        <div
+          class="border-t p-6 bg-white shadow-[0_-5px_15px_rgba(0,0,0,0.05)]"
+        >
+          <div class="flex justify-between items-end mb-4">
+            <span
+              class="text-gray-500 font-bold uppercase text-xs tracking-widest"
+              >Total Estimasi</span
+            >
+            <span id="cart-total" class="text-2xl font-black text-lumina-gold"
+              >Rp 0</span
+            >
+          </div>
+
+          <input
+            type="text"
+            id="cust-name"
+            placeholder="Nama Anda"
+            class="w-full mb-3 px-4 py-3 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:border-lumina-gold transition"
+          />
+
+          <button
+            onclick="checkoutWA()"
+            class="w-full bg-green-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-green-700 transition shadow-lg flex items-center justify-center gap-2"
+          >
+            <i class="fab fa-whatsapp text-2xl"></i> Checkout WhatsApp
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="toast"
+      class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-lumina-dark text-white px-6 py-3 rounded-full shadow-lg z-[120] hidden items-center gap-3 transition-all duration-300"
+    >
+      <i class="fas fa-check-circle text-green-400"></i>
+      <span class="text-sm font-medium">Produk berhasil ditambahkan!</span>
+    </div>
+
+    <script>
+      // 1. DATA PRODUK (Database Sederhana)
+      const allProducts = [
+        {
+          id: 1,
+          name: "Sofa Velvet Emerald",
+          price: 8500000,
+          category: "LivingRoom",
+          image:
+            "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80",
+          desc: "Sofa tiga dudukan dengan material velvet premium. Rangka jati solid.",
+        },
+        {
+          id: 2,
+          name: "Meja Marmer Gold",
+          price: 3200000,
+          category: "LivingRoom",
+          image:
+            "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&q=80",
+          desc: "Meja tamu marmer carrara dengan kaki besi gold.",
+        },
+        {
+          id: 3,
+          name: "Tempat Tidur King Size",
+          price: 12000000,
+          category: "Bedroom",
+          image:
+            "https://images.unsplash.com/photo-1505691938895-1758d7eaa511?auto=format&fit=crop&q=80",
+          desc: "Tempat tidur King (180x200) dengan headboard linen.",
+        },
+        {
+          id: 4,
+          name: "Lampu Tidur Minimalis",
+          price: 450000,
+          category: "Bedroom",
+          image:
+            "https://images.unsplash.com/photo-1507473884658-66a3ea901ada?auto=format&fit=crop&q=80",
+          desc: "Lampu tidur cahaya warm white menenangkan.",
+        },
+        {
+          id: 5,
+          name: "Meja Kerja Kayu Jati",
+          price: 4200000,
+          category: "Workplace",
+          image:
+            "https://images.unsplash.com/photo-1518455027359-f3f816b1a228?auto=format&fit=crop&q=80",
+          desc: "Meja kerja skandinavia dengan laci penyimpanan.",
+        },
+        {
+          id: 6,
+          name: "Kursi Ergonomis Pro",
+          price: 2100000,
+          category: "Workplace",
+          image:
+            "https://images.unsplash.com/photo-1505797149-43b0069ec26b?auto=format&fit=crop&q=80",
+          desc: "Kursi kerja mesh breathable dengan penyangga lumbal.",
+        },
+      ];
+
+      // ==========================================
+      // LOGIC KERANJANG (SHOPPING CART SYSTEM)
+      // ==========================================
+
+      // Ambil data dari LocalStorage saat web dibuka
+      let cart = JSON.parse(localStorage.getItem("lumina_cart")) || [];
+
+      // Fungsi Simpan ke LocalStorage
+      function saveCart() {
+        localStorage.setItem("lumina_cart", JSON.stringify(cart));
+        updateCartCount();
+        renderCartItems();
+      }
+
+      // Fungsi Tambah ke Keranjang
+      function addToCart(id) {
+        const product = allProducts.find((p) => p.id === id);
+
+        // Cek apakah barang sudah ada di keranjang
+        const existingItem = cart.find((item) => item.id === id);
+
+        if (existingItem) {
+          existingItem.qty++;
+        } else {
+          cart.push({ ...product, qty: 1 });
+        }
+
+        saveCart();
+        showToast(); // Tampilkan notifikasi
+        closeModal(); // Tutup modal detail produk
+        toggleCart(); // Buka keranjang otomatis (opsional)
+      }
+
+      // Fungsi Hapus Item
+      function removeFromCart(id) {
+        cart = cart.filter((item) => item.id !== id);
+        saveCart();
+      }
+
+      // Fungsi Update Tambah/Kurang Qty di Keranjang
+      function updateQty(id, change) {
+        const item = cart.find((item) => item.id === id);
+        if (item) {
+          item.qty += change;
+          if (item.qty <= 0) removeFromCart(id);
+          else saveCart();
+        }
+      }
+
+      // Update Angka di Ikon Keranjang (Navbar)
+      function updateCartCount() {
+        const count = cart.reduce((sum, item) => sum + item.qty, 0);
+        const badge = document.getElementById("cart-count");
+        badge.innerText = count;
+        // Animasi kecil
+        badge.classList.add("scale-125");
+        setTimeout(() => badge.classList.remove("scale-125"), 200);
+      }
+
+      // Render Tampilan Keranjang Side-Panel
+      function renderCartItems() {
+        const container = document.getElementById("cart-items");
+        const totalEl = document.getElementById("cart-total");
+
+        if (cart.length === 0) {
+          container.innerHTML = `
+                <div class="text-center text-gray-400 mt-10">
+                    <i class="fas fa-shopping-cart text-4xl mb-3 opacity-20"></i>
+                    <p>Keranjang masih kosong.</p>
+                </div>`;
+          totalEl.innerText = "Rp 0";
+          return;
+        }
+
+        let total = 0;
+        container.innerHTML = cart
+          .map((item) => {
+            total += item.price * item.qty;
+            return `
+                <div class="flex gap-4 bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                    <img src="${item.image}" class="w-16 h-16 object-cover rounded-lg">
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-sm text-lumina-dark line-clamp-1">${item.name}</h4>
+                        <p class="text-xs text-lumina-gold font-bold">Rp ${item.price.toLocaleString("id-ID")}</p>
+                        
+                        <div class="flex items-center gap-3 mt-2">
+                            <button onclick="updateQty(${item.id}, -1)" class="w-5 h-5 bg-gray-100 rounded text-xs hover:bg-gray-200">-</button>
+                            <span class="text-xs font-bold">${item.qty}</span>
+                            <button onclick="updateQty(${item.id}, 1)" class="w-5 h-5 bg-gray-100 rounded text-xs hover:bg-gray-200">+</button>
+                            <button onclick="removeFromCart(${item.id})" class="ml-auto text-red-400 text-xs hover:text-red-600"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+          })
+          .join("");
+
+        totalEl.innerText = "Rp " + total.toLocaleString("id-ID");
+      }
+
+      // Fungsi Checkout WhatsApp
+      function checkoutWA() {
+        if (cart.length === 0) return alert("Keranjang masih kosong!");
+
+        const name = document.getElementById("cust-name").value;
+        if (!name) return alert("Mohon isi nama Anda terlebih dahulu.");
+
+        let message = `Halo LUMINA, saya ${name} ingin memesan:\n\n`;
+        let total = 0;
+
+        cart.forEach((item, index) => {
+          const subtotal = item.price * item.qty;
+          total += subtotal;
+          message += `${index + 1}. ${item.name} (${item.qty}x) - Rp ${subtotal.toLocaleString("id-ID")}\n`;
+        });
+
+        message += `\n*Total Tagihan: Rp ${total.toLocaleString("id-ID")}*`;
+        message += `\n\nMohon info ketersediaan stok & ongkir. Terima kasih!`;
+
+        const phone = "6281234567890"; // Ganti dengan nomor WA Admin kamu
+        window.open(
+          `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
+          "_blank",
+        );
+      }
+
+      // Toggle (Buka/Tutup) Keranjang
+      function toggleCart() {
+        const modal = document.getElementById("cart-modal");
+        if (modal.classList.contains("hidden")) {
+          modal.classList.remove("hidden");
+          modal.classList.add("flex");
+          renderCartItems();
+        } else {
+          modal.classList.add("hidden");
+          modal.classList.remove("flex");
+        }
+      }
+
+      // Show Toast Notification
+      function showToast() {
+        const toast = document.getElementById("toast");
+        toast.classList.remove("hidden");
+        toast.classList.add("flex");
+        setTimeout(() => {
+          toast.classList.add("hidden");
+          toast.classList.remove("flex");
+        }, 3000);
+      }
+
+      // ==========================================
+      // LOGIC KATALOG & RENDER HALAMAN
+      // ==========================================
+
+      function renderKatalog() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentCategory = urlParams.get("category");
+        const grid = document.getElementById("product-grid");
+        const title = document.getElementById("category-title");
+        const descText = document.getElementById("category-desc");
+
+        // Filter produk
+        const filtered = allProducts.filter(
+          (p) => p.category === currentCategory,
+        );
+
+        if (currentCategory) {
+          title.innerText = currentCategory.replace(/([A-Z])/g, " $1").trim();
+          descText.innerText = "Koleksi terpilih untuk " + title.innerText;
+        } else {
+          title.innerText = "Semua Koleksi";
+        }
+
+        if (filtered.length === 0) {
+          grid.innerHTML = `<p class="col-span-full text-center py-20 text-gray-400">Silakan pilih kategori dari halaman depan.</p>`;
+          return;
+        }
+
+        grid.innerHTML = filtered
+          .map(
+            (product) => `
+            <div onclick="openDetail(${product.id})" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition duration-300 border border-gray-100 group cursor-pointer">
+                <div class="h-64 overflow-hidden relative">
+                    <img src="${product.image}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                    <span class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-lumina-dark">
+                        ${product.category}
+                    </span>
+                </div>
+                <div class="p-6">
+                    <h3 class="font-bold text-lg mb-1 text-lumina-dark">${product.name}</h3>
+                    <p class="text-lumina-gold font-black text-xl">Rp ${product.price.toLocaleString("id-ID")}</p>
+                    <button class="mt-4 w-full bg-gray-100 text-lumina-dark py-2 rounded-lg text-sm font-bold group-hover:bg-lumina-dark group-hover:text-white transition">
+                        Lihat Detail
+                    </button>
+                </div>
+            </div>
+        `,
+          )
+          .join("");
+      }
+
+      // Logic Modal Detail Produk
+      let currentDetailId = null; // Menyimpan ID produk yang sedang dilihat
+
+      function openDetail(id) {
+        const product = allProducts.find((p) => p.id === id);
+        if (!product) return;
+
+        currentDetailId = id; // Simpan ID
+        document.getElementById("modal-img").src = product.image;
+        document.getElementById("modal-name").innerText = product.name;
+        document.getElementById("modal-cat").innerText = product.category;
+        document.getElementById("modal-price").innerText =
+          `Rp ${product.price.toLocaleString("id-ID")}`;
+        document.getElementById("modal-desc").innerText =
+          product.desc || "Deskripsi produk belum tersedia.";
+
+        // Update fungsi tombol Add to Cart di dalam Modal
+        const btn = document.getElementById("add-to-cart-btn");
+        // Kita set onclick via JS agar bisa pass ID dinamis
+        btn.onclick = function () {
+          addToCart(currentDetailId);
+        };
+
+        const modal = document.getElementById("product-modal");
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      }
+
+      function closeModal() {
+        document.getElementById("product-modal").classList.add("hidden");
+        document.getElementById("product-modal").classList.remove("flex");
+      }
+
+      // Event Listeners
+      document.addEventListener("DOMContentLoaded", () => {
+        renderKatalog();
+        updateCartCount(); // Load cart count saat pertama kali buka
+      });
+
+      // Close modal on click outside
+      document
+        .getElementById("product-modal")
+        .addEventListener("click", (e) => {
+          if (e.target.id === "product-modal") closeModal();
+        });
+    </script>
+  </body>
+</html>

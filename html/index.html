@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LUMINA | Cashier Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              lumina: {
+                dark: "#1a2a40",
+                gold: "#d4af37",
+                light: "#f8f9fa",
+              },
+            },
+            fontFamily: { sans: ["Poppins", "sans-serif"] },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body
+    class="bg-gray-100 text-gray-800 font-sans h-screen flex flex-col overflow-hidden"
+  >
+    <nav class="bg-lumina-dark text-white shadow-md flex-none z-10">
+      <div
+        class="container mx-auto px-6 py-4 flex justify-between items-center"
+      >
+        <div class="flex items-center gap-4">
+          <h1 class="text-2xl font-bold tracking-widest text-lumina-gold">
+            <i class="fas fa-cash-register mr-2"></i> LUMINA CASHIER
+          </h1>
+          <a
+            href="/html/landing.html"
+            class="text-xs bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-full transition"
+          >
+            <i class="fas fa-arrow-left mr-1"></i> Ke Landing Page
+          </a>
+        </div>
+
+        <div class="flex gap-4">
+          <a href="/html/index.html" class="text-sm font-bold text-gray-800 bg-lumina-gold px-3 py-1 rounded text-lumina-dark">Kasir</a>
+          <a
+            href="/html/laporan.html"
+            class="text-sm font-bold text-gray-400 hover:text-white transition py-1"
+            >Laporan Penjualan</a
+          >
+        </div>
+
+        <button
+          onclick="openProductModal()"
+          class="bg-lumina-gold text-lumina-dark px-4 py-2 rounded-lg font-bold hover:bg-yellow-400 transition shadow-sm text-sm"
+        >
+          <i class="fas fa-plus mr-2"></i> Kelola Produk
+        </button>
+      </div>
+    </nav>
+
+    <div class="flex flex-1 overflow-hidden">
+      <div class="flex-1 flex flex-col p-6 overflow-hidden">
+        <div class="flex flex-col md:flex-row gap-4 mb-6 flex-none">
+          <div class="relative flex-grow">
+            <input
+              type="text"
+              id="search-input"
+              placeholder="Cari nama produk..."
+              class="w-full pl-10 pr-4 py-3 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-lumina-gold outline-none"
+              oninput="searchProducts()"
+            />
+            <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
+          </div>
+          <div
+            id="category-filters"
+            class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
+          ></div>
+        </div>
+
+        <div class="flex-grow overflow-y-auto pr-2 custom-scroll">
+          <h2 class="text-lg font-bold mb-4 text-lumina-dark">Daftar Produk</h2>
+          <div
+            id="product-list"
+            class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-20"
+          ></div>
+        </div>
+      </div>
+
+      <div
+        class="w-full md:w-[400px] bg-white shadow-xl flex flex-col h-full border-l border-gray-200 z-20"
+      >
+        <div class="p-5 border-b border-gray-100 bg-gray-50">
+          <h2 class="text-xl font-bold text-lumina-dark">Keranjang Belanja</h2>
+          <p class="text-xs text-gray-400" id="transaction-id">TRX-...</p>
+        </div>
+
+        <div
+          id="cart-items"
+          class="flex-grow overflow-y-auto p-4 space-y-3 custom-scroll bg-white"
+        >
+          <div class="text-center text-gray-400 mt-10">
+            <i class="fas fa-shopping-basket text-4xl mb-2 opacity-30"></i>
+            <p>Keranjang kosong</p>
+          </div>
+        </div>
+
+        <div class="p-6 bg-gray-50 border-t border-gray-200 space-y-4">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-500">Subtotal</span>
+            <span id="subtotal-price" class="font-bold">Rp 0</span>
+          </div>
+          <div
+            class="flex justify-between items-center text-xl font-black text-lumina-dark"
+          >
+            <span>Total</span>
+            <span id="total-price">Rp 0</span>
+          </div>
+
+          <button
+            onclick="processCheckout()"
+            class="w-full bg-lumina-dark text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-800 transition shadow-lg flex justify-center items-center gap-2"
+          >
+            <i class="fas fa-print"></i> Bayar & Cetak Struk
+          </button>
+        </div>
+        
+        </div>
+    </div>
+
+    <div
+      id="product-modal"
+      class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm"
+    >
+      <div
+        class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+      >
+        <div class="flex justify-between items-center p-6 border-b">
+          <h3 class="text-xl font-bold text-lumina-dark">
+            Manajemen Inventaris
+          </h3>
+          <button
+            onclick="closeProductModal()"
+            class="text-gray-400 hover:text-red-500 transition"
+          >
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+
+        <div class="flex flex-col md:flex-row h-full overflow-hidden">
+          <div class="w-full md:w-1/3 p-6 bg-gray-50 border-r overflow-y-auto">
+            <h4
+              class="text-sm font-bold text-gray-500 uppercase mb-4 tracking-wider"
+            >
+              Form Produk
+            </h4>
+            <input type="hidden" id="product-id" />
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1"
+                  >Nama Produk</label
+                >
+                <input
+                  type="text"
+                  id="product-name"
+                  class="w-full p-2 border rounded-lg focus:ring-1 focus:ring-lumina-gold outline-none text-sm"
+                />
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 mb-1"
+                    >Harga (Rp)</label
+                  >
+                  <input
+                    type="number"
+                    id="product-price"
+                    class="w-full p-2 border rounded-lg focus:ring-1 focus:ring-lumina-gold outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-gray-500 mb-1"
+                    >Stok</label
+                  >
+                  <input
+                    type="number"
+                    id="product-stock"
+                    class="w-full p-2 border rounded-lg focus:ring-1 focus:ring-lumina-gold outline-none text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="block text-xs font-bold text-gray-500"
+                    >Kategori</label
+                  >
+                  <div class="flex gap-2">
+                    <button
+                      onclick="deleteCategory()"
+                      id="btn-delete-cat"
+                      class="text-[10px] text-red-500 font-bold hover:underline cursor-pointer hidden"
+                    >
+                      <i class="fas fa-trash-alt"></i> Hapus
+                    </button>
+                    <button
+                      onclick="toggleCategoryMode()"
+                      class="text-[10px] text-lumina-gold font-bold hover:underline cursor-pointer"
+                      id="toggle-cat-btn"
+                    >
+                      + Tambah Baru
+                    </button>
+                  </div>
+                </div>
+
+                <div id="cat-select-wrapper" class="relative">
+                  <select
+                    id="product-category-select"
+                    onchange="checkCategorySelection()"
+                    class="w-full p-2 border rounded-lg focus:ring-1 focus:ring-lumina-gold outline-none text-sm bg-white appearance-none"
+                  >
+                    <option value="">Pilih Kategori...</option>
+                  </select>
+                  <i
+                    class="fas fa-chevron-down absolute right-3 top-3 text-gray-400 text-xs pointer-events-none"
+                  ></i>
+                </div>
+
+                <div id="cat-input-wrapper" class="hidden relative">
+                  <input
+                    type="text"
+                    id="product-category-input"
+                    placeholder="Ketik nama kategori baru..."
+                    class="w-full p-2 border border-lumina-gold rounded-lg focus:ring-1 focus:ring-lumina-gold outline-none text-sm bg-yellow-50"
+                  />
+                  <button
+                    onclick="toggleCategoryMode()"
+                    class="absolute right-2 top-1.5 text-gray-400 hover:text-red-500"
+                  >
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1"
+                  >URL Gambar</label
+                >
+                <input
+                  type="text"
+                  id="product-image"
+                  class="w-full p-2 border rounded-lg focus:ring-1 focus:ring-lumina-gold outline-none text-sm"
+                  placeholder="https://..."
+                />
+              </div>
+
+              <button
+                onclick="saveProduct()"
+                class="w-full bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700 transition shadow-md mt-4"
+              >
+                <i class="fas fa-save mr-2"></i> Simpan Produk
+              </button>
+              <button
+                onclick="resetForm()"
+                class="w-full bg-gray-200 text-gray-600 py-2 rounded-lg font-bold hover:bg-gray-300 transition text-sm mt-2"
+              >
+                Reset Form
+              </button>
+            </div>
+          </div>
+
+          <div class="w-full md:w-2/3 p-0 flex flex-col h-full">
+            <div class="p-4 bg-gray-100 border-b">
+              <input
+                type="text"
+                id="search-inventory"
+                placeholder="Cari di database..."
+                class="w-full px-4 py-2 rounded-lg border focus:outline-none text-sm"
+              />
+            </div>
+
+            <div
+              class="overflow-y-auto flex-grow p-0 max-h-[500px] border border-gray-200 rounded-lg"
+            >
+              <table class="w-full text-left border-collapse relative">
+                <thead
+                  class="bg-gray-50 sticky top-0 z-10 shadow-sm text-gray-700"
+                >
+                  <tr>
+                    <th
+                      class="p-3 text-xs font-bold text-gray-500 uppercase border-b"
+                    >
+                      Produk
+                    </th>
+                    <th
+                      class="p-3 text-xs font-bold text-gray-500 uppercase border-b"
+                    >
+                      Kategori
+                    </th>
+                    <th
+                      class="p-3 text-xs font-bold text-gray-500 uppercase border-b"
+                    >
+                      Harga
+                    </th>
+                    <th
+                      class="p-3 text-xs font-bold text-gray-500 uppercase border-b text-center"
+                    >
+                      Stok
+                    </th>
+                    <th
+                      class="p-3 text-xs font-bold text-gray-500 uppercase border-b text-center"
+                    >
+                      Aksi
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody
+                  id="inventory-table-body"
+                  class="text-sm divide-y divide-gray-100 bg-white"
+                ></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="receipt-modal"
+      class="fixed inset-0 bg-black/80 z-[150] hidden flex items-center justify-center p-4 backdrop-blur-sm"
+    >
+      <div
+        class="bg-white w-full max-w-sm rounded-lg shadow-2xl overflow-hidden animate-fade-in"
+      >
+        <div
+          id="receipt-print-area"
+          class="p-8 bg-white text-gray-800 font-mono text-sm"
+        >
+          <div class="text-center border-b-2 border-dashed pb-4 mb-4">
+            <h2 class="text-2xl font-bold tracking-tighter">LUMINA</h2>
+            <p class="text-[10px] uppercase">Luxury Furniture & Living</p>
+            <p class="text-[10px] mt-1" id="receipt-date"></p>
+          </div>
+
+          <div class="space-y-2 mb-4">
+            <div class="flex justify-between text-[10px]">
+              <span>No. Transaksi:</span>
+              <span id="receipt-trx-id" class="font-bold"></span>
+            </div>
+            <div class="flex justify-between text-[10px]">
+              <span>Kasir:</span>
+              <span>Admin Lumina</span>
+            </div>
+          </div>
+
+          <table class="w-full mb-4 text-[11px]">
+            <thead class="border-b border-dashed">
+              <tr>
+                <th class="text-left py-2">Item</th>
+                <th class="text-center py-2">Qty</th>
+                <th class="text-right py-2">Total</th>
+              </tr>
+            </thead>
+            <tbody
+              id="receipt-items-list"
+              class="divide-y divide-gray-100"
+            ></tbody>
+          </table>
+
+          <div class="border-t-2 border-dashed pt-4 space-y-1">
+            <div class="flex justify-between font-bold text-lg">
+              <span>TOTAL</span>
+              <span id="receipt-total"></span>
+            </div>
+          </div>
+
+          <div class="text-center mt-8 pt-4 border-t border-gray-100">
+            <p class="text-[10px]">Terima kasih atas kunjungan Anda</p>
+            <p class="text-[9px] text-gray-400 mt-1">
+              Barang yang sudah dibeli tidak dapat ditukar/dikembalikan
+            </p>
+          </div>
+        </div>
+
+        <div class="p-4 bg-gray-50 flex gap-2">
+          <button
+            onclick="window.print()"
+            class="flex-1 bg-lumina-dark text-white py-2 rounded-lg font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2"
+          >
+            <i class="fas fa-print"></i> Cetak
+          </button>
+          <button
+            onclick="closeReceipt()"
+            class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-bold hover:bg-gray-300 transition"
+          >
+            Selesai
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        #receipt-print-area,
+        #receipt-print-area * {
+          visibility: visible;
+        }
+        #receipt-print-area {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          padding: 0;
+          margin: 0;
+        }
+      }
+    </style>
+
+    <style>
+      .custom-scroll::-webkit-scrollbar {
+        width: 5px;
+      }
+      .custom-scroll::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+
+    <script type="module" src="/js/script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LUMINA | Luxury Furniture & Living</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              lumina: {
+                dark: "#1a2a40",
+                gold: "#d4af37",
+                light: "#f8f9fa",
+                text: "#2c3e50",
+              },
+            },
+            fontFamily: { sans: ["Poppins", "sans-serif"] },
+            animation: {
+              "slide-in-right": "slideInRight 0.3s ease-out forwards",
+              "fade-in": "fadeIn 0.5s ease-out forwards",
+            },
+            keyframes: {
+              slideInRight: {
+                "0%": { transform: "translateX(100%)" },
+                "100%": { transform: "translateX(0)" },
+              },
+              fadeIn: {
+                "0%": { opacity: "0" },
+                "100%": { opacity: "1" },
+              },
+            },
+          },
+        },
+      };
+    </script>
+
+    <link rel="stylesheet" href="/css/landing.css" />
+  </head>
+
+  <body class="bg-gray-50 text-lumina-text font-sans">
+    <nav class="bg-lumina-dark text-white shadow-lg sticky top-0 z-50">
+      <div
+        class="container mx-auto px-6 py-4 flex justify-between items-center"
+      >
+        <h1
+          class="text-2xl font-black tracking-widest text-lumina-gold cursor-pointer"
+          onclick="location.reload()"
+        >
+          <i class="fa-solid fa-couch"></i> LUMINA
+        </h1>
+        <div class="flex items-center gap-6">
+          <button
+            onclick="toggleCartModal()"
+            class="relative p-2 text-white hover:text-lumina-gold transition"
+          >
+            <i class="fas fa-shopping-bag text-xl"></i>
+            <span
+              id="cart-count"
+              class="absolute -top-1 -right-1 bg-lumina-gold text-lumina-dark text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center hidden"
+              >0</span
+            >
+          </button>
+
+          <button
+            onclick="openLoginModal()"
+            class="bg-lumina-gold text-lumina-dark px-5 py-2 rounded-full hover:bg-white font-bold transition shadow-md text-sm"
+          >
+            <i class="fas fa-lock mr-2"></i>Area Kasir
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <header
+      class="bg-lumina-dark text-white py-24 px-6 relative overflow-hidden"
+    >
+      <div
+        class="absolute top-0 right-0 opacity-10 transform translate-x-1/3 -translate-y-1/4"
+      >
+        <i class="fas fa-couch text-[400px]"></i>
+      </div>
+      <div class="container mx-auto relative z-10">
+        <span
+          class="text-lumina-gold font-bold tracking-[0.3em] uppercase mb-4 block animate-fade-in"
+        >
+          Exclusive Collection
+        </span>
+        <h2
+          class="text-5xl md:text-7xl font-black mb-6 leading-tight animate-slide-in"
+        >
+          Elevate Your <br />
+          <span
+            class="text-transparent bg-clip-text bg-gradient-to-r from-lumina-gold to-yellow-200"
+          >
+            Living Space
+          </span>
+        </h2>
+        <p class="text-xl mb-10 opacity-80 max-w-xl font-light">
+          Temukan furnitur premium untuk kenyamanan hunian modern Anda.
+        </p>
+        <a
+          href="#customer-product-grid"
+          class="bg-lumina-gold text-lumina-dark font-bold py-4 px-10 rounded-full shadow-lg hover:bg-white transition uppercase tracking-widest text-sm inline-block"
+        >
+          Lihat Katalog
+        </a>
+      </div>
+    </header>
+
+    <main class="container mx-auto py-16 px-6">
+      <div class="text-center mb-12">
+        <h3 class="text-3xl md:text-4xl font-black text-lumina-dark mb-4">
+          Belanja Berdasarkan Ruangan
+        </h3>
+        <p class="text-gray-500">
+          Pilih kategori untuk melihat koleksi lengkap kami
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+        <div
+          class="group relative overflow-hidden rounded-3xl bg-gray-200 h-[400px] cursor-pointer shadow-xl"
+          onclick="
+            filterCategory('Living Room');
+            window.scrollTo({
+              top:
+                document.getElementById('customer-product-grid').offsetTop -
+                100,
+              behavior: 'smooth',
+            });
+          "
+        >
+          <img
+            src="/img/living_room.jpg"
+            class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90"
+          />
+          <div
+            class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 text-white"
+          >
+            <h4 class="text-2xl font-bold mb-2">Living Room</h4>
+            <p class="text-sm opacity-80 mb-4">Sofa, Meja Tamu, & Hiburan</p>
+            <span
+              class="bg-lumina-gold text-lumina-dark py-2 px-6 rounded-full font-bold text-xs w-fit"
+              >Lihat Koleksi</span
+            >
+          </div>
+        </div>
+
+        <div
+          class="group relative overflow-hidden rounded-3xl bg-gray-200 h-[400px] cursor-pointer shadow-xl"
+          onclick="
+            filterCategory('Bedroom');
+            window.scrollTo({
+              top:
+                document.getElementById('customer-product-grid').offsetTop -
+                100,
+              behavior: 'smooth',
+            });
+          "
+        >
+          <img
+            src="/img/bedroom.jpg"
+            class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90"
+          />
+          <div
+            class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 text-white"
+          >
+            <h4 class="text-2xl font-bold mb-2">Bedroom</h4>
+            <p class="text-sm opacity-80 mb-4">
+              Tempat Tidur, Lemari, & Nyenyak
+            </p>
+            <span
+              class="bg-lumina-gold text-lumina-dark py-2 px-6 rounded-full font-bold text-xs w-fit"
+              >Lihat Koleksi</span
+            >
+          </div>
+        </div>
+
+        <div
+          class="group relative overflow-hidden rounded-3xl bg-gray-200 h-[400px] cursor-pointer shadow-xl"
+          onclick="
+            filterCategory('Workplace');
+            window.scrollTo({
+              top:
+                document.getElementById('customer-product-grid').offsetTop -
+                100,
+              behavior: 'smooth',
+            });
+          "
+        >
+          <img
+            src="/img/workplace.jpg"
+            class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90"
+          />
+          <div
+            class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 text-white"
+          >
+            <h4 class="text-2xl font-bold mb-2">Workplace</h4>
+            <p class="text-sm opacity-80 mb-4">
+              Meja Kerja, Kursi, & Produktivitas
+            </p>
+            <span
+              class="bg-lumina-gold text-lumina-dark py-2 px-6 rounded-full font-bold text-xs w-fit"
+              >Lihat Koleksi</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4"
+        id="katalog"
+      >
+        <div>
+          <h3 id="katalog-title" class="text-2xl font-bold text-lumina-dark">
+            Koleksi Terbaru
+          </h3>
+          <p class="text-gray-400 text-sm">Pilihan terbaik untuk Anda</p>
+        </div>
+
+        <div class="flex flex-wrap gap-2 justify-center">
+          <button
+            onclick="filterCategory('Semua')"
+            class="category-btn px-6 py-2 rounded-full border border-lumina-dark bg-lumina-dark text-white font-medium shadow-md text-sm transition"
+          >
+            Semua
+          </button>
+          <button
+            onclick="filterCategory('Living Room')"
+            class="category-btn px-6 py-2 rounded-full border border-gray-300 text-gray-500 font-medium hover:border-lumina-dark hover:text-lumina-dark transition text-sm"
+          >
+            Living Room
+          </button>
+          <button
+            onclick="filterCategory('Bedroom')"
+            class="category-btn px-6 py-2 rounded-full border border-gray-300 text-gray-500 font-medium hover:border-lumina-dark hover:text-lumina-dark transition text-sm"
+          >
+            Bedroom
+          </button>
+          <button
+            onclick="filterCategory('Workplace')"
+            class="category-btn px-6 py-2 rounded-full border border-gray-300 text-gray-500 font-medium hover:border-lumina-dark hover:text-lumina-dark transition text-sm"
+          >
+            Workplace
+          </button>
+        </div>
+
+        <div class="relative w-full md:w-64">
+          <input
+            type="text"
+            oninput="handleSearch(event)"
+            placeholder="Cari furnitur..."
+            class="w-full pl-10 pr-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:border-lumina-gold transition"
+          />
+          <i class="fas fa-search absolute left-4 top-3 text-gray-400"></i>
+        </div>
+      </div>
+
+      <div
+        id="customer-product-grid"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+      >
+        <div id="loading-status" class="col-span-full text-center py-20">
+          <i class="fas fa-circle-notch fa-spin text-4xl text-lumina-gold"></i>
+          <p class="mt-4 text-gray-400">Memuat koleksi...</p>
+        </div>
+      </div>
+    </main>
+
+    <div
+      id="product-detail-modal"
+      class="fixed inset-0 bg-black/80 z-[70] hidden items-center justify-center p-4"
+    >
+      <div
+        class="bg-white w-full max-w-4xl rounded-3xl overflow-hidden relative shadow-2xl animate-modal-in"
+      >
+        <button
+          onclick="closeProductDetail()"
+          class="absolute top-5 right-5 w-10 h-10 bg-white shadow-md rounded-full flex items-center justify-center text-gray-400 hover:text-lumina-dark z-10 transition"
+        >
+          <i class="fas fa-times"></i>
+        </button>
+        <div
+          id="detail-content"
+          class="p-8 md:p-12 max-h-[90vh] overflow-y-auto custom-scroll"
+        ></div>
+      </div>
+    </div>
+
+    <div
+      id="cart-modal"
+      class="fixed inset-0 bg-black/50 z-[110] hidden justify-end transition-opacity"
+    >
+      <div
+        class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col animate-slide-in-right"
+      >
+        <div
+          class="bg-lumina-dark p-6 flex justify-between items-center text-white"
+        >
+          <h3 class="text-xl font-bold">
+            <i class="fas fa-shopping-bag mr-2"></i>Keranjang Anda
+          </h3>
+          <button
+            onclick="toggleCartModal()"
+            class="text-gray-300 hover:text-white transition"
+          >
+            <i class="fas fa-times text-xl"></i>
+          </button>
+        </div>
+
+        <div
+          id="cart-items"
+          class="flex-grow overflow-y-auto p-6 space-y-4 bg-gray-50 custom-scroll"
+        ></div>
+
+        <div
+          id="checkout-form"
+          class="border-t p-6 bg-white shadow-[0_-5px_15px_rgba(0,0,0,0.05)]"
+        >
+          <div class="flex justify-between items-end mb-4">
+            <span
+              class="text-gray-500 font-bold uppercase text-xs tracking-widest"
+              >Total Estimasi</span
+            >
+            <span id="cart-total" class="text-2xl font-black text-lumina-gold"
+              >Rp 0</span
+            >
+          </div>
+
+          <div class="space-y-3 mb-4">
+            <input
+              type="text"
+              id="cust-name"
+              placeholder="Nama Penerima"
+              class="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm focus:outline-none focus:border-lumina-gold transition"
+            />
+            <textarea
+              id="cust-address"
+              placeholder="Alamat Lengkap Pengiriman"
+              rows="2"
+              class="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm focus:outline-none focus:border-lumina-gold transition resize-none"
+            ></textarea>
+          </div>
+
+          <button
+            onclick="checkoutWhatsApp()"
+            class="w-full bg-green-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-green-700 transition shadow-lg flex items-center justify-center gap-2"
+          >
+            <i class="fab fa-whatsapp text-2xl"></i> Checkout WhatsApp
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="login-modal"
+      class="fixed inset-0 bg-lumina-dark/90 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4 animate-fade-in"
+    >
+      <div
+        class="bg-white w-full max-w-sm rounded-2xl p-8 shadow-2xl relative animate-slide-in text-center"
+      >
+        <div
+          class="w-16 h-16 bg-lumina-light rounded-full flex items-center justify-center mx-auto mb-6"
+        >
+          <i class="fas fa-user-shield text-2xl text-lumina-dark"></i>
+        </div>
+        <h3 class="text-xl font-bold text-lumina-dark mb-2">Akses Terbatas</h3>
+        <p class="text-gray-400 text-xs mb-6">
+          Masukkan sandi administrator untuk mengelola stok.
+        </p>
+        <input
+          type="password"
+          id="admin-password"
+          class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center font-bold text-lumina-dark mb-6 focus:ring-1 focus:ring-lumina-gold outline-none"
+          placeholder="Sandi Admin"
+          onkeyup="if (event.key === 'Enter') checkLogin();"
+        />
+        <button
+          onclick="checkLogin()"
+          class="w-full bg-lumina-dark text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition shadow-lg mb-3"
+        >
+          Masuk
+        </button>
+        <button
+          onclick="closeLoginModal()"
+          class="text-gray-400 text-xs hover:text-red-500 font-medium transition"
+        >
+          Batal
+        </button>
+      </div>
+    </div>
+
+    <footer class="bg-lumina-dark text-white py-16 text-center">
+      <h4 class="text-2xl font-black text-lumina-gold mb-4 tracking-widest">
+        LUMINA
+      </h4>
+      <p class="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]">
+        &copy; 2026 LUMINA Furniture. All Rights Reserved.
+      </p>
+    </footer>
+
+    <nav
+      class="mobile-nav fixed bottom-0 left-0 right-0 h-16 md:hidden flex justify-around items-center z-[100] px-2 pb-safe bg-white border-t"
+    >
+      <a
+        href="#"
+        onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
+        class="nav-item active flex flex-col items-center justify-center w-full h-full text-lumina-dark"
+      >
+        <i class="fas fa-home"></i>
+        <span class="text-[10px] mt-1">Beranda</span>
+      </a>
+
+      <a
+        href="#customer-product-grid"
+        class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400"
+      >
+        <i class="fas fa-th-large"></i>
+        <span class="text-[10px] mt-1">Kategori</span>
+      </a>
+
+      <button
+        onclick="toggleCartModal()"
+        class="nav-item relative flex flex-col items-center justify-center w-full h-full text-gray-400"
+      >
+        <i class="fas fa-shopping-bag"></i>
+        <span class="text-[10px] mt-1">Keranjang</span>
+        <span
+          id="cart-count-mobile"
+          class="absolute top-2 right-4 bg-lumina-gold text-lumina-dark text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden"
+          >0</span
+        >
+      </button>
+
+      <button
+        onclick="openLoginModal()"
+        class="nav-item flex flex-col items-center justify-center w-full h-full text-gray-400"
+      >
+        <i class="fas fa-user-shield"></i>
+        <span class="text-[10px] mt-1">Admin</span>
+      </button>
+    </nav>
+
+    <style>
+      @media (max-width: 768px) {
+        body {
+          padding-bottom: 5rem;
+        }
+      }
+      /* Custom Scrollbar for Cart */
+      .custom-scroll::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scroll::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      .custom-scroll::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 10px;
+      }
+      .custom-scroll::-webkit-scrollbar-thumb:hover {
+        background: #aaa;
+      }
+    </style>
+
+    <script type="module" src="/js/landing.js"></script>
+  </body>
+</html>
