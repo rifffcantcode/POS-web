@@ -15,6 +15,23 @@
       rel="stylesheet"
     />
     <style>
+      /* Pastikan warna ini sesuai dengan palet Lumina kita */
+      .bg-lumina-dark {
+        background-color: #1d2939 !important; /* Biru gelap dari Figma */
+      }
+
+      .text-lumina-gold {
+        color: #d4af37 !important; /* Kuning emas dari Figma */
+      }
+
+      .bg-lumina-gold {
+        background-color: #d4af37 !important;
+      }
+
+      .text-lumina-dark {
+        color: #1d2939 !important;
+      }
+
       body {
         font-family: "Poppins", sans-serif;
       }
@@ -30,24 +47,52 @@
   </head>
   <body class="bg-gray-50 text-gray-800">
     <nav
-      class="bg-white border-b px-8 py-4 flex justify-between items-center sticky top-0 z-50 no-print"
+      class="bg-lumina-dark text-white shadow-lg flex-none z-20 border-b border-white/10"
     >
-      <div class="flex items-center gap-8">
-        <h1 class="text-2xl font-black tracking-tighter text-gray-800">
-          LUMINA <span class="text-xs font-normal text-gray-400">REPORTS</span>
-        </h1>
-        <div class="flex gap-4">
+      <div
+        class="container mx-auto px-6 py-4 flex justify-between items-center"
+      >
+        <div class="flex items-center gap-6">
+          <h1
+            class="text-xl font-bold tracking-widest text-lumina-gold flex items-center"
+          >
+            <i class="fas fa-chart-line mr-3"></i> LUMINA
+            <span class="ml-1 font-light text-white/70">REPORTS</span>
+          </h1>
+          <div class="h-6 w-[1px] bg-white/20"></div>
+          <a
+            href="landing.html"
+            class="flex items-center text-xs text-gray-400 hover:text-white transition-all group"
+          >
+            <i
+              class="fas fa-arrow-left mr-2 group-hover:-translate-x-1 transition-transform"
+            ></i>
+            Ke Landing Page
+          </a>
+        </div>
+
+        <div class="flex items-center bg-black/20 p-1 rounded-xl">
           <a
             href="index.html"
-            class="text-sm font-bold text-gray-500 hover:text-gray-800 transition"
-            >Dashboard Kasir</a
+            class="text-sm font-semibold text-gray-400 hover:text-white px-6 py-2 rounded-lg transition-all"
           >
+            Kasir
+          </a>
           <a
-            href="#"
-            class="text-sm font-bold text-gray-800 border-b-2 border-gray-800"
-            >Laporan Penjualan</a
+            href="laporan.html"
+            class="text-sm font-bold bg-lumina-gold text-lumina-dark px-6 py-2 rounded-lg shadow-md transition-all"
           >
+            Laporan Penjualan
+          </a>
         </div>
+
+        <button
+          onclick="window.print()"
+          class="bg-white/5 border border-white/10 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-lumina-gold hover:text-lumina-dark hover:border-lumina-gold transition-all duration-300 shadow-sm text-sm flex items-center gap-2"
+        >
+          <i class="fas fa-print"></i>
+          Cetak Laporan
+        </button>
       </div>
     </nav>
 
