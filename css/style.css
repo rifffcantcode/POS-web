@@ -504,8 +504,39 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
 
 @media print {
-    body * { visibility: hidden; }
-    #receipt-modal, #receipt-modal * { visibility: visible; }
-    #receipt-modal { position: absolute; left: 0; top: 0; width: 100%; }
-    .modal-actions { display: none; }
+    /* 1. Sembunyikan elemen latar belakang */
+    body * { 
+        visibility: hidden; 
+    }
+
+    /* 2. Tampilkan hanya modal struk */
+    #receipt-modal, #receipt-modal * { 
+        visibility: visible; 
+    }
+
+    /* 3. Atur dimensi kertas struk */
+    #receipt-modal { 
+        position: absolute; 
+        left: 0; 
+        top: 0; 
+        width: 80mm; /* Standar struk besar (80mm) atau ganti ke 58mm */
+        padding: 5mm;
+        margin: 0;
+        background: white;
+        box-shadow: none; /* Hilangkan bayangan modal saat diprint */
+        border: none;
+    }
+
+    /* 4. Sembunyikan tombol aksi (Print/Cancel) */
+    .modal-actions, 
+    button, 
+    .close-btn { 
+        display: none !important; 
+    }
+
+    /* 5. Pengaturan halaman browser */
+    @page {
+        size: auto;   /* Membiarkan konten menentukan tinggi kertas */
+        margin: 0;    /* Menghilangkan header/footer otomatis browser */
+    }
 }

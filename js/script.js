@@ -216,25 +216,38 @@ window.deleteCategory = async function() {
 }
 
 // ==========================================
-// 4. CRUD PRODUCT
+// 4. CRUD PRODUCT (VERSI PERBAIKAN)
 // ==========================================
 
 window.saveProduct = async function() {
-    const id = document.getElementById("product-id").value;
-    const name = document.getElementById("product-name").value;
-    const price = document.getElementById("product-price").value;
-    const stock = document.getElementById("product-stock").value;
-    const image = document.getElementById("product-image").value;
+    // 1. Ambil semua elemen input
+    const idEl = document.getElementById("product-id");
+    const nameEl = document.getElementById("product-name");
+    const priceEl = document.getElementById("product-price");
+    const stockEl = document.getElementById("product-stock");
+    const imageEl = document.getElementById("product-image");
+    const descEl = document.getElementById("product-desc");
+
+    // 2. Ambil nilai (values)
+    const id = idEl.value;
+    const name = nameEl.value.trim();
+    const price = priceEl.value;
+    const stock = stockEl.value;
+    const image = imageEl.value;
+    const description = descEl ? descEl.value : ""; 
     
     let category = "";
     if (isCategoryInputMode) {
-        category = document.getElementById("product-category-input").value.trim();
+        const catInput = document.getElementById("product-category-input");
+        category = catInput ? catInput.value.trim() : "";
         if(category) category = category.charAt(0).toUpperCase() + category.slice(1);
     } else {
-        category = document.getElementById("product-category-select").value;
+        const catSelect = document.getElementById("product-category-select");
+        category = catSelect ? catSelect.value : "";
     }
 
-    if (!name || !price || !stock || !category) {
+    // Validasi
+    if (!name || price === "" || stock === "" || !category) { 
         alert("Mohon lengkapi semua data!");
         return;
     }
@@ -244,62 +257,77 @@ window.saveProduct = async function() {
         category, 
         price: Number(price),
         stock: Number(stock),
-        image: image || "https://via.placeholder.com/150"
+        image: image || "https://via.placeholder.com/150",
+        description: description 
     };
 
     try {
+        // PROSES DATABASE
         if (id) {
             await updateDoc(doc(db, "products", id), productData);
         } else {
             await addDoc(productsRef, productData);
         }
-        resetForm();
+        
+        // JIKA BERHASIL: Munculkan pesan sukses dulu
         alert("Produk berhasil disimpan!");
+        
+        // BARU BERSIHKAN FORM (Gunakan fungsi resetForm yang sudah diperbaiki)
+        resetForm();
+
     } catch (error) {
-        console.error("Error:", error);
-        alert("Gagal menyimpan produk.");
+        // Hanya muncul jika benar-benar gagal ke Firebase
+        console.error("Detail Error:", error);
+        alert("Gagal menyimpan produk ke database.");
     }
+}
+
+window.resetForm = function() {
+    // Gunakan try-catch internal agar jika satu elemen tidak ada, yang lain tetap ter-reset
+    const fields = ["product-id", "product-name", "product-price", "product-stock", "product-image", "product-desc", "product-category-input"];
+    
+    fields.forEach(fieldId => {
+        const el = document.getElementById(fieldId);
+        if (el) el.value = "";
+    });
+
+    isCategoryInputMode = false;
+    const selWrapper = document.getElementById("cat-select-wrapper");
+    const inpWrapper = document.getElementById("cat-input-wrapper");
+    const selEl = document.getElementById("product-category-select");
+
+    if (selWrapper) selWrapper.classList.remove("hidden");
+    if (inpWrapper) inpWrapper.classList.add("hidden");
+    if (selEl) selEl.value = "";
+    
+    checkCategorySelection();
 }
 
 window.editProduct = function(id) {
     const product = allProducts.find(p => p.id === id);
     if (!product) return;
 
+    // Masukkan data ke input form
     document.getElementById("product-id").value = product.id;
     document.getElementById("product-name").value = product.name;
     document.getElementById("product-price").value = product.price;
     document.getElementById("product-stock").value = product.stock;
-    document.getElementById("product-image").value = product.image;
-
+    document.getElementById("product-image").value = product.image || "";
+    
+    // PERBAIKAN: Mengambil deskripsi dari objek product, bukan variabel gaib
+    document.getElementById("product-desc").value = product.description || ""; 
+    
+    // Reset mode kategori ke select
     isCategoryInputMode = false; 
     document.getElementById("cat-select-wrapper").classList.remove("hidden");
     document.getElementById("cat-input-wrapper").classList.add("hidden");
     document.getElementById("toggle-cat-btn").innerText = "+ Tambah Baru";
+    document.getElementById("toggle-cat-btn").classList.replace("text-red-500", "text-lumina-gold");
     
     const select = document.getElementById("product-category-select");
-    select.value = product.category;
-    checkCategorySelection();
-}
-
-window.deleteProduct = async function(id) {
-    if (confirm("Yakin ingin menghapus produk ini?")) {
-        await deleteDoc(doc(db, "products", id));
+    if (select) {
+        select.value = product.category;
     }
-}
-
-window.resetForm = function() {
-    document.getElementById("product-id").value = "";
-    document.getElementById("product-name").value = "";
-    document.getElementById("product-price").value = "";
-    document.getElementById("product-stock").value = "";
-    document.getElementById("product-image").value = "";
-    
-    isCategoryInputMode = false;
-    document.getElementById("cat-select-wrapper").classList.remove("hidden");
-    document.getElementById("cat-input-wrapper").classList.add("hidden");
-    document.getElementById("product-category-select").value = "";
-    document.getElementById("product-category-input").value = "";
-    
     checkCategorySelection();
 }
 

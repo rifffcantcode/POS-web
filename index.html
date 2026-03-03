@@ -33,36 +33,37 @@
   <body
     class="bg-gray-100 text-gray-800 font-sans h-screen flex flex-col overflow-hidden"
   >
-  
-<nav class="bg-lumina-dark text-white shadow-lg flex-none z-20 border-b border-white/10">
-  <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-    
+   <nav class="bg-[#1e293b] text-white py-4 px-8 flex justify-between items-center shadow-md">
     <div class="flex items-center gap-6">
-      <h1 class="text-xl font-bold tracking-widest text-lumina-gold flex items-center">
-        <i class="fas fa-cash-register mr-3"></i> LUMINA <span class="ml-1 font-light text-white/70">CASHIER</span>
-      </h1>
-      <div class="h-6 w-[1px] bg-white/20"></div> <a href="landing.html" class="flex items-center text-xs text-gray-400 hover:text-white transition-all group">
-        <i class="fas fa-arrow-left mr-2 group-hover:-translate-x-1 transition-transform"></i> 
-        Ke Landing Page
-      </a>
+        <div class="flex items-center gap-3">
+            <i class="fas fa-cash-register text-lumina-gold text-xl"></i>
+            <h1 class="text-xl font-bold tracking-tight">
+                <span class="text-lumina-gold">LUMINA</span> 
+                <span class="text-gray-300 font-light ml-1">CASHIER</span>
+            </h1>
+        </div>
+        
+        <div class="h-6 w-[1px] bg-gray-700"></div>
+        
+        <a href="landing.html" class="bg-gray-800/50 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-gray-300 hover:text-white transition text-xs flex items-center gap-2 border border-gray-700">
+            <i class="fas fa-arrow-left text-[10px]"></i> Ke Landing Page
+        </a>
     </div>
 
-    <div class="flex items-center bg-black/20 p-1 rounded-xl">
-      <a href="index.html" class="text-sm font-bold bg-lumina-gold text-lumina-dark px-6 py-2 rounded-lg shadow-md transition-all">
-        Kasir
-      </a>
-      <a href="laporan.html" class="text-sm font-semibold text-gray-400 hover:text-white px-6 py-2 rounded-lg transition-all">
-        Laporan Penjualan
-      </a>
+    <div class="flex items-center gap-6">
+        <div class="flex bg-[#111827] rounded-xl p-1 border border-gray-800">
+            <button class="bg-lumina-gold text-lumina-dark px-6 py-2 rounded-lg text-sm font-bold shadow-sm">
+                Kasir
+            </button>
+            <a href="laporan.html" class="text-gray-500 px-6 py-2 rounded-lg text-sm font-bold hover:text-gray-300 transition">
+                Laporan Penjualan
+            </a>
+        </div>
+
+        <button onclick="openProductModal()" class="bg-lumina-gold/10 text-lumina-gold border border-lumina-gold/30 px-4 py-2 rounded-xl text-sm font-bold hover:bg-lumina-gold hover:text-lumina-dark transition flex items-center gap-2">
+            <i class="fas fa-plus"></i> Kelola Produk
+        </button>
     </div>
-
-    <button onclick="openProductModal()" 
-      class="bg-white/5 border border-white/10 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-lumina-gold hover:text-lumina-dark hover:border-lumina-gold transition-all duration-300 shadow-sm text-sm flex items-center gap-2">
-      <i class="fas fa-boxes"></i> 
-      Kelola Produk
-    </button>
-
-  </div>
 </nav>
 
     <div class="flex flex-1 overflow-hidden">
@@ -130,8 +131,7 @@
             <i class="fas fa-print"></i> Bayar & Cetak Struk
           </button>
         </div>
-        
-        </div>
+      </div>
     </div>
 
     <div
@@ -197,6 +197,19 @@
               </div>
 
               <div>
+                <label
+                  class="block text-xs font-bold text-gray-500 mb-1 "
+                  >Deskripsi Produk</label
+                >
+                <textarea
+                  id="product-desc"
+                  class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-lumina-gold outline-none transition-all resize-none"
+                  placeholder="Keterangan produk..."
+                  rows="3"
+                ></textarea>
+              </div>
+
+              <div>
                 <div class="flex justify-between items-center mb-1">
                   <label class="block text-xs font-bold text-gray-500"
                     >Kategori</label
@@ -236,7 +249,7 @@
                   <input
                     type="text"
                     id="product-category-input"
-                    placeholder="Ketik nama kategori baru..."
+                    placeholder="Nama kategori baru..."
                     class="w-full p-2 border border-lumina-gold rounded-lg focus:ring-1 focus:ring-lumina-gold outline-none text-sm bg-yellow-50"
                   />
                   <button
@@ -260,18 +273,20 @@
                 />
               </div>
 
-              <button
-                onclick="saveProduct()"
-                class="w-full bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700 transition shadow-md mt-4"
-              >
-                <i class="fas fa-save mr-2"></i> Simpan Produk
-              </button>
-              <button
-                onclick="resetForm()"
-                class="w-full bg-gray-200 text-gray-600 py-2 rounded-lg font-bold hover:bg-gray-300 transition text-sm mt-2"
-              >
-                Reset Form
-              </button>
+              <div class="pt-2">
+                <button
+                  onclick="saveProduct()"
+                  class="w-full bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700 transition shadow-md"
+                >
+                  <i class="fas fa-save mr-2"></i> Simpan Produk
+                </button>
+                <button
+                  onclick="resetForm()"
+                  class="w-full bg-gray-200 text-gray-600 py-2 rounded-lg font-bold hover:bg-gray-300 transition text-sm mt-2"
+                >
+                  Reset Form
+                </button>
+              </div>
             </div>
           </div>
 
