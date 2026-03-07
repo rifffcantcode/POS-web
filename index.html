@@ -29,42 +29,114 @@
         },
       };
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+    <style>
+      /* Style Scrollbar */
+      .custom-scroll::-webkit-scrollbar {
+        width: 5px;
+      }
+      .custom-scroll::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* LOGIKA PRINT KHUSUS */
+      @media print {
+        /* Sembunyikan semuanya secara default saat print */
+        body * {
+          visibility: hidden;
+        }
+
+        /* JIKA YANG DIPRINT ADALAH STRUK */
+        #receipt-modal,
+        #receipt-print-area,
+        #receipt-print-area * {
+          visibility: visible;
+        }
+        #receipt-print-area {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          border: none;
+        }
+
+        /* JIKA YANG DIPRINT ADALAH KATALOG BARCODE */
+        #barcode-catalog-modal,
+        #barcode-catalog-modal * {
+          visibility: visible;
+        }
+        #barcode-catalog-modal {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          background: white !important;
+        }
+        /* Sembunyikan tombol aksi saat print katalog */
+        .print-hidden {
+          display: none !important;
+        }
+
+        @page {
+          margin: 0.5cm;
+          size: auto;
+        }
+      }
+    </style>
   </head>
+
   <body
     class="bg-gray-100 text-gray-800 font-sans h-screen flex flex-col overflow-hidden"
   >
-   <nav class="bg-[#1e293b] text-white py-4 px-8 flex justify-between items-center shadow-md">
-    <div class="flex items-center gap-6">
+    <nav
+      class="bg-[#1e293b] text-white py-4 px-8 flex justify-between items-center shadow-md z-30"
+    >
+      <div class="flex items-center gap-6">
         <div class="flex items-center gap-3">
-            <i class="fas fa-cash-register text-lumina-gold text-xl"></i>
-            <h1 class="text-xl font-bold tracking-tight">
-                <span class="text-lumina-gold">LUMINA</span> 
-                <span class="text-gray-300 font-light ml-1">CASHIER</span>
-            </h1>
+          <i class="fas fa-cash-register text-lumina-gold text-xl"></i>
+          <h1 class="text-xl font-bold tracking-tight">
+            <span class="text-lumina-gold">LUMINA</span>
+            <span class="text-gray-300 font-light ml-1">CASHIER</span>
+          </h1>
         </div>
-        
         <div class="h-6 w-[1px] bg-gray-700"></div>
-        
-        <a href="landing.html" class="bg-gray-800/50 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-gray-300 hover:text-white transition text-xs flex items-center gap-2 border border-gray-700">
-            <i class="fas fa-arrow-left text-[10px]"></i> Ke Landing Page
+        <a
+          href="landing.html"
+          class="bg-gray-800/50 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-gray-300 hover:text-white transition text-xs flex items-center gap-2 border border-gray-700"
+        >
+          <i class="fas fa-arrow-left text-[10px]"></i> Ke Landing Page
         </a>
-    </div>
+      </div>
 
-    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-6">
         <div class="flex bg-[#111827] rounded-xl p-1 border border-gray-800">
-            <button class="bg-lumina-gold text-lumina-dark px-6 py-2 rounded-lg text-sm font-bold shadow-sm">
-                Kasir
-            </button>
-            <a href="laporan.html" class="text-gray-500 px-6 py-2 rounded-lg text-sm font-bold hover:text-gray-300 transition">
-                Laporan Penjualan
-            </a>
+          <button
+            class="bg-lumina-gold text-lumina-dark px-6 py-2 rounded-lg text-sm font-bold shadow-sm"
+          >
+            Kasir
+          </button>
+          <a
+            href="laporan.html"
+            class="text-gray-500 px-6 py-2 rounded-lg text-sm font-bold hover:text-gray-300 transition"
+            >Laporan Penjualan</a
+          >
         </div>
-
-        <button onclick="openProductModal()" class="bg-lumina-gold/10 text-lumina-gold border border-lumina-gold/30 px-4 py-2 rounded-xl text-sm font-bold hover:bg-lumina-gold hover:text-lumina-dark transition flex items-center gap-2">
-            <i class="fas fa-plus"></i> Kelola Produk
+        <button
+          onclick="openProductModal()"
+          class="bg-lumina-gold/10 text-lumina-gold border border-lumina-gold/30 px-4 py-2 rounded-xl text-sm font-bold hover:bg-lumina-gold hover:text-lumina-dark transition flex items-center gap-2"
+        >
+          <i class="fas fa-plus"></i> Kelola Produk
         </button>
-    </div>
-</nav>
+      </div>
+    </nav>
 
     <div class="flex flex-1 overflow-hidden">
       <div class="flex-1 flex flex-col p-6 overflow-hidden">
@@ -73,7 +145,7 @@
             <input
               type="text"
               id="search-input"
-              placeholder="Cari nama produk..."
+              placeholder="Scan barcode atau cari nama..."
               class="w-full pl-10 pr-4 py-3 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-lumina-gold outline-none"
               oninput="searchProducts()"
             />
@@ -101,7 +173,6 @@
           <h2 class="text-xl font-bold text-lumina-dark">Keranjang Belanja</h2>
           <p class="text-xs text-gray-400" id="transaction-id">TRX-...</p>
         </div>
-
         <div
           id="cart-items"
           class="flex-grow overflow-y-auto p-4 space-y-3 custom-scroll bg-white"
@@ -111,7 +182,6 @@
             <p>Keranjang kosong</p>
           </div>
         </div>
-
         <div class="p-6 bg-gray-50 border-t border-gray-200 space-y-4">
           <div class="flex justify-between items-center text-sm">
             <span class="text-gray-500">Subtotal</span>
@@ -123,7 +193,6 @@
             <span>Total</span>
             <span id="total-price">Rp 0</span>
           </div>
-
           <button
             onclick="processCheckout()"
             class="w-full bg-lumina-dark text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-800 transition shadow-lg flex justify-center items-center gap-2"
@@ -139,7 +208,7 @@
       class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm"
     >
       <div
-        class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+        class="bg-white w-full max-w-5xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
       >
         <div class="flex justify-between items-center p-6 border-b">
           <h3 class="text-xl font-bold text-lumina-dark">
@@ -154,7 +223,9 @@
         </div>
 
         <div class="flex flex-col md:flex-row h-full overflow-hidden">
-          <div class="w-full md:w-1/3 p-6 bg-gray-50 border-r overflow-y-auto">
+          <div
+            class="w-full md:w-1/3 p-6 bg-gray-50 border-r overflow-y-auto custom-scroll"
+          >
             <h4
               class="text-sm font-bold text-gray-500 uppercase mb-4 tracking-wider"
             >
@@ -172,7 +243,6 @@
                   class="w-full p-2 border rounded-lg focus:ring-1 focus:ring-lumina-gold outline-none text-sm"
                 />
               </div>
-
               <div class="grid grid-cols-2 gap-2">
                 <div>
                   <label class="block text-xs font-bold text-gray-500 mb-1"
@@ -195,44 +265,30 @@
                   />
                 </div>
               </div>
-
               <div>
-                <label
-                  class="block text-xs font-bold text-gray-500 mb-1 "
+                <label class="block text-xs font-bold text-gray-500 mb-1"
                   >Deskripsi Produk</label
                 >
                 <textarea
                   id="product-desc"
                   class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-lumina-gold outline-none transition-all resize-none"
-                  placeholder="Keterangan produk..."
-                  rows="3"
+                  rows="2"
                 ></textarea>
               </div>
-
               <div>
                 <div class="flex justify-between items-center mb-1">
                   <label class="block text-xs font-bold text-gray-500"
                     >Kategori</label
                   >
-                  <div class="flex gap-2">
-                    <button
-                      onclick="deleteCategory()"
-                      id="btn-delete-cat"
-                      class="text-[10px] text-red-500 font-bold hover:underline cursor-pointer hidden"
-                    >
-                      <i class="fas fa-trash-alt"></i> Hapus
-                    </button>
-                    <button
-                      onclick="toggleCategoryMode()"
-                      class="text-[10px] text-lumina-gold font-bold hover:underline cursor-pointer"
-                      id="toggle-cat-btn"
-                    >
-                      + Tambah Baru
-                    </button>
-                  </div>
+                  <button
+                    onclick="toggleCategoryMode()"
+                    class="text-[10px] text-lumina-gold font-bold hover:underline"
+                    id="toggle-cat-btn"
+                  >
+                    + Tambah Baru
+                  </button>
                 </div>
-
-                <div id="cat-select-wrapper" class="relative">
+                <div id="cat-select-wrapper">
                   <select
                     id="product-category-select"
                     onchange="checkCategorySelection()"
@@ -240,57 +296,89 @@
                   >
                     <option value="">Pilih Kategori...</option>
                   </select>
-                  <i
-                    class="fas fa-chevron-down absolute right-3 top-3 text-gray-400 text-xs pointer-events-none"
-                  ></i>
                 </div>
-
-                <div id="cat-input-wrapper" class="hidden relative">
+                <div id="cat-input-wrapper" class="hidden">
                   <input
                     type="text"
                     id="product-category-input"
                     placeholder="Nama kategori baru..."
                     class="w-full p-2 border border-lumina-gold rounded-lg focus:ring-1 focus:ring-lumina-gold outline-none text-sm bg-yellow-50"
                   />
-                  <button
-                    onclick="toggleCategoryMode()"
-                    class="absolute right-2 top-1.5 text-gray-400 hover:text-red-500"
-                  >
-                    <i class="fas fa-times"></i>
-                  </button>
                 </div>
               </div>
-
               <div>
                 <label class="block text-xs font-bold text-gray-500 mb-1"
-                  >URL Gambar</label
+                  >Upload Gambar Produk</label
                 >
-                <input
-                  type="text"
-                  id="product-image"
-                  class="w-full p-2 border rounded-lg focus:ring-1 focus:ring-lumina-gold outline-none text-sm"
-                  placeholder="https://..."
-                />
+                <div class="flex gap-2">
+                  <input
+                    type="file"
+                    id="product-image-file"
+                    accept="image/*"
+                    class="hidden"
+                    onchange="handleImageUpload(this)"
+                  />
+
+                  <button
+                    type="button"
+                    onclick="
+                      document.getElementById('product-image-file').click()
+                    "
+                    class="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-2 text-xs text-gray-500 hover:border-lumina-gold hover:text-lumina-gold transition flex flex-col items-center gap-1"
+                  >
+                    <i class="fas fa-cloud-upload-alt text-lg"></i>
+                    <span id="file-name-label">Pilih Gambar...</span>
+                  </button>
+
+                  <div
+                    id="image-preview-container"
+                    class="w-12 h-12 border rounded-lg hidden bg-gray-100 items-center justify-center overflow-hidden"
+                  >
+                    <img
+                      id="temp-image-preview"
+                      src=""
+                      class="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+                <input type="hidden" id="product-image" />
               </div>
 
-              <div class="pt-2">
+              <div
+                class="mt-4 flex flex-col items-center p-3 bg-white rounded-xl border border-dashed border-gray-300"
+              >
+                <p class="text-[10px] text-gray-400 font-bold uppercase mb-2">
+                  Preview Barcode
+                </p>
+                <svg id="barcode-preview" class="max-w-full"></svg>
+              </div>
+
+              <div class="pt-2 space-y-2">
                 <button
                   onclick="saveProduct()"
                   class="w-full bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700 transition shadow-md"
                 >
                   <i class="fas fa-save mr-2"></i> Simpan Produk
                 </button>
-                <button
-                  onclick="resetForm()"
-                  class="w-full bg-gray-200 text-gray-600 py-2 rounded-lg font-bold hover:bg-gray-300 transition text-sm mt-2"
-                >
-                  Reset Form
-                </button>
+                <div class="flex gap-2">
+                  <button
+                    onclick="resetForm()"
+                    class="flex-1 bg-gray-200 text-gray-600 py-2 rounded-lg font-bold hover:bg-gray-300 transition text-xs"
+                  >
+                    Reset Form
+                  </button>
+                  <button
+                    onclick="openBarcodeCatalog()"
+                    class="flex-1 bg-gray-800 text-white py-2 rounded-lg font-bold hover:bg-black transition text-xs flex items-center justify-center gap-1"
+                  >
+                    <i class="fas fa-barcode"></i> Katalog
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="w-full md:w-2/3 p-0 flex flex-col h-full">
+          <div class="w-full md:w-2/3 p-0 flex flex-col h-full overflow-hidden">
             <div class="p-4 bg-gray-100 border-b">
               <input
                 type="text"
@@ -299,14 +387,9 @@
                 class="w-full px-4 py-2 rounded-lg border focus:outline-none text-sm"
               />
             </div>
-
-            <div
-              class="overflow-y-auto flex-grow p-0 max-h-[500px] border border-gray-200 rounded-lg"
-            >
-              <table class="w-full text-left border-collapse relative">
-                <thead
-                  class="bg-gray-50 sticky top-0 z-10 shadow-sm text-gray-700"
-                >
+            <div class="overflow-y-auto flex-grow p-0 custom-scroll">
+              <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm">
                   <tr>
                     <th
                       class="p-3 text-xs font-bold text-gray-500 uppercase border-b"
@@ -335,7 +418,6 @@
                     </th>
                   </tr>
                 </thead>
-
                 <tbody
                   id="inventory-table-body"
                   class="text-sm divide-y divide-gray-100 bg-white"
@@ -356,28 +438,25 @@
       >
         <div
           id="receipt-print-area"
-          class="p-8 bg-white text-gray-800 font-mono text-sm"
+          class="p-6 bg-white text-gray-800 font-mono text-xs"
         >
           <div class="text-center border-b-2 border-dashed pb-4 mb-4">
             <h2 class="text-2xl font-bold tracking-tighter">LUMINA</h2>
             <p class="text-[10px] uppercase">Luxury Furniture & Living</p>
             <p class="text-[10px] mt-1" id="receipt-date"></p>
           </div>
-
-          <div class="space-y-2 mb-4">
-            <div class="flex justify-between text-[10px]">
-              <span>No. Transaksi:</span>
-              <span id="receipt-trx-id" class="font-bold"></span>
+          <div class="space-y-1 mb-4">
+            <div class="flex justify-between">
+              <span>No. TRX:</span
+              ><span id="receipt-trx-id" class="font-bold"></span>
             </div>
-            <div class="flex justify-between text-[10px]">
-              <span>Kasir:</span>
-              <span>Admin Lumina</span>
+            <div class="flex justify-between">
+              <span>Kasir:</span><span>Admin Lumina</span>
             </div>
           </div>
-
-          <table class="w-full mb-4 text-[11px]">
-            <thead class="border-b border-dashed">
-              <tr>
+          <table class="w-full mb-4 border-b border-dashed">
+            <thead>
+              <tr class="border-b border-dashed">
                 <th class="text-left py-2">Item</th>
                 <th class="text-center py-2">Qty</th>
                 <th class="text-right py-2">Total</th>
@@ -385,25 +464,18 @@
             </thead>
             <tbody
               id="receipt-items-list"
-              class="divide-y divide-gray-100"
+              class="divide-y divide-gray-50"
             ></tbody>
           </table>
-
-          <div class="border-t-2 border-dashed pt-4 space-y-1">
-            <div class="flex justify-between font-bold text-lg">
-              <span>TOTAL</span>
-              <span id="receipt-total"></span>
+          <div class="pt-2 space-y-1">
+            <div class="flex justify-between font-bold text-base">
+              <span>TOTAL</span><span id="receipt-total"></span>
             </div>
           </div>
-
-          <div class="text-center mt-8 pt-4 border-t border-gray-100">
+          <div class="text-center mt-6 pt-4 border-t border-gray-100">
             <p class="text-[10px]">Terima kasih atas kunjungan Anda</p>
-            <p class="text-[9px] text-gray-400 mt-1">
-              Barang yang sudah dibeli tidak dapat ditukar/dikembalikan
-            </p>
           </div>
         </div>
-
         <div class="p-4 bg-gray-50 flex gap-2">
           <button
             onclick="window.print()"
@@ -421,41 +493,40 @@
       </div>
     </div>
 
-    <style>
-      @media print {
-        body * {
-          visibility: hidden;
-        }
-        #receipt-print-area,
-        #receipt-print-area * {
-          visibility: visible;
-        }
-        #receipt-print-area {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
-          padding: 0;
-          margin: 0;
-        }
-      }
-    </style>
-
-    <style>
-      .custom-scroll::-webkit-scrollbar {
-        width: 5px;
-      }
-      .custom-scroll::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .custom-scroll::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
-      }
-      .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-      }
-    </style>
+    <div
+      id="barcode-catalog-modal"
+      class="hidden fixed inset0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+      >
+        <div
+          class="p-6 border-b flex justify-between items-center bg-gray-50 print-hidden"
+        >
+          <h2 class="text-xl font-bold text-gray-800">
+            <i class="fas fa-barcode mr-2"></i>Katalog Barcode Produk
+          </h2>
+          <div class="space-x-2">
+            <button
+              onclick="window.printCatalog()"
+              class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            >
+              <i class="fas fa-print mr-2"></i>Cetak Katalog
+            </button>
+            <button
+              onclick="closeBarcodeCatalog()"
+              class="text-gray-400 hover:text-gray-600 p-2"
+            >
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+        </div>
+        <div
+          id="catalog-content"
+          class="p-8 overflow-y-auto grid grid-cols-3 gap-6 bg-white"
+        ></div>
+      </div>
+    </div>
 
     <script type="module" src="js/script.js"></script>
   </body>

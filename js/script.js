@@ -36,6 +36,29 @@ let allProducts = [];
 let cart = [];
 let isCategoryInputMode = false; // False = Select Mode, True = Text Input Mode
 
+// Taruh di sekitar baris 35-50 (Area Fungsi Barcode)
+window.renderBarcode = function() {
+    const productName = document.getElementById("product-name").value;
+    const barcodeSvg = document.getElementById("barcode-preview");
+    
+    if (productName && productName.trim() !== "") {
+        try {
+            JsBarcode("#barcode-preview", productName, {
+                format: "CODE128",
+                width: 1.5,
+                height: 40,
+                displayValue: true,
+                fontSize: 10,
+                margin: 10
+            });
+        } catch (error) {
+            console.error("Gagal membuat barcode:", error);
+        }
+    } else {
+        if (barcodeSvg) barcodeSvg.innerHTML = "";
+    }
+}
+
 // ==========================================
 // 2. MAIN LOAD FUNCTIONS (REALTIME)
 // ==========================================
@@ -49,40 +72,59 @@ onSnapshot(productsRef, (snapshot) => {
   loadCategoriesIntoSelect(); 
 });
 
-// Render Grid Produk (Halaman Kasir)
-function renderProductGrid(products) {
-  const grid = document.getElementById("product-list");
-  if (!grid) return;
-  
-  grid.innerHTML = "";
-
-  products.forEach((product) => {
-    const card = document.createElement("div");
-    card.className = "bg-white rounded-xl shadow-sm hover:shadow-md transition p-4 flex flex-col h-full border border-gray-100 cursor-pointer group";
+// Render Grid Produk (Halaman Kasir) - VERSI FIX 100%
+function renderProductGrid(input = allProducts) {
+    const grid = document.getElementById("product-list");
+    if (!grid) return;
     
-    card.innerHTML = `
-        <div class="h-48 w-full bg-gray-50 rounded-lg mb-4 overflow-hidden relative p-4 flex items-center justify-center group-hover:bg-gray-100 transition">
-            <img src="${product.image}" alt="${product.name}" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition duration-300">
-            
-            <span class="absolute top-2 right-2 bg-white/90 backdrop-blur text-[10px] px-2 py-1 rounded-full text-gray-600 font-bold border shadow-sm">
-                ${product.stock} Unit
-            </span>
-        </div>
-        <h3 class="font-bold text-gray-800 text-sm mb-1 line-clamp-2 h-10" title="${product.name}">${product.name}</h3>
-        <p class="text-xs text-gray-500 mb-3 bg-gray-100 w-fit px-2 py-1 rounded-full">${product.category}</p>
+    grid.innerHTML = "";
+
+    let productsToDisplay;
+
+    // LOGIKA FILTER:
+    if (Array.isArray(input)) {
+        // Jika yang masuk adalah ARRAY (Hasil filter kategori), gunakan langsung
+        productsToDisplay = input;
+    } else if (typeof input === "string" && input.trim() !== "") {
+        // Jika yang masuk adalah STRING (Hasil ketik di search), filter dari allProducts
+        productsToDisplay = allProducts.filter(p => 
+            p.name.toLowerCase().includes(input.toLowerCase())
+        );
+    } else {
+        // Jika kosong atau lainnya, tampilkan semua
+        productsToDisplay = allProducts;
+    }
+
+    if (productsToDisplay.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-10 text-gray-400">Produk tidak ditemukan</div>`;
+        return;
+    }
+
+    productsToDisplay.forEach((product) => {
+        const card = document.createElement("div");
+        card.className = "bg-white rounded-xl shadow-sm hover:shadow-md transition p-4 flex flex-col h-full border border-gray-100 cursor-pointer group";
         
-        <div class="mt-auto flex justify-between items-end">
-            <div>
-                <p class="text-[10px] text-gray-400 font-bold uppercase">Harga</p>
-                <span class="font-black text-lumina-dark text-lg">Rp ${parseInt(product.price).toLocaleString("id-ID")}</span>
+        card.innerHTML = `
+            <div class="h-48 w-full bg-gray-50 rounded-lg mb-4 overflow-hidden relative p-4 flex items-center justify-center group-hover:bg-gray-100 transition">
+                <img src="${product.image}" alt="${product.name}" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition duration-300">
+                <span class="absolute top-2 right-2 bg-white/90 backdrop-blur text-[10px] px-2 py-1 rounded-full text-gray-600 font-bold border shadow-sm">
+                    ${product.stock} Unit
+                </span>
             </div>
-            <button onclick="addToCart('${product.id}')" class="bg-lumina-dark text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-lumina-gold hover:text-lumina-dark transition shadow-md active:scale-95">
-                <i class="fas fa-plus"></i>
-            </button>
-        </div>
-    `;
-    grid.appendChild(card);
-  });
+            <h3 class="font-bold text-gray-800 text-sm mb-1 line-clamp-2 h-10" title="${product.name}">${product.name}</h3>
+            <p class="text-xs text-gray-500 mb-3 bg-gray-100 w-fit px-2 py-1 rounded-full">${product.category}</p>
+            <div class="mt-auto flex justify-between items-end">
+                <div>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase">Harga</p>
+                    <span class="font-black text-lumina-dark text-lg">Rp ${parseInt(product.price).toLocaleString("id-ID")}</span>
+                </div>
+                <button onclick="addToCart('${product.id}')" class="bg-lumina-dark text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-lumina-gold hover:text-lumina-dark transition shadow-md active:scale-95">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
 }
 
 // Render Tabel Inventaris (Di dalam Modal Kelola)
@@ -283,14 +325,23 @@ window.saveProduct = async function() {
 }
 
 window.resetForm = function() {
-    // Gunakan try-catch internal agar jika satu elemen tidak ada, yang lain tetap ter-reset
-    const fields = ["product-id", "product-name", "product-price", "product-stock", "product-image", "product-desc", "product-category-input"];
+    // 1. Reset Field Standar (Teks & Hidden)
+    const fields = [
+        "product-id", 
+        "product-name", 
+        "product-price", 
+        "product-stock", 
+        "product-image", // Ini sekarang berfungsi sebagai penampung Base64
+        "product-desc", 
+        "product-category-input"
+    ];
     
     fields.forEach(fieldId => {
         const el = document.getElementById(fieldId);
         if (el) el.value = "";
     });
 
+    // 2. Reset Mode Kategori
     isCategoryInputMode = false;
     const selWrapper = document.getElementById("cat-select-wrapper");
     const inpWrapper = document.getElementById("cat-input-wrapper");
@@ -299,8 +350,26 @@ window.resetForm = function() {
     if (selWrapper) selWrapper.classList.remove("hidden");
     if (inpWrapper) inpWrapper.classList.add("hidden");
     if (selEl) selEl.value = "";
-    
-    checkCategorySelection();
+
+    // 3. Reset Preview Barcode
+    const barcodeSvg = document.getElementById("barcode-preview");
+    if (barcodeSvg) barcodeSvg.innerHTML = "";
+
+    // 4. MODIFIKASI TERBARU: Reset Komponen Upload Gambar
+    const imageFileInput = document.getElementById("product-image-file");
+    const fileNameLabel = document.getElementById("file-name-label");
+    const imagePreviewContainer = document.getElementById("image-preview-container");
+    const tempImagePreview = document.getElementById("temp-image-preview");
+
+    if (imageFileInput) imageFileInput.value = ""; // Bersihkan antrean file explorer
+    if (fileNameLabel) fileNameLabel.innerText = "Pilih Gambar..."; // Kembalikan teks label
+    if (imagePreviewContainer) imagePreviewContainer.classList.add("hidden"); // Sembunyikan kotak preview
+    if (tempImagePreview) tempImagePreview.src = ""; // Hapus gambar dari memori browser
+
+    // 5. Jalankan pengecekan UI kategori
+    if (typeof checkCategorySelection === "function") {
+        checkCategorySelection();
+    }
 }
 
 window.editProduct = function(id) {
@@ -329,6 +398,7 @@ window.editProduct = function(id) {
         select.value = product.category;
     }
     checkCategorySelection();
+    setTimeout(window.renderBarcode, 100);
 }
 
 // ==========================================
@@ -539,31 +609,55 @@ window.fetchTransactions = function() {
 // 7. UTILS & HELPERS
 // ==========================================
 
-// Pencarian Produk di Kasir (Kiri Atas)
 window.searchProducts = function() {
-    const keyword = document.getElementById("search-input").value.toLowerCase();
-    const filtered = allProducts.filter(p => p.name.toLowerCase().includes(keyword));
-    renderProductGrid(filtered);
-}
+    const searchInput = document.getElementById("search-input");
+    const searchTerm = searchInput.value.trim().toLowerCase();
+    
+    if (searchTerm === "") {
+        renderProductGrid(); // Tampilkan semua jika kosong
+        return;
+    }
 
+    // 1. Cari produk yang namanya sama persis (Hasil Scan Barcode)
+    const matchedProduct = allProducts.find(p => p.name.toLowerCase() === searchTerm);
+
+    if (matchedProduct) {
+        addToCart(matchedProduct.id);
+        
+        // RESET INPUT
+        searchInput.value = "";
+        
+        // TAMPILKAN SEMUA PRODUK LAGI
+        renderProductGrid(); 
+        
+        return; 
+    }
+
+    // 2. Jika sedang mengetik (bukan scan barcode), filter grid
+    renderProductGrid(searchTerm); 
+};
+
+// Filter Kategori di Kasir
 // Filter Kategori di Kasir
 window.filterGridByCategory = function(category) {
     if (category === "Semua") {
         renderProductGrid(allProducts);
     } else {
         const filtered = allProducts.filter(p => p.category === category);
-        renderProductGrid(filtered);
+        renderProductGrid(filtered); // Mengirim ARRAY ke renderProductGrid
     }
     
-    // Update Style Tombol Filter
+    // Update Style Tombol Filter (Visual Feedback)
     const container = document.getElementById("category-filters");
-    Array.from(container.children).forEach(btn => {
-        if(btn.innerText === category) {
-            btn.className = "whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold border transition bg-lumina-dark text-white border-lumina-dark";
-        } else {
-            btn.className = "whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold border transition bg-white text-gray-500 border-gray-200 hover:border-lumina-dark hover:text-lumina-dark";
-        }
-    });
+    if (container) {
+        Array.from(container.children).forEach(btn => {
+            if(btn.innerText.trim() === category) {
+                btn.className = "whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold border transition bg-lumina-dark text-white border-lumina-dark";
+            } else {
+                btn.className = "whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold border transition bg-white text-gray-500 border-gray-200 hover:border-lumina-dark hover:text-lumina-dark";
+            }
+        });
+    }
 }
 
 window.openProductModal = function() {
@@ -573,6 +667,88 @@ window.openProductModal = function() {
 window.closeProductModal = function() {
     document.getElementById("product-modal").classList.add("hidden");
 }
+
+// Membuka Modal Katalog dan Merender Semua Barcode
+window.openBarcodeCatalog = function() {
+    const modal = document.getElementById("barcode-catalog-modal");
+    const container = document.getElementById("catalog-content");
+    
+    if (!modal || !container) return;
+    
+    container.innerHTML = ""; // Bersihkan isi lama
+    modal.classList.remove("hidden");
+
+    allProducts.forEach(product => {
+        const itemDiv = document.createElement("div");
+        itemDiv.className = "border border-dashed border-gray-300 p-4 flex flex-col items-center justify-center rounded-lg";
+        
+        itemDiv.innerHTML = `
+            <p class="text-[10px] font-bold text-gray-700 mb-1 uppercase text-center truncate w-full">${product.name}</p>
+            <svg id="catalog-barcode-${product.id}"></svg>
+            <p class="text-[9px] text-gray-500 mt-1">Rp ${parseInt(product.price).toLocaleString()}</p>
+        `;
+        
+        container.appendChild(itemDiv);
+
+        // Render Barcode menggunakan JsBarcode
+        JsBarcode(`#catalog-barcode-${product.id}`, product.name, {
+            format: "CODE128",
+            width: 1.2,
+            height: 40,
+            displayValue: false, // Kita sudah buat teks manual di atas agar lebih rapi
+            margin: 5
+        });
+    });
+}
+
+window.closeBarcodeCatalog = function() {
+    document.getElementById("barcode-catalog-modal").classList.add("hidden");
+}
+
+window.printCatalog = function() {
+    window.print();
+}
+
+window.handleImageUpload = function(input) {
+    const file = input.files[0];
+    const label = document.getElementById("file-name-label");
+    const previewContainer = document.getElementById("image-preview-container");
+    const previewImg = document.getElementById("temp-image-preview");
+    const hiddenInput = document.getElementById("product-image");
+
+    if (file) {
+        // Tampilkan nama file di label
+        label.innerText = file.name;
+
+        // Gunakan FileReader untuk membaca gambar
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Masukkan data gambar ke preview
+            previewImg.src = e.target.result;
+            previewContainer.classList.remove("hidden");
+            previewContainer.classList.add("flex");
+
+            // Simpan data base64 ke input hidden agar bisa disimpan ke database
+            hiddenInput.value = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+};
+
+// Memastikan kursor selalu fokus ke kolom scan saat halaman siap
+document.addEventListener("DOMContentLoaded", () => {
+    const searchInput = document.getElementById("search-input");
+    if (searchInput) searchInput.focus();
+});
+
+// Fokus kembali ke input setelah modal ditutup atau transaksi selesai
+window.addEventListener("click", (e) => {
+    // Jika tidak sedang mengisi form modal, kembalikan fokus ke input utama
+    const modalProduk = document.getElementById("product-modal");
+    if (modalProduk && modalProduk.classList.contains("hidden")) {
+        document.getElementById("search-input").focus();
+    }
+});
 
 // ==========================================
 // 8. EVENT LISTENERS TAMBAHAN
@@ -587,6 +763,11 @@ if (inventorySearchInput) {
         const filtered = allProducts.filter(p => p.name.toLowerCase().includes(keyword));
         renderInventoryTable(filtered);
     });
+}
+
+const nameInput = document.getElementById("product-name");
+if (nameInput) {
+    nameInput.addEventListener("input", window.renderBarcode);
 }
 
 // Jalankan fetch pertama kali
