@@ -6,8 +6,14 @@
     <title>Laporan Penjualan - LUMINA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
 
     <script>
       tailwind.config = {
@@ -23,53 +29,75 @@
     </script>
 
     <style>
-      body { font-family: "Plus Jakarta Sans", sans-serif; background-color: #f8fafc; color: #1e293b; }
-      .card-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); }
-      @media print { .no-print { display: none !important; } body { background-color: white !important; } }
+      body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background-color: #f8fafc;
+        color: #1e293b;
+      }
+      .card-shadow {
+        box-shadow:
+          0 10px 25px -5px rgba(0, 0, 0, 0.05),
+          0 8px 10px -6px rgba(0, 0, 0, 0.05);
+      }
+      @media print {
+        .no-print {
+          display: none !important;
+        }
+        body {
+          background-color: white !important;
+        }
+      }
     </style>
   </head>
   <body class="min-h-screen">
-
-    <nav class="bg-[#1e293b] text-white py-4 px-8 flex justify-between items-center shadow-md">
-    <div class="flex items-center gap-6">
+    <nav
+      class="bg-[#1e293b] text-white py-4 px-8 flex justify-between items-center shadow-md"
+    >
+      <div class="flex items-center gap-6">
         <div class="flex items-center gap-3">
-            <i class="fas fa-chart-line text-lumina-gold text-xl"></i>
-            <h1 class="text-xl font-bold tracking-tight">
-                <span class="text-lumina-gold">LUMINA</span> 
-                <span class="text-gray-300 font-light ml-1">REPORTS</span>
-            </h1>
+          <i class="fas fa-chart-line text-lumina-gold text-xl"></i>
+          <h1 class="text-xl font-bold tracking-tight">
+            <span class="text-lumina-gold">LUMINA</span>
+            <span class="text-gray-300 font-light ml-1">REPORTS</span>
+          </h1>
         </div>
-        
+
         <div class="h-6 w-[1px] bg-gray-700"></div>
-        
-        <a href="landing.html" class="bg-gray-800/50 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-gray-300 hover:text-white transition text-xs flex items-center gap-2 border border-gray-700">
-            <i class="fas fa-arrow-left text-[10px]"></i> Ke Landing Page
+
+        <a
+          href="landing.html"
+          class="bg-gray-800/50 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-gray-300 hover:text-white transition text-xs flex items-center gap-2 border border-gray-700"
+        >
+          <i class="fas fa-arrow-left text-[10px]"></i> Ke Landing Page
         </a>
-    </div>
+      </div>
 
-    <div class="flex items-center gap-6">
-        <div class="flex bg-[#111827] rounded-xl p-1 border border-gray-800">
-            <a href="index.html" class="text-gray-500 px-6 py-2 rounded-lg text-sm font-bold hover:text-gray-300 transition">
-                Kasir
-            </a>
-            <button class="bg-lumina-gold text-lumina-dark px-6 py-2 rounded-lg text-sm font-bold shadow-sm">
-                Laporan Penjualan
-            </button>
-        </div>
-
-        <button onclick="exportToPDF()" class="bg-gray-800 text-white border border-gray-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-gray-700 transition flex items-center gap-2">
-            <i class="fas fa-file-pdf"></i> Export PDF
+      <div class="flex items-center gap-6">
+        <button
+          onclick="exportToPDF()"
+          class="bg-gray-800 text-white border border-gray-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-gray-700 transition flex items-center gap-2"
+        >
+          <i class="fas fa-file-pdf"></i> Export PDF
         </button>
-    </div>
-</nav>
+      </div>
+    </nav>
 
     <main class="p-8 max-w-7xl mx-auto">
-      <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-10 no-print">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-10 no-print"
+      >
         <div>
-          <h2 class="text-3xl font-extrabold text-slate-800 tracking-tight">Ringkasan Performa</h2>
-          <p class="text-slate-500 text-sm mt-1">Pantau data penjualan showroom secara akurat.</p>
+          <h2 class="text-3xl font-extrabold text-slate-800 tracking-tight">
+            Ringkasan Performa
+          </h2>
+          <p class="text-slate-500 text-sm mt-1">
+            Pantau data penjualan showroom secara akurat.
+          </p>
         </div>
-        <select id="period-filter" class="bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm focus:ring-2 focus:ring-lumina-gold outline-none cursor-pointer">
+        <select
+          id="period-filter"
+          class="bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm focus:ring-2 focus:ring-lumina-gold outline-none cursor-pointer"
+        >
           <option value="all">Semua Waktu</option>
           <option value="today">Hari Ini</option>
           <option value="week">7 Hari Terakhir</option>
@@ -78,34 +106,69 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div class="bg-lumina-dark p-8 rounded-[2rem] card-shadow relative overflow-hidden">
+        <div
+          class="bg-lumina-dark p-8 rounded-[2rem] card-shadow relative overflow-hidden"
+        >
           <div class="relative z-10">
             <div class="flex justify-between items-start mb-6">
-              <div class="bg-lumina-gold/20 p-3 rounded-2xl"><i class="fas fa-wallet text-lumina-gold text-xl"></i></div>
-              <span class="text-[10px] bg-green-500/20 text-green-400 px-3 py-1 rounded-full font-black tracking-widest uppercase">Live</span>
+              <div class="bg-lumina-gold/20 p-3 rounded-2xl">
+                <i class="fas fa-wallet text-lumina-gold text-xl"></i>
+              </div>
+              <span
+                class="text-[10px] bg-green-500/20 text-green-400 px-3 py-1 rounded-full font-black tracking-widest uppercase"
+                >Live</span
+              >
             </div>
-            <p class="text-white/50 text-xs font-bold uppercase tracking-widest">Total Omzet</p>
-            <h2 id="total-revenue" class="text-4xl font-black text-white mt-2">Rp 0</h2>
+            <p
+              class="text-white/50 text-xs font-bold uppercase tracking-widest"
+            >
+              Total Omzet
+            </p>
+            <h2 id="total-revenue" class="text-4xl font-black text-white mt-2">
+              Rp 0
+            </h2>
           </div>
-          <i class="fas fa-chart-line absolute -right-6 -bottom-6 text-white/5 text-9xl"></i>
+          <i
+            class="fas fa-chart-line absolute -right-6 -bottom-6 text-white/5 text-9xl"
+          ></i>
         </div>
 
-        <div class="bg-white p-8 rounded-[2rem] card-shadow border border-slate-100">
-          <div class="bg-blue-50 w-fit p-4 rounded-2xl mb-4"><i class="fas fa-shopping-cart text-blue-600 text-2xl"></i></div>
-          <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">Transaksi</p>
-          <h2 id="total-orders" class="text-4xl font-black text-slate-800 mt-2">0</h2>
+        <div
+          class="bg-white p-8 rounded-[2rem] card-shadow border border-slate-100"
+        >
+          <div class="bg-blue-50 w-fit p-4 rounded-2xl mb-4">
+            <i class="fas fa-shopping-cart text-blue-600 text-2xl"></i>
+          </div>
+          <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">
+            Transaksi
+          </p>
+          <h2 id="total-orders" class="text-4xl font-black text-slate-800 mt-2">
+            0
+          </h2>
         </div>
 
-        <div class="bg-white p-8 rounded-[2rem] card-shadow border border-slate-100">
-          <div class="bg-orange-50 w-fit p-4 rounded-2xl mb-4"><i class="fas fa-couch text-orange-600 text-2xl"></i></div>
-          <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">Produk Terjual</p>
-          <h2 id="total-items" class="text-4xl font-black text-slate-800 mt-2">0</h2>
+        <div
+          class="bg-white p-8 rounded-[2rem] card-shadow border border-slate-100"
+        >
+          <div class="bg-orange-50 w-fit p-4 rounded-2xl mb-4">
+            <i class="fas fa-couch text-orange-600 text-2xl"></i>
+          </div>
+          <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">
+            Produk Terjual
+          </p>
+          <h2 id="total-items" class="text-4xl font-black text-slate-800 mt-2">
+            0
+          </h2>
         </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10 no-print">
-        <div class="lg:col-span-2 bg-white p-8 rounded-[2rem] card-shadow border border-slate-100">
-          <h3 class="font-bold text-slate-800 text-lg mb-8 flex items-center gap-3">
+        <div
+          class="lg:col-span-2 bg-white p-8 rounded-[2rem] card-shadow border border-slate-100"
+        >
+          <h3
+            class="font-bold text-slate-800 text-lg mb-8 flex items-center gap-3"
+          >
             <i class="fas fa-chart-line text-lumina-gold"></i> Tren Penjualan
           </h3>
           <div class="h-[350px] w-full">
@@ -113,8 +176,12 @@
           </div>
         </div>
 
-        <div class="bg-white p-8 rounded-[2rem] card-shadow border border-slate-100">
-          <h3 class="font-bold text-slate-800 text-lg mb-8 flex items-center gap-3">
+        <div
+          class="bg-white p-8 rounded-[2rem] card-shadow border border-slate-100"
+        >
+          <h3
+            class="font-bold text-slate-800 text-lg mb-8 flex items-center gap-3"
+          >
             <i class="fas fa-crown text-lumina-gold"></i> Produk Terlaris
           </h3>
           <div class="h-[350px] w-full flex items-center justify-center">
@@ -123,14 +190,25 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-[2rem] card-shadow border border-slate-100 overflow-hidden">
-        <div class="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-          <h3 class="font-bold text-slate-800 text-lg">Riwayat Transaksi Terkini</h3>
-          <span class="text-xs text-slate-400 font-medium px-4 py-2 bg-white rounded-full border border-slate-100">Real-time Update</span>
+      <div
+        class="bg-white rounded-[2rem] card-shadow border border-slate-100 overflow-hidden"
+      >
+        <div
+          class="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50"
+        >
+          <h3 class="font-bold text-slate-800 text-lg">
+            Riwayat Transaksi Terkini
+          </h3>
+          <span
+            class="text-xs text-slate-400 font-medium px-4 py-2 bg-white rounded-full border border-slate-100"
+            >Real-time Update</span
+          >
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left">
-            <thead class="bg-slate-50 text-[11px] uppercase font-bold text-slate-400 tracking-widest">
+            <thead
+              class="bg-slate-50 text-[11px] uppercase font-bold text-slate-400 tracking-widest"
+            >
               <tr>
                 <th class="px-8 py-5">Waktu</th>
                 <th class="px-8 py-5">ID Transaksi</th>
@@ -138,7 +216,10 @@
                 <th class="px-8 py-5 text-right">Total Bayar</th>
               </tr>
             </thead>
-            <tbody id="report-table-body" class="text-sm divide-y divide-slate-50 text-slate-600"></tbody>
+            <tbody
+              id="report-table-body"
+              class="text-sm divide-y divide-slate-50 text-slate-600"
+            ></tbody>
           </table>
         </div>
       </div>

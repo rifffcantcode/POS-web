@@ -100,31 +100,37 @@ function renderProductGrid(input = allProducts) {
         return;
     }
 
-    productsToDisplay.forEach((product) => {
-        const card = document.createElement("div");
-        card.className = "bg-white rounded-xl shadow-sm hover:shadow-md transition p-4 flex flex-col h-full border border-gray-100 cursor-pointer group";
-        
-        card.innerHTML = `
-            <div class="h-48 w-full bg-gray-50 rounded-lg mb-4 overflow-hidden relative p-4 flex items-center justify-center group-hover:bg-gray-100 transition">
-                <img src="${product.image}" alt="${product.name}" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition duration-300">
-                <span class="absolute top-2 right-2 bg-white/90 backdrop-blur text-[10px] px-2 py-1 rounded-full text-gray-600 font-bold border shadow-sm">
-                    ${product.stock} Unit
-                </span>
+   productsToDisplay.forEach((product, index) => {
+    const card = document.createElement("div");
+    
+    // 1. Tambahkan class 'reveal-card' dan 'product-card-kasir'
+    card.className = "bg-white rounded-xl shadow-sm p-4 flex flex-col h-full border border-gray-100 cursor-pointer group reveal-card product-card-kasir";
+
+    // 2. Tambahkan delay agar muncul satu per satu (Stagger Effect)
+    // index * 0.05s artinya produk ke-2 muncul 0.05 detik setelah produk ke-1, dst.
+    card.style.animationDelay = `${index * 0.05}s`;
+
+    card.innerHTML = `
+        <div class="h-48 w-full bg-gray-50 rounded-lg mb-4 overflow-hidden relative p-4 flex items-center justify-center group-hover:bg-gray-100 transition">
+            <img src="${product.image}" alt="${product.name}" class="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition duration-300">
+            <span class="absolute top-2 right-2 bg-white/90 backdrop-blur text-[10px] px-2 py-1 rounded-full text-gray-600 font-bold border shadow-sm">
+                ${product.stock} Unit
+            </span>
+        </div>
+        <h3 class="font-bold text-gray-800 text-sm mb-1 line-clamp-2 h-10">${product.name}</h3>
+        <p class="text-xs text-gray-500 mb-3 bg-gray-100 w-fit px-2 py-1 rounded-full">${product.category}</p>
+        <div class="mt-auto flex justify-between items-end">
+            <div>
+                <p class="text-[10px] text-gray-400 font-bold uppercase">Harga</p>
+                <span class="font-black text-lumina-dark text-lg">Rp ${parseInt(product.price).toLocaleString("id-ID")}</span>
             </div>
-            <h3 class="font-bold text-gray-800 text-sm mb-1 line-clamp-2 h-10" title="${product.name}">${product.name}</h3>
-            <p class="text-xs text-gray-500 mb-3 bg-gray-100 w-fit px-2 py-1 rounded-full">${product.category}</p>
-            <div class="mt-auto flex justify-between items-end">
-                <div>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase">Harga</p>
-                    <span class="font-black text-lumina-dark text-lg">Rp ${parseInt(product.price).toLocaleString("id-ID")}</span>
-                </div>
-                <button onclick="addToCart('${product.id}')" class="bg-lumina-dark text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-lumina-gold hover:text-lumina-dark transition shadow-md active:scale-95">
-                    <i class="fas fa-plus"></i>
-                </button>
-            </div>
-        `;
-        grid.appendChild(card);
-    });
+            <button onclick="addToCart('${product.id}')" class="bg-lumina-dark text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-lumina-gold hover:text-lumina-dark transition shadow-md active:scale-95">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    `;
+    grid.appendChild(card);
+});
 }
 
 // Render Tabel Inventaris (Di dalam Modal Kelola)
@@ -151,6 +157,21 @@ function renderInventoryTable(products) {
     });
 }
 
+// Fungsi Sinkronisasi Data Manual
+window.syncData = () => {
+    showToast("Menyinkronkan data...");
+    // Di sini biasanya Firebase onSnapshot sudah otomatis, 
+    // tapi kita bisa panggil ulang render untuk memastikan visual update
+    renderProductGrid(allProducts);
+};
+
+// Fungsi Sortir Produk
+// 4. Update fungsi Sortir Produk
+window.sortProducts = (criteria) => {
+    window.currentSort = criteria;
+    // Panggil fungsi proses gabungan
+    window.applyFiltersAndSort();
+};
 // ==========================================
 // 3. KELOLA KATEGORI (DINAMIS & HAPUS)
 // ==========================================
@@ -175,40 +196,48 @@ window.loadCategoriesIntoSelect = function() {
 }
 
 window.renderCategoryFilters = function() {
-    const container = document.getElementById("category-filters");
-    if (!container) return;
+    const selectContainer = document.getElementById("category-select");
+    if (!selectContainer) return;
 
-    const uniqueCategories = ["Semua", ...new Set(allProducts.map(p => p.category))].sort();
+    // 1. Ambil kategori unik & urutkan abjad
+    const productCategories = [...new Set(allProducts.map(p => p.category))].sort();
     
-    container.innerHTML = uniqueCategories.map(cat => `
-        <button onclick="filterGridByCategory('${cat}')" 
-        class="whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold border transition transform active:scale-95
-        ${cat === 'Semua' ? 'bg-lumina-dark text-white border-lumina-dark' : 'bg-white text-gray-500 border-gray-200 hover:border-lumina-dark hover:text-lumina-dark'}">
-        ${cat}
-        </button>
-    `).join("");
-}
+    // 2. Taruh "Semua" di depan
+    const uniqueCategories = ["Semua", ...productCategories];
+    const activeCat = window.currentCategory || 'Semua';
 
+    // 3. Render ke dalam elemen <select> sebagai <option>
+    selectContainer.innerHTML = uniqueCategories.map(cat => {
+        const isSelected = cat === activeCat ? 'selected' : '';
+        return `<option value="${cat}" ${isSelected}>${cat}</option>`;
+    }).join("");
+}
 window.toggleCategoryMode = function() {
     isCategoryInputMode = !isCategoryInputMode;
     const selectWrapper = document.getElementById("cat-select-wrapper");
     const inputWrapper = document.getElementById("cat-input-wrapper");
     const toggleBtn = document.getElementById("toggle-cat-btn");
-    const deleteBtn = document.getElementById("btn-delete-cat");
+    const deleteBtn = document.getElementById("btn-delete-cat"); // Sekarang ID sudah ada
 
     if (isCategoryInputMode) {
-        selectWrapper.classList.add("hidden");
-        deleteBtn.classList.add("hidden");
-        inputWrapper.classList.remove("hidden");
+        if(selectWrapper) selectWrapper.classList.add("hidden");
+        if(deleteBtn) deleteBtn.classList.add("hidden"); // Cek dulu apakah ada
+        if(inputWrapper) inputWrapper.classList.remove("hidden");
+        
         toggleBtn.innerText = "Batal";
         toggleBtn.classList.replace("text-lumina-gold", "text-red-500");
-        document.getElementById("product-category-input").focus();
+        
+        const inputField = document.getElementById("product-category-input");
+        if(inputField) inputField.focus();
     } else {
-        selectWrapper.classList.remove("hidden");
-        inputWrapper.classList.add("hidden");
+        if(selectWrapper) selectWrapper.classList.remove("hidden");
+        if(inputWrapper) inputWrapper.classList.add("hidden");
+        
         toggleBtn.innerText = "+ Tambah Baru";
         toggleBtn.classList.replace("text-red-500", "text-lumina-gold");
-        document.getElementById("product-category-input").value = ""; 
+        
+        const inputField = document.getElementById("product-category-input");
+        if(inputField) inputField.value = ""; 
         checkCategorySelection();
     }
 }
@@ -400,6 +429,152 @@ window.editProduct = function(id) {
     checkCategorySelection();
     setTimeout(window.renderBarcode, 100);
 }
+
+// BAGIAN PERBAIKAN FUNGSI HAPUS
+window.deleteProduct = async function(id) {
+    if (!id) return;
+
+    if (confirm("Apakah Anda yakin ingin menghapus produk ini?")) {
+        try {
+            // Kita gunakan doc dan deleteDoc yang sudah di-import di atas, 
+            // JANGAN gunakan window.FirebaseFirestore lagi.
+            const productRef = doc(db, "products", id);
+            await deleteDoc(productRef);
+            
+            // Opsional: Beri notifikasi sukses
+            alert("Produk berhasil dihapus!");
+            console.log("ID dihapus:", id);
+        } catch (error) {
+            console.error("Gagal menghapus:", error);
+            alert("Gagal menghapus: " + error.message);
+        }
+    }
+}
+
+// Referensi Koleksi Baru
+const categoriesRef = collection(db, "categories");
+let allCategories = [];
+
+// 1. Ambil Data Kategori Secara Realtime
+onSnapshot(categoriesRef, (snapshot) => {
+    allCategories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderCategoryTable();
+    // Update juga dropdown kategori di form produk agar otomatis sinkron
+    updateProductCategoryDropdown(); 
+});
+
+// Render Tabel Kategori di Manajemen
+window.renderCategoryTable = function() {
+    const tbody = document.getElementById("category-table-body");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    allCategories.forEach(cat => {
+        tbody.innerHTML += `
+            <tr class="border-b hover:bg-gray-50 transition">
+                <td class="p-4 w-32">
+                    <img src="${cat.image || 'https://via.placeholder.com/150'}" class="w-24 h-16 rounded-lg object-cover border shadow-sm">
+                </td>
+                <td class="p-4 font-bold text-gray-800 w-48">${cat.name}</td>
+                <td class="p-4 text-sm text-gray-500 line-clamp-2 h-20 pt-6">${cat.description || '-'}</td>
+                <td class="p-4 text-center w-24">
+                    <button onclick="deleteCategory('${cat.id}')" class="text-red-500 hover:text-red-700 mx-2 bg-red-50 w-8 h-8 rounded-full transition">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+};
+// 1. Fungsi BARU untuk menangani proses upload gambar Kategori
+window.handleCatImageUpload = function(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        
+        // Ubah teks pada tombol menjadi nama file yang diupload
+        document.getElementById('cat-file-name-label').innerText = file.name;
+
+        // Proses membaca file gambar
+        reader.onload = function(e) {
+            const base64Image = e.target.result;
+            
+            // Simpan hasil gambar ke input tersembunyi
+            document.getElementById('cat-image-base64').value = base64Image;
+            
+            // Tampilkan gambar di kotak Preview
+            const previewImg = document.getElementById('cat-preview-img');
+            const previewText = document.getElementById('cat-preview-text');
+            
+            previewImg.src = base64Image;
+            previewImg.classList.remove('hidden');
+            previewText.classList.add('hidden');
+        };
+        
+        reader.readAsDataURL(file); // Konversi gambar ke format Base64
+    }
+};
+
+// 2. UPDATE fungsi Simpan Kategori (Ambil data dari base64, bukan URL lagi)
+window.saveCategory = async function() {
+    const name = document.getElementById("cat-name").value.trim();
+    const desc = document.getElementById("cat-desc").value.trim();
+    const imageBase64 = document.getElementById("cat-image-base64").value;
+
+    if (!name || !imageBase64) return alert("Harap isi Judul Kategori dan Upload Gambar!");
+
+    try {
+        await addDoc(categoriesRef, {
+            name: name,
+            description: desc,
+            image: imageBase64,
+            createdAt: serverTimestamp()
+        });
+        alert("Kategori berhasil ditambahkan!");
+        closeCategoryModal();
+    } catch (error) {
+        console.error("Error adding category: ", error);
+    }
+};
+
+// 4. Hapus Kategori
+window.deleteCategory = async function(id) {
+    if (confirm("Hapus kategori ini? Produk dengan kategori ini tidak akan terhapus, tapi kategori ini tidak akan muncul di filter.")) {
+        await deleteDoc(doc(db, "categories", id));
+    }
+};
+
+// Fungsi UI Modal
+window.openCategoryModal = () => document.getElementById("category-modal").classList.remove("hidden");
+// 3. UPDATE fungsi Tutup Modal (Pastikan tombol upload dan preview di-reset)
+window.closeCategoryModal = () => {
+    document.getElementById("category-modal").classList.add("hidden");
+    document.getElementById("cat-name").value = "";
+    document.getElementById("cat-desc").value = "";
+    
+    // Reset tombol Upload
+    document.getElementById("cat-image-file").value = "";
+    document.getElementById("cat-image-base64").value = "";
+    document.getElementById("cat-file-name-label").innerText = "Pilih Gambar dari Perangkat...";
+    
+    // Reset Preview
+    document.getElementById("cat-preview-img").src = "";
+    document.getElementById("cat-preview-img").classList.add("hidden");
+    document.getElementById("cat-preview-text").classList.remove("hidden");
+};
+// Fungsi Switch Tab
+window.switchManageTab = (tab) => {
+    const tabProd = document.getElementById("tab-produk"); // ID tabel produk kamu
+    const tabCat = document.getElementById("tab-kategori");
+    
+    if (tab === 'produk') {
+        tabProd?.classList.remove("hidden");
+        tabCat?.classList.add("hidden");
+    } else {
+        tabProd?.classList.add("hidden");
+        tabCat?.classList.remove("hidden");
+    }
+};
 
 // ==========================================
 // 5. KERANJANG (CART)
@@ -609,6 +784,15 @@ window.fetchTransactions = function() {
 // 7. UTILS & HELPERS
 // ==========================================
 
+// Fungsi untuk menggeser kategori secara horizontal
+window.scrollCategories = function(amount) {
+    const container = document.getElementById('category-filters');
+    container.scrollBy({
+        left: amount,
+        behavior: 'smooth'
+    });
+};
+
 window.searchProducts = function() {
     const searchInput = document.getElementById("search-input");
     const searchTerm = searchInput.value.trim().toLowerCase();
@@ -637,29 +821,39 @@ window.searchProducts = function() {
     renderProductGrid(searchTerm); 
 };
 
-// Filter Kategori di Kasir
-// Filter Kategori di Kasir
-window.filterGridByCategory = function(category) {
-    if (category === "Semua") {
-        renderProductGrid(allProducts);
-    } else {
-        const filtered = allProducts.filter(p => p.category === category);
-        renderProductGrid(filtered); // Mengirim ARRAY ke renderProductGrid
-    }
-    
-    // Update Style Tombol Filter (Visual Feedback)
-    const container = document.getElementById("category-filters");
-    if (container) {
-        Array.from(container.children).forEach(btn => {
-            if(btn.innerText.trim() === category) {
-                btn.className = "whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold border transition bg-lumina-dark text-white border-lumina-dark";
-            } else {
-                btn.className = "whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold border transition bg-white text-gray-500 border-gray-200 hover:border-lumina-dark hover:text-lumina-dark";
-            }
-        });
-    }
-}
+// 1. Tambahkan variabel state global di bagian atas jika belum ada
+window.currentSort = "default";
+// 2. Fungsi Utama untuk memproses Filter & Sortir secara bersamaan
+window.applyFiltersAndSort = function() {
+    let displayProducts = [...allProducts];
 
+    // Tahap 1: Filter berdasarkan Kategori
+    if (window.currentCategory && window.currentCategory !== "Semua") {
+        displayProducts = displayProducts.filter(p => p.category === window.currentCategory);
+    }
+
+    // Tahap 2: Sortir berdasarkan Kriteria yang dipilih
+    if (window.currentSort === 'low') {
+        displayProducts.sort((a, b) => a.price - b.price);
+    } else if (window.currentSort === 'high') {
+        displayProducts.sort((a, b) => b.price - a.price);
+    } else if (window.currentSort === 'name') {
+        displayProducts.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    // Tahap 3: Render hasil akhir ke layar
+    renderProductGrid(displayProducts);
+};
+// 3. Update fungsi Filter Kategori
+window.filterGridByCategory = function(category) {
+    window.currentCategory = category;
+    // Panggil fungsi proses gabungan
+    window.applyFiltersAndSort();
+    
+    // Sinkronisasi visual (jika perlu)
+    const selectContainer = document.getElementById("category-select");
+    if (selectContainer) selectContainer.value = category;
+};
 window.openProductModal = function() {
     document.getElementById("product-modal").classList.remove("hidden");
     resetForm();
@@ -743,6 +937,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Fokus kembali ke input setelah modal ditutup atau transaksi selesai
 window.addEventListener("click", (e) => {
+    if (e.target.id === "category-select") {
+        return; // Hentikan perintah pemaksaan fokus di sini
+    }
+
+    if (e.target.id === "category-select" || e.target.id === "sort-select") {
+        return; // Jangan lakukan apa-apa jika yang diklik adalah salah satu dropdown
+    }
+
     // Jika tidak sedang mengisi form modal, kembalikan fokus ke input utama
     const modalProduk = document.getElementById("product-modal");
     if (modalProduk && modalProduk.classList.contains("hidden")) {

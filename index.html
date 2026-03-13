@@ -13,6 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/css/style.css" />
     <script>
       tailwind.config = {
         theme: {
@@ -30,7 +31,6 @@
       };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-
     <style>
       /* Style Scrollbar */
       .custom-scroll::-webkit-scrollbar {
@@ -49,12 +49,9 @@
 
       /* LOGIKA PRINT KHUSUS */
       @media print {
-        /* Sembunyikan semuanya secara default saat print */
         body * {
           visibility: hidden;
         }
-
-        /* JIKA YANG DIPRINT ADALAH STRUK */
         #receipt-modal,
         #receipt-print-area,
         #receipt-print-area * {
@@ -67,8 +64,6 @@
           width: 100%;
           border: none;
         }
-
-        /* JIKA YANG DIPRINT ADALAH KATALOG BARCODE */
         #barcode-catalog-modal,
         #barcode-catalog-modal * {
           visibility: visible;
@@ -80,11 +75,9 @@
           width: 100%;
           background: white !important;
         }
-        /* Sembunyikan tombol aksi saat print katalog */
         .print-hidden {
           display: none !important;
         }
-
         @page {
           margin: 0.5cm;
           size: auto;
@@ -92,7 +85,6 @@
       }
     </style>
   </head>
-
   <body
     class="bg-gray-100 text-gray-800 font-sans h-screen flex flex-col overflow-hidden"
   >
@@ -115,46 +107,56 @@
           <i class="fas fa-arrow-left text-[10px]"></i> Ke Landing Page
         </a>
       </div>
-
       <div class="flex items-center gap-6">
-        <div class="flex bg-[#111827] rounded-xl p-1 border border-gray-800">
-          <button
-            class="bg-lumina-gold text-lumina-dark px-6 py-2 rounded-lg text-sm font-bold shadow-sm"
-          >
-            Kasir
-          </button>
-          <a
-            href="laporan.html"
-            class="text-gray-500 px-6 py-2 rounded-lg text-sm font-bold hover:text-gray-300 transition"
-            >Laporan Penjualan</a
-          >
-        </div>
         <button
           onclick="openProductModal()"
           class="bg-lumina-gold/10 text-lumina-gold border border-lumina-gold/30 px-4 py-2 rounded-xl text-sm font-bold hover:bg-lumina-gold hover:text-lumina-dark transition flex items-center gap-2"
         >
-          <i class="fas fa-plus"></i> Kelola Produk
+          <i class="fas fa-cog"></i> Manajemen Data
         </button>
       </div>
     </nav>
 
     <div class="flex flex-1 overflow-hidden">
       <div class="flex-1 flex flex-col p-6 overflow-hidden">
-        <div class="flex flex-col md:flex-row gap-4 mb-6 flex-none">
-          <div class="relative flex-grow">
+        <div class="filter-section-wrapper">
+          <div class="search-wrapper">
+            <i class="fas fa-search"></i>
             <input
               type="text"
               id="search-input"
-              placeholder="Scan barcode atau cari nama..."
-              class="w-full pl-10 pr-4 py-3 rounded-xl border-none shadow-sm focus:ring-2 focus:ring-lumina-gold outline-none"
-              oninput="searchProducts()"
+              oninput="handleSearch(event)"
+              placeholder="Cari furnitur..."
             />
-            <i class="fas fa-search absolute left-4 top-3.5 text-gray-400"></i>
           </div>
-          <div
-            id="category-filters"
-            class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
-          ></div>
+          <div class="flex items-center gap-3">
+            <div class="category-dropdown-wrapper">
+              <select
+                id="category-select"
+                onchange="filterGridByCategory(this.value)"
+              ></select>
+              <i class="fas fa-chevron-down drop-icon"></i>
+            </div>
+            <div
+              class="category-dropdown-wrapper"
+              style="min-width: 180px !important"
+            >
+              <select id="sort-select" onchange="sortProducts(this.value)">
+                <option value="default">Urutkan: Default</option>
+                <option value="low">Harga: Rendah - Tinggi</option>
+                <option value="high">Harga: Tinggi - Rendah</option>
+                <option value="name">Nama: A - Z</option>
+              </select>
+              <i class="fas fa-sort-amount-down drop-icon"></i>
+            </div>
+            <button
+              onclick="syncData()"
+              class="nav-scroll-btn"
+              title="Sinkronkan Data"
+            >
+              <i class="fas fa-sync-alt"></i>
+            </button>
+          </div>
         </div>
 
         <div class="flex-grow overflow-y-auto pr-2 custom-scroll">
@@ -210,10 +212,25 @@
       <div
         class="bg-white w-full max-w-5xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
       >
-        <div class="flex justify-between items-center p-6 border-b">
-          <h3 class="text-xl font-bold text-lumina-dark">
-            Manajemen Inventaris
-          </h3>
+        <div
+          class="flex justify-between items-center p-6 border-b shrink-0 bg-white z-10"
+        >
+          <div class="flex gap-6">
+            <button
+              onclick="switchManageTab('produk')"
+              id="btn-tab-produk"
+              class="text-lg font-bold text-lumina-dark border-b-2 border-lumina-dark pb-1 transition"
+            >
+              Kelola Produk
+            </button>
+            <button
+              onclick="switchManageTab('kategori')"
+              id="btn-tab-kategori"
+              class="text-lg font-bold text-gray-400 hover:text-gray-600 border-b-2 border-transparent pb-1 transition"
+            >
+              Kelola Kategori
+            </button>
+          </div>
           <button
             onclick="closeProductModal()"
             class="text-gray-400 hover:text-red-500 transition"
@@ -222,7 +239,10 @@
           </button>
         </div>
 
-        <div class="flex flex-col md:flex-row h-full overflow-hidden">
+        <div
+          id="tab-produk"
+          class="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden"
+        >
           <div
             class="w-full md:w-1/3 p-6 bg-gray-50 border-r overflow-y-auto custom-scroll"
           >
@@ -276,39 +296,23 @@
                 ></textarea>
               </div>
               <div>
-                <div class="flex justify-between items-center mb-1">
-                  <label class="block text-xs font-bold text-gray-500"
-                    >Kategori</label
-                  >
-                  <button
-                    onclick="toggleCategoryMode()"
-                    class="text-[10px] text-lumina-gold font-bold hover:underline"
-                    id="toggle-cat-btn"
-                  >
-                    + Tambah Baru
-                  </button>
-                </div>
-                <div id="cat-select-wrapper">
-                  <select
-                    id="product-category-select"
-                    onchange="checkCategorySelection()"
-                    class="w-full p-2 border rounded-lg focus:ring-1 focus:ring-lumina-gold outline-none text-sm bg-white appearance-none"
-                  >
-                    <option value="">Pilih Kategori...</option>
-                  </select>
-                </div>
-                <div id="cat-input-wrapper" class="hidden">
-                  <input
-                    type="text"
-                    id="product-category-input"
-                    placeholder="Nama kategori baru..."
-                    class="w-full p-2 border border-lumina-gold rounded-lg focus:ring-1 focus:ring-lumina-gold outline-none text-sm bg-yellow-50"
-                  />
-                </div>
+                <label class="block text-xs font-bold text-gray-500 mb-1"
+                  >Kategori</label
+                >
+                <select
+                  id="product-category-select"
+                  onchange="checkCategorySelection()"
+                  class="w-full p-2 border rounded-lg focus:ring-1 focus:ring-lumina-gold outline-none text-sm bg-white"
+                >
+                  <option value="">Pilih Kategori...</option>
+                </select>
+                <p class="text-[10px] text-gray-400 mt-1">
+                  *Kategori ditambahkan via Tab "Kelola Kategori"
+                </p>
               </div>
               <div>
                 <label class="block text-xs font-bold text-gray-500 mb-1"
-                  >Upload Gambar Produk</label
+                  >Upload Gambar</label
                 >
                 <div class="flex gap-2">
                   <input
@@ -318,18 +322,16 @@
                     class="hidden"
                     onchange="handleImageUpload(this)"
                   />
-
                   <button
                     type="button"
                     onclick="
                       document.getElementById('product-image-file').click()
                     "
-                    class="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-2 text-xs text-gray-500 hover:border-lumina-gold hover:text-lumina-gold transition flex flex-col items-center gap-1"
+                    class="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-2 text-xs text-gray-500 hover:border-lumina-gold transition flex flex-col items-center gap-1"
                   >
                     <i class="fas fa-cloud-upload-alt text-lg"></i>
                     <span id="file-name-label">Pilih Gambar...</span>
                   </button>
-
                   <div
                     id="image-preview-container"
                     class="w-12 h-12 border rounded-lg hidden bg-gray-100 items-center justify-center overflow-hidden"
@@ -343,7 +345,6 @@
                 </div>
                 <input type="hidden" id="product-image" />
               </div>
-
               <div
                 class="mt-4 flex flex-col items-center p-3 bg-white rounded-xl border border-dashed border-gray-300"
               >
@@ -352,7 +353,6 @@
                 </p>
                 <svg id="barcode-preview" class="max-w-full"></svg>
               </div>
-
               <div class="pt-2 space-y-2">
                 <button
                   onclick="saveProduct()"
@@ -377,9 +377,8 @@
               </div>
             </div>
           </div>
-
-          <div class="w-full md:w-2/3 p-0 flex flex-col h-full overflow-hidden">
-            <div class="p-4 bg-gray-100 border-b">
+          <div class="w-full md:w-2/3 flex flex-col min-h-0 bg-white">
+            <div class="p-4 bg-gray-100 border-b shrink-0">
               <input
                 type="text"
                 id="search-inventory"
@@ -387,32 +386,26 @@
                 class="w-full px-4 py-2 rounded-lg border focus:outline-none text-sm"
               />
             </div>
-            <div class="overflow-y-auto flex-grow p-0 custom-scroll">
+            <div class="flex-1 overflow-y-auto custom-scroll">
               <table class="w-full text-left border-collapse">
-                <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm">
-                  <tr>
-                    <th
-                      class="p-3 text-xs font-bold text-gray-500 uppercase border-b"
-                    >
+                <thead class="bg-gray-50 sticky top-0 z-20 shadow-sm">
+                  <tr class="border-b">
+                    <th class="p-4 text-xs font-bold text-gray-500 uppercase">
                       Produk
                     </th>
-                    <th
-                      class="p-3 text-xs font-bold text-gray-500 uppercase border-b"
-                    >
+                    <th class="p-4 text-xs font-bold text-gray-500 uppercase">
                       Kategori
                     </th>
-                    <th
-                      class="p-3 text-xs font-bold text-gray-500 uppercase border-b"
-                    >
+                    <th class="p-4 text-xs font-bold text-gray-500 uppercase">
                       Harga
                     </th>
                     <th
-                      class="p-3 text-xs font-bold text-gray-500 uppercase border-b text-center"
+                      class="p-4 text-xs font-bold text-gray-500 uppercase text-center"
                     >
                       Stok
                     </th>
                     <th
-                      class="p-3 text-xs font-bold text-gray-500 uppercase border-b text-center"
+                      class="p-4 text-xs font-bold text-gray-500 uppercase text-center"
                     >
                       Aksi
                     </th>
@@ -425,6 +418,130 @@
               </table>
             </div>
           </div>
+        </div>
+
+        <div
+          id="tab-kategori"
+          class="hidden flex-1 flex-col p-6 bg-gray-50 overflow-y-auto custom-scroll"
+        >
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h2 class="text-xl font-bold text-gray-800">
+                Daftar Kategori Landing Page
+              </h2>
+              <p class="text-xs text-gray-500 mt-1">
+                Kelola gambar, judul, dan deskripsi kategori untuk halaman depan
+                pengunjung.
+              </p>
+            </div>
+            <button
+              onclick="openCategoryModal()"
+              class="bg-lumina-dark text-white px-5 py-2.5 rounded-xl hover:bg-opacity-90 shadow-md font-bold transition text-sm flex items-center gap-2"
+            >
+              <i class="fas fa-plus"></i> Tambah Kategori
+            </button>
+          </div>
+
+          <div
+            class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 flex-1"
+          >
+            <table class="w-full text-left">
+              <thead class="bg-gray-50 border-b">
+                <tr>
+                  <th class="p-4 font-bold text-xs text-gray-500 uppercase">
+                    Gambar Preview
+                  </th>
+                  <th class="p-4 font-bold text-xs text-gray-500 uppercase">
+                    Judul Kategori
+                  </th>
+                  <th class="p-4 font-bold text-xs text-gray-500 uppercase">
+                    Deskripsi
+                  </th>
+                  <th
+                    class="p-4 font-bold text-xs text-gray-500 uppercase text-center"
+                  >
+                    Aksi
+                  </th>
+                </tr>
+              </thead>
+              <tbody
+                id="category-table-body"
+                class="divide-y divide-gray-100"
+              ></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="category-modal"
+      class="fixed inset-0 bg-black/60 hidden z-[100] flex items-center justify-center p-4 backdrop-blur-sm"
+    >
+      <div class="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl">
+        <h3
+          class="text-xl font-bold mb-4 text-lumina-dark"
+          id="cat-modal-title"
+        >
+          Tambah Kategori Baru
+        </h3>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-bold text-gray-600 mb-1"
+              >Judul Kategori</label
+            >
+            <input
+              type="text"
+              id="cat-name"
+              class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-lumina-gold outline-none"
+              placeholder="Contoh: Living Room"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-600 mb-1"
+              >Deskripsi Kategori</label
+            >
+            <textarea
+              id="cat-desc"
+              class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-lumina-gold outline-none resize-none"
+              rows="3"
+              placeholder="Contoh: Elevate your living space..."
+            ></textarea>
+          </div>
+         <div>
+                  <label class="block text-sm font-bold text-gray-600 mb-1">Upload Gambar Kategori</label>
+                  <div class="flex flex-col gap-2">
+                      <input type="file" id="cat-image-file" accept="image/*" class="hidden" onchange="handleCatImageUpload(this)"/>
+                      <button type="button" onclick="document.getElementById('cat-image-file').click()" class="w-full border-2 border-dashed border-gray-300 rounded-xl p-4 text-sm text-gray-500 hover:border-lumina-gold transition flex flex-col items-center justify-center gap-2 bg-gray-50 cursor-pointer">
+                          <i class="fas fa-cloud-upload-alt text-3xl text-gray-400"></i>
+                          <span id="cat-file-name-label" class="font-bold">Pilih Gambar dari Perangkat...</span>
+                      </button>
+                      <input type="hidden" id="cat-image-base64" />
+                  </div>
+              </div>
+              
+              <div class="flex flex-col py-2 mt-2">
+                  <p class="text-xs font-bold text-gray-400 mb-2 uppercase text-center">Live Preview Gambar</p>
+                  <div class="w-full h-32 rounded-xl border-2 border-dashed shadow-sm flex items-center justify-center bg-gray-50 overflow-hidden relative" id="cat-preview">
+                      <span id="cat-preview-text" class="text-gray-300 text-xs font-bold">Preview</span>
+                      <img id="cat-preview-img" src="" class="w-full h-full object-cover hidden">
+                  </div>
+              </div>
+
+        <div class="flex gap-3 mt-6">
+          <button
+            onclick="closeCategoryModal()"
+            class="flex-1 py-3 border rounded-xl hover:bg-gray-50 font-bold text-gray-600 transition"
+          >
+            Batal
+          </button>
+          <button
+            onclick="saveCategory()"
+            class="flex-1 py-3 bg-lumina-dark text-white rounded-xl hover:bg-gray-800 shadow-md font-bold transition"
+          >
+            Simpan Kategori
+          </button>
         </div>
       </div>
     </div>
@@ -481,10 +598,10 @@
             onclick="window.print()"
             class="flex-1 bg-lumina-dark text-white py-2 rounded-lg font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2"
           >
-            <i class="fas fa-print"></i> Cetak
+            <i class="fas fa-print"></i> Print Struk
           </button>
           <button
-            onclick="closeReceipt()"
+            onclick="closeReceiptModal()"
             class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-bold hover:bg-gray-300 transition"
           >
             Selesai
@@ -503,31 +620,33 @@
         <div
           class="p-6 border-b flex justify-between items-center bg-gray-50 print-hidden"
         >
-          <h2 class="text-xl font-bold text-gray-800">
-            <i class="fas fa-barcode mr-2"></i>Katalog Barcode Produk
+          <h2 class="text-xl font-bold text-lumina-dark">
+            Katalog Barcode Produk
           </h2>
-          <div class="space-x-2">
+          <div class="flex gap-2">
             <button
-              onclick="window.printCatalog()"
-              class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              onclick="window.print()"
+              class="bg-lumina-dark text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-800 transition flex items-center gap-2"
             >
-              <i class="fas fa-print mr-2"></i>Cetak Katalog
+              <i class="fas fa-print"></i> Print Katalog
             </button>
             <button
               onclick="closeBarcodeCatalog()"
-              class="text-gray-400 hover:text-gray-600 p-2"
+              class="text-gray-400 hover:text-red-500 p-2 transition"
             >
               <i class="fas fa-times text-xl"></i>
             </button>
           </div>
         </div>
-        <div
-          id="catalog-content"
-          class="p-8 overflow-y-auto grid grid-cols-3 gap-6 bg-white"
-        ></div>
+        <div class="flex-1 overflow-y-auto p-6 bg-white custom-scroll">
+          <div
+            id="catalog-grid"
+            class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+          ></div>
+        </div>
       </div>
     </div>
 
-    <script type="module" src="js/script.js"></script>
+    <script type="module" src="/js/script.js"></script>
   </body>
 </html>

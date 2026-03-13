@@ -233,3 +233,12 @@
     color: #0f172a;
     font-size: 10px;
 }
+
+/* Sembunyikan scrollbar untuk kategori di landing page */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
