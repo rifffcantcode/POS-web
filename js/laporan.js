@@ -66,13 +66,24 @@ function initChart(data) {
     });
 }
 
-// --- 2. GRAFIK DONAT (DIPERBAIKI AGAR TIDAK TERPOTONG) ---
+// --- 2. GRAFIK DONAT (VERSI PERBAIKAN) ---
 function initTopProductsChart(productData) {
     const canvas = document.getElementById('topProductsChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    
+    if (topProductsChart) {
+        topProductsChart.destroy();
+    }
 
-    if (topProductsChart) topProductsChart.destroy();
+    // LOCK UKURAN: Ambil ukuran parent saat ini agar tidak berubah-ubah
+    const parent = canvas.parentElement;
+    const parentWidth = parent.clientWidth;
+    const parentHeight = parent.clientHeight;
+
+    // Set atribut internal canvas agar fix
+    canvas.width = parentWidth;
+    canvas.height = parentHeight;
 
     setTimeout(() => {
         topProductsChart = new Chart(ctx, {
@@ -83,48 +94,37 @@ function initTopProductsChart(productData) {
                     data: productData.values,
                     backgroundColor: ['#D4AF37', '#1D2939', '#475569', '#94A3B8', '#CBD5E1'],
                     borderWidth: 0,
-                    // Dikurangi sedikit dari 20 ke 12 agar tidak terlalu 'off-side'
-                    hoverOffset: 12 
+                    hoverOffset: 12
                 }]
             },
             options: {
-                responsive: true,
+                // MATIKAN RESPONSIVE OTOMATIS: 
+                // Ini mencegah Chart.js melakukan 'reset' saat zoom 100%
+                responsive: false, 
                 maintainAspectRatio: false,
+                devicePixelRatio: window.devicePixelRatio, // Ikuti zoom browser secara manual
                 cutout: '75%',
-                // --- BAGIAN PENYELAMAT: MEMBERI RUANG AMAN ---
                 layout: {
-                    padding: {
-                        top: 20,
-                        bottom: 20,
-                        left: 10,
-                        right: 10
-                    }
+                    padding: 30
                 },
                 animation: {
                     animateRotate: true,
                     animateScale: true,
-                    duration: isFirstLoad ? 2500 : 0,
+                    duration: isFirstLoad ? 2000 : 800,
                     easing: 'easeOutQuart'
                 },
-                plugins: { 
-                    legend: { 
-                        position: 'bottom', 
-                        labels: { 
-                            usePointStyle: true, 
-                            padding: 20,
-                            // Menghindari teks legend yang terlalu rapat dengan chart
-                            boxWidth: 8 
-                        } 
-                    },
-                    tooltip: {
-                        // Memperhalus tampilan tooltip agar tidak menempel ke chart
-                        cornerRadius: 8,
-                        padding: 12
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
                     }
                 }
             }
         });
-    }, 50);
+    }, 150);
 }
 
 // --- 3. LOAD DATA ---
@@ -208,3 +208,50 @@ document.getElementById('period-filter').addEventListener('change', (e) => {
 });
 
 loadReport();
+
+window.exportToPDF = async function() {
+    const { jsPDF } = window.jspdf;
+    const element = document.querySelector('main'); // Mengambil konten utama saja
+    const button = document.querySelector('button[onclick="exportToPDF()"]');
+    
+    // 1. Beri feedback visual (loading)
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    button.disabled = true;
+
+    try {
+        // 2. Konfigurasi html2canvas agar hasilnya tajam
+        const canvas = await html2canvas(element, {
+            scale: 2, // Meningkatkan resolusi PDF
+            useCORS: true, // Untuk gambar dari URL luar jika ada
+            logging: false,
+            backgroundColor: "#f8fafc", // Warna background sesuai CSS kamu
+            ignoreElements: (el) => el.classList.contains('no-print') // Sembunyikan filter & tombol
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        
+        // 3. Setup Dokumen PDF (A4)
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'px',
+            format: 'a4'
+        });
+
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+        // 4. Masukkan gambar ke PDF
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`Lumina-Sales-Report-${new Date().toLocaleDateString()}.pdf`);
+
+    } catch (error) {
+        console.error("PDF Export Error:", error);
+        alert("Gagal mengekspor PDF. Silakan coba lagi.");
+    } finally {
+        // 5. Kembalikan tombol ke semula
+        button.innerHTML = originalText;
+        button.disabled = false;
+    }
+};

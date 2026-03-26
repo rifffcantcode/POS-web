@@ -1,17 +1,16 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  query,
-  orderBy,
-  serverTimestamp
+import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    updateDoc, 
+    deleteDoc,
+    doc, 
+    onSnapshot, 
+    query, 
+    orderBy, 
+    serverTimestamp // <--- PASTIKAN INI ADA
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
 // ==========================================
 // 1. KONFIGURASI FIREBASE
 // ==========================================
@@ -27,16 +26,37 @@ const firebaseConfig = {
 
 // Inisialisasi
 const app = initializeApp(firebaseConfig);
+window.db = getFirestore(app);
 const db = getFirestore(app);
 const productsRef = collection(db, "products");
 const transactionsRef = collection(db, "transactions");
 
 // STATE VARIABLES
 let allProducts = [];
+let deletedProducts = []; 
+window.deletedCategories = [];
+let isShowingTrash = false;
 let cart = [];
-let isCategoryInputMode = false; // False = Select Mode, True = Text Input Mode
+let isCategoryInputMode = false; 
 
-// Taruh di sekitar baris 35-50 (Area Fungsi Barcode)
+// ==========================================
+// FUNGSI PENCARIAN PRODUK
+// ==========================================
+window.handleSearch = (e) => {
+    // Ambil teks yang diketik (ubah ke huruf kecil agar pencarian tidak sensitif huruf besar)
+    const query = e.target.value.toLowerCase();
+    
+    // Filter dari array allProducts yang sudah ada di memori
+    const filtered = allProducts.filter(p => {
+        const nameMatch = p.name.toLowerCase().includes(query);
+        const Match = p.category.toLowerCase().includes(query);
+        return nameMatch || categoryMatch;
+    });
+    
+    // Tampilkan hasil filter ke grid produk
+    renderProductGrid(filtered);
+};
+
 window.renderBarcode = function() {
     const productName = document.getElementById("product-name").value;
     const barcodeSvg = document.getElementById("barcode-preview");
@@ -65,13 +85,19 @@ window.renderBarcode = function() {
 
 // Load Produk Realtime
 onSnapshot(productsRef, (snapshot) => {
-  allProducts = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-  renderProductGrid(allProducts);
-  renderInventoryTable(allProducts); // Render awal tabel inventaris
-  renderCategoryFilters(); 
-  loadCategoriesIntoSelect(); 
-});
+  const allDocs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 
+  // Pisahkan yang aktif dan yang terhapus
+  allProducts = allDocs.filter((product) => product.isDeleted !== true);
+  window.deletedProducts = allDocs.filter((product) => product.isDeleted === true);
+  renderProductGrid(allProducts);
+  renderInventoryTable(allProducts); 
+  renderCategoryFilters();
+  loadCategoriesIntoSelect();
+  
+  // Render ke tabel tempat sampah
+  renderTrashProducts(window.deletedProducts);
+});
 // Render Grid Produk (Halaman Kasir) - VERSI FIX 100%
 function renderProductGrid(input = allProducts) {
     const grid = document.getElementById("product-list");
@@ -253,38 +279,39 @@ window.checkCategorySelection = function() {
     }
 }
 
-window.deleteCategory = async function() {
-    const select = document.getElementById("product-category-select");
-    const categoryName = select.value;
-
-    if (!categoryName) return;
-
-    const productsInCat = allProducts.filter(p => p.category === categoryName);
-    
-    const confirmMsg = `Yakin ingin menghapus kategori "${categoryName}"?\n\n` + 
-                       `Ada ${productsInCat.length} produk dalam kategori ini.\n` +
-                       `Produk akan dipindahkan ke kategori "Uncategorized".`;
-
-    if (!confirm(confirmMsg)) return;
+window.softDeleteCategory = async (id) => {
+    if (!confirm("Pindahkan kategori ke tempat sampah?")) return;
 
     try {
-        const btnDel = document.getElementById("btn-delete-cat");
-        btnDel.innerText = "...";
-        
-        const updatePromises = productsInCat.map(product => {
-            const productRef = doc(db, "products", product.id);
-            return updateDoc(productRef, { category: "Uncategorized" });
+        const catRef = doc(db, "categories", id);
+
+        await updateDoc(catRef, {
+            isDeleted: true
         });
 
-        await Promise.all(updatePromises);
-        alert("Kategori berhasil dihapus!");
-        resetForm();
-        
+        alert("Kategori dipindahkan ke tempat sampah!");
     } catch (error) {
-        console.error("Error deleting category:", error);
+        console.error("Error:", error);
         alert("Gagal menghapus kategori.");
     }
-}
+};
+
+window.restoreCategory = async (id) => {
+    if (!confirm("Kembalikan kategori ini?")) return;
+
+    try {
+        const catRef = doc(db, "categories", id);
+
+        await updateDoc(catRef, {
+            isDeleted: false
+        });
+
+        alert("Kategori berhasil dikembalikan!");
+    } catch (error) {
+        console.error(error);
+        alert("Gagal restore kategori.");
+    }
+};
 
 // ==========================================
 // 4. CRUD PRODUCT (VERSI PERBAIKAN)
@@ -316,6 +343,7 @@ window.saveProduct = async function() {
         const catSelect = document.getElementById("product-category-select");
         category = catSelect ? catSelect.value : "";
     }
+
 
     // Validasi
     if (!name || price === "" || stock === "" || !category) { 
@@ -430,37 +458,40 @@ window.editProduct = function(id) {
     setTimeout(window.renderBarcode, 100);
 }
 
-// BAGIAN PERBAIKAN FUNGSI HAPUS
-window.deleteProduct = async function(id) {
-    if (!id) return;
-
-    if (confirm("Apakah Anda yakin ingin menghapus produk ini?")) {
-        try {
-            // Kita gunakan doc dan deleteDoc yang sudah di-import di atas, 
-            // JANGAN gunakan window.FirebaseFirestore lagi.
-            const productRef = doc(db, "products", id);
-            await deleteDoc(productRef);
-            
-            // Opsional: Beri notifikasi sukses
-            alert("Produk berhasil dihapus!");
-            console.log("ID dihapus:", id);
-        } catch (error) {
-            console.error("Gagal menghapus:", error);
-            alert("Gagal menghapus: " + error.message);
-        }
+window.deleteProduct = async (id) => {
+  if (confirm("Apakah Anda yakin ingin menghapus produk ini?")) {
+    try {
+      // Menerapkan Soft Delete: mengubah status isDeleted menjadi true
+      const productRef = doc(db, "products", id);
+      await updateDoc(productRef, {
+        isDeleted: true,
+        updatedAt: serverTimestamp()
+      });
+      showToast("Produk berhasil dihapus", "success");
+    } catch (e) {
+      console.error("Error menghapus produk: ", e);
+      showToast("Gagal menghapus produk", "error");
     }
-}
+  }
+};
 
 // Referensi Koleksi Baru
 const categoriesRef = collection(db, "categories");
 let allCategories = [];
+let editingCategoryId = null;
 
 // 1. Ambil Data Kategori Secara Realtime
 onSnapshot(categoriesRef, (snapshot) => {
-    allCategories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // FILTER SOFT DELETE: Hanya simpan ke array jika isDeleted BUKAN true
+    allCategories = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(cat => cat.isDeleted !== true);
+
     renderCategoryTable();
     // Update juga dropdown kategori di form produk agar otomatis sinkron
-    updateProductCategoryDropdown(); 
+    if (typeof updateProductCategoryDropdown === "function") {
+        updateProductCategoryDropdown();
+    }
 });
 
 // Render Tabel Kategori di Manajemen
@@ -470,20 +501,43 @@ window.renderCategoryTable = function() {
     tbody.innerHTML = "";
 
     allCategories.forEach(cat => {
-        tbody.innerHTML += `
-            <tr class="border-b hover:bg-gray-50 transition">
-                <td class="p-4 w-32">
-                    <img src="${cat.image || 'https://via.placeholder.com/150'}" class="w-24 h-16 rounded-lg object-cover border shadow-sm">
-                </td>
-                <td class="p-4 font-bold text-gray-800 w-48">${cat.name}</td>
-                <td class="p-4 text-sm text-gray-500 line-clamp-2 h-20 pt-6">${cat.description || '-'}</td>
-                <td class="p-4 text-center w-24">
-                    <button onclick="deleteCategory('${cat.id}')" class="text-red-500 hover:text-red-700 mx-2 bg-red-50 w-8 h-8 rounded-full transition">
+        const row = document.createElement("tr");
+        row.className = "border-b hover:bg-gray-50 transition";
+
+        row.innerHTML = `
+            <td class="p-4 w-32">
+                <img src="${cat.image || 'https://via.placeholder.com/150'}" 
+                     class="w-24 h-16 rounded-lg object-cover border shadow-sm">
+            </td>
+
+            <td class="p-4 font-bold text-gray-800 w-48">
+                ${cat.name}
+            </td>
+
+            <td class="p-4 text-sm text-gray-500 line-clamp-2 h-20 pt-6">
+                ${cat.description || '-'}
+            </td>
+
+            <td class="p-4 text-center">
+                <div class="flex justify-center items-center gap-2">
+
+                    <!-- EDIT (SAMA KAYAK PRODUCT) -->
+                    <button onclick="editCategory('${cat.id}')" 
+                        class="bg-yellow-50 text-yellow-600 p-2 rounded hover:bg-yellow-100 transition">
+                        <i class="fas fa-edit"></i>
+                    </button>
+
+                    <!-- DELETE -->
+                    <button onclick="softDeleteCategory('${cat.id}')" 
+                        class="bg-red-50 text-red-600 p-2 rounded hover:bg-red-100 transition">
                         <i class="fas fa-trash"></i>
                     </button>
-                </td>
-            </tr>
+
+                </div>
+            </td>
         `;
+
+        tbody.appendChild(row);
     });
 };
 // 1. Fungsi BARU untuk menangani proses upload gambar Kategori
@@ -515,32 +569,58 @@ window.handleCatImageUpload = function(input) {
     }
 };
 
-// 2. UPDATE fungsi Simpan Kategori (Ambil data dari base64, bukan URL lagi)
-window.saveCategory = async function() {
-    const name = document.getElementById("cat-name").value.trim();
-    const desc = document.getElementById("cat-desc").value.trim();
+// 2. UPDATE fungsi Simpan Kategori
+window.saveCategory = async () => {
+    const titleEl = document.getElementById("category-title");
+    const descEl = document.getElementById("category-desc");
     const imageBase64 = document.getElementById("cat-image-base64").value;
 
-    if (!name || !imageBase64) return alert("Harap isi Judul Kategori dan Upload Gambar!");
+    const titleVal = titleEl.value.trim();
+    const descVal = descEl.value.trim();
+
+    if (!titleVal || !imageBase64) {
+        alert("Judul & gambar wajib diisi!");
+        return;
+    }
 
     try {
-        await addDoc(categoriesRef, {
-            name: name,
-            description: desc,
-            image: imageBase64,
-            createdAt: serverTimestamp()
-        });
-        alert("Kategori berhasil ditambahkan!");
+        if (editingCategoryId) {
+            // ✏️ EDIT MODE
+            await updateDoc(doc(db, "categories", editingCategoryId), {
+                name: titleVal,
+                description: descVal,
+                image: imageBase64,
+                updatedAt: serverTimestamp()
+            });
+
+            alert("Kategori berhasil diupdate!");
+            editingCategoryId = null;
+
+        } else {
+            // ➕ CREATE MODE
+            await addDoc(collection(db, "categories"), {
+                name: titleVal,
+                description: descVal,
+                image: imageBase64,
+                isDeleted: false,
+                createdAt: serverTimestamp()
+            });
+
+            alert("Kategori berhasil dibuat!");
+        }
+
         closeCategoryModal();
+
     } catch (error) {
-        console.error("Error adding category: ", error);
+        console.error(error);
+        alert("Gagal menyimpan kategori.");
     }
 };
 
-// 4. Hapus Kategori
-window.deleteCategory = async function(id) {
-    if (confirm("Hapus kategori ini? Produk dengan kategori ini tidak akan terhapus, tapi kategori ini tidak akan muncul di filter.")) {
-        await deleteDoc(doc(db, "categories", id));
+window.closeAddCategoryModal = () => {
+    const modal = document.getElementById("add-category-modal");
+    if (modal) {
+        modal.classList.add("hidden"); // Menghilangkan modal
     }
 };
 
@@ -549,32 +629,132 @@ window.openCategoryModal = () => document.getElementById("category-modal").class
 // 3. UPDATE fungsi Tutup Modal (Pastikan tombol upload dan preview di-reset)
 window.closeCategoryModal = () => {
     document.getElementById("category-modal").classList.add("hidden");
-    document.getElementById("cat-name").value = "";
-    document.getElementById("cat-desc").value = "";
-    
-    // Reset tombol Upload
+
+    document.getElementById("category-title").value = "";
+    document.getElementById("category-desc").value = "";
+
+    // reset edit mode
+    editingCategoryId = null;
+
+    // reset upload
     document.getElementById("cat-image-file").value = "";
     document.getElementById("cat-image-base64").value = "";
     document.getElementById("cat-file-name-label").innerText = "Pilih Gambar dari Perangkat...";
-    
-    // Reset Preview
+
+    // reset preview
     document.getElementById("cat-preview-img").src = "";
     document.getElementById("cat-preview-img").classList.add("hidden");
     document.getElementById("cat-preview-text").classList.remove("hidden");
 };
-// Fungsi Switch Tab
+// FUNGSI PERPINDAHAN TAB MODAL
 window.switchManageTab = (tab) => {
-    const tabProd = document.getElementById("tab-produk"); // ID tabel produk kamu
-    const tabCat = document.getElementById("tab-kategori");
+    const tabIds = ['produk', 'kategori', 'trash'];
     
-    if (tab === 'produk') {
-        tabProd?.classList.remove("hidden");
-        tabCat?.classList.add("hidden");
-    } else {
-        tabProd?.classList.add("hidden");
-        tabCat?.classList.remove("hidden");
+    tabIds.forEach(t => {
+        const contentEl = document.getElementById(`tab-${t}`);
+        const btnEl = document.getElementById(`btn-tab-${t}`);
+        
+        if (contentEl && btnEl) {
+            if (t === tab) {
+                // Tampilkan tab aktif
+                contentEl.classList.remove('hidden');
+                btnEl.classList.add('text-lumina-dark', 'border-lumina-dark');
+                btnEl.classList.remove('text-gray-400', 'border-transparent');
+            } else {
+                // Sembunyikan tab lain
+                contentEl.classList.add('hidden');
+                btnEl.classList.remove('text-lumina-dark', 'border-lumina-dark');
+                btnEl.classList.add('text-gray-400', 'border-transparent');
+            }
+        }
+    });
+
+    // Otomatis render ulang tabel sampah setiap kali tabnya dibuka
+    if (tab === 'trash') {
+        if (typeof window.renderTrashProducts === 'function') window.renderTrashProducts();
+        if (typeof window.renderTrashCategories === 'function') window.renderTrashCategories();
     }
 };
+
+// Fungsi Render untuk Tabel Tempat Sampah
+function renderTrashTables() {
+    // Ambil data dari state 'allProducts' yang isDeleted === true
+    const deletedProducts = window.deletedProducts;
+    const productTrashBody = document.getElementById('trash-products-body');
+    
+    productTrashBody.innerHTML = deletedProducts.length ? '' : '<tr><td colspan="2" class="p-4 text-center text-gray-400 italic">Tidak ada produk di sampah</td></tr>';
+    
+    deletedProducts.forEach(product => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="p-4 font-medium text-gray-700">${product.name}</td>
+           <td class="p-4 text-center space-x-2">
+  <button onclick="restoreProduct('${product.id}')" 
+    class="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded-lg text-xs font-bold border border-blue-200">
+    <i class="fas fa-undo"></i>
+  </button>
+
+  <button onclick="hardDeleteProduct('${product.id}')" 
+    class="text-red-600 hover:bg-red-50 px-3 py-1 rounded-lg text-xs font-bold border border-red-200">
+    <i class="fas fa-trash"></i>
+  </button>
+</td>
+        `;
+        productTrashBody.appendChild(tr);
+    });
+
+    // Lakukan hal yang sama untuk kategori jika kamu punya status 'isDeleted' di kategori
+}
+
+window.editCategory = function(id) {
+    const category = allCategories.find(c => c.id === id);
+    if (!category) return;
+
+    editingCategoryId = id;
+
+    // Isi form
+    document.getElementById("category-title").value = category.name;
+    document.getElementById("category-desc").value = category.description || "";
+    document.getElementById("cat-image-base64").value = category.image || "";
+
+    // Preview image
+    const previewImg = document.getElementById("cat-preview-img");
+    const previewText = document.getElementById("cat-preview-text");
+
+    if (category.image) {
+        previewImg.src = category.image;
+        previewImg.classList.remove("hidden");
+        previewText.classList.add("hidden");
+    }
+
+    // Buka modal
+    document.getElementById("category-modal").classList.remove("hidden");
+};
+
+window.hardDeleteProduct = async (id) => {
+  if (!confirm("Hapus PERMANEN produk ini? (tidak bisa dikembalikan)")) return;
+
+  try {
+    await deleteDoc(doc(db, "products", id));
+    alert("Produk berhasil dihapus permanen!");
+  } catch (error) {
+    console.error(error);
+    alert("Gagal menghapus produk.");
+  }
+};
+
+window.hardDeleteCategory = async (id) => {
+  if (!confirm("Hapus PERMANEN kategori ini?")) return;
+
+  try {
+    await deleteDoc(doc(db, "categories", id));
+    alert("Kategori berhasil dihapus permanen!");
+  } catch (error) {
+    console.error(error);
+    alert("Gagal menghapus kategori.");
+  }
+};
+
 
 // ==========================================
 // 5. KERANJANG (CART)
@@ -798,7 +978,7 @@ window.searchProducts = function() {
     const searchTerm = searchInput.value.trim().toLowerCase();
     
     if (searchTerm === "") {
-        renderProductGrid(); // Tampilkan semua jika kosong
+        renderProductGrid();
         return;
     }
 
@@ -952,8 +1132,139 @@ window.addEventListener("click", (e) => {
     }
 });
 
+// ============================================================
+// FITUR TEMPAT SAMPAH (PRODUK & KATEGORI)
+// ============================================================
+
+window.renderTrashProducts = () => {
+    const tbody = document.getElementById("trash-products-body");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    if (!window.deletedProducts || window.deletedProducts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="2" class="p-6 text-center text-gray-400 text-sm italic">Tong sampah produk kosong.</td></tr>`;
+        return;
+    }
+
+    window.deletedProducts.forEach((product) => {
+        tbody.innerHTML += `
+            <tr class="hover:bg-red-50/50 transition border-b border-gray-50">
+                <td class="p-4 text-sm font-medium text-gray-700 line-through decoration-red-400 decoration-2">${product.name}</td>
+                <td class="p-4 text-center space-x-2">
+
+                    <!-- RESTORE -->
+                    <button onclick="restoreProduct('${product.id}')" 
+                        class="bg-white border border-green-200 text-green-600 px-3 py-1.5 rounded-lg hover:bg-green-50 font-bold text-xs transition shadow-sm">
+                        <i class="fas fa-undo"></i>
+                    </button>
+
+                    <!-- HARD DELETE -->
+                    <button onclick="hardDeleteProduct('${product.id}')" 
+                        class="bg-white border border-red-200 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 font-bold text-xs transition shadow-sm">
+                        <i class="fas fa-trash"></i>
+                    </button>
+
+                </td>
+            </tr>
+        `;
+    });
+};
+
+window.renderTrashCategories = function() {
+    const tbody = document.getElementById("trash-categories-body");
+    if (!tbody) return;
+
+    tbody.innerHTML = "";
+
+    if (!window.deletedCategories || window.deletedCategories.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="2">Kosong</td></tr>`;
+        return;
+    }
+
+    window.deletedCategories.forEach(cat => {
+        tbody.innerHTML += `
+            <tr class="hover:bg-red-50/50 transition border-b border-gray-50">
+                <td class="p-4 text-sm font-medium text-gray-700 line-through decoration-red-400 decoration-2">${cat.name}</td>
+                <td class="p-4 text-center space-x-2">
+
+                    <!-- RESTORE -->
+                    <button onclick="restoreCategory('${cat.id}')" 
+                        class="bg-white border border-green-200 text-green-600 px-3 py-1.5 rounded-lg hover:bg-green-50 font-bold text-xs transition shadow-sm">
+                        <i class="fas fa-undo"></i>
+                    </button>
+
+                    <!-- HARD DELETE -->
+                    <button onclick="hardDeleteCategory('${cat.id}')" 
+                        class="bg-white border border-red-200 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 font-bold text-xs transition shadow-sm">
+                        <i class="fas fa-trash"></i>
+                    </button>
+
+                </td>
+            </tr>
+        `;
+    });
+};
+
+window.restoreProduct = async (id) => {
+    if (confirm("Kembalikan produk ini ke daftar aktif?")) {
+        try {
+            await updateDoc(doc(db, "products", id), { 
+                isDeleted: false, 
+                updatedAt: serverTimestamp() 
+            });
+            alert("Produk berhasil dipulihkan!");
+            // Tabel otomatis render ulang berkat onSnapshot
+        } catch (e) {
+            console.error("Error restoring product:", e);
+        }
+    }
+};
+
+window.restoreCategory = async (id) => {
+    if (confirm("Kembalikan kategori ini ke daftar aktif?")) {
+        try {
+            await updateDoc(doc(db, "categories", id), { 
+                isDeleted: false, 
+                updatedAt: serverTimestamp() 
+            });
+            alert("Kategori berhasil dipulihkan!");
+        } catch (e) {
+            console.error("Error restoring category:", e);
+        }
+    }
+};
+
+// Deklarasikan variabel global agar bisa dibaca tempat sampah
+window.allCategories = [];
+window.deletedCategories = [];
+
+// 1. Ambil Data Kategori Secara Realtime (HANYA SATU DI SINI)
+onSnapshot(categoriesRef, (snapshot) => {
+    // Ambil semua dokumen
+    const allDocs = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+    }));
+
+    // Pisahkan: Kategori Aktif vs Kategori Tempat Sampah
+    allCategories = allDocs.filter(cat => cat.isDeleted !== true);
+    window.deletedCategories = allDocs.filter(cat => cat.isDeleted === true);
+
+    // 1. Render tabel utama
+    renderCategoryTable();
+
+    // 2. Render tabel tempat sampah (PENTING AGAR TEMPAT SAMPAH UPDATE)
+    if (typeof renderTrashCategories === "function") {
+        renderTrashCategories();
+    }
+
+    // 3. Update juga dropdown kategori di form produk agar otomatis sinkron
+    if (typeof updateProductCategoryDropdown === "function") {
+        updateProductCategoryDropdown();
+    }
+});
 // ==========================================
-// 8. EVENT LISTENERS TAMBAHAN
+// 9. EVENT LISTENERS TAMBAHAN
 // ==========================================
 
 // [FIX] Pencarian di Manajemen Inventaris (Realtime Search)
@@ -974,3 +1285,4 @@ if (nameInput) {
 
 // Jalankan fetch pertama kali
 fetchTransactions();
+

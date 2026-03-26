@@ -219,7 +219,7 @@
             <button
               onclick="switchManageTab('produk')"
               id="btn-tab-produk"
-              class="text-lg font-bold text-lumina-dark border-b-2 border-lumina-dark pb-1 transition"
+              class="text-lg font-bold text-gray-400 hover:text-gray-600 border-b-2 border-transparent pb-1 transition"
             >
               Kelola Produk
             </button>
@@ -230,6 +230,13 @@
             >
               Kelola Kategori
             </button>
+          <button
+  onclick="switchManageTab('trash')"
+  class="text-lg font-bold text-gray-400 hover:text-gray-600 border-b-2 border-transparent pb-1 transition"
+  id="btn-tab-trash"
+>
+  Tempat Sampah
+</button>
           </div>
           <button
             onclick="closeProductModal()"
@@ -238,7 +245,7 @@
             <i class="fas fa-times text-xl"></i>
           </button>
         </div>
-
+    
         <div
           id="tab-produk"
           class="flex flex-col md:flex-row flex-1 min-h-0 overflow-hidden"
@@ -372,7 +379,7 @@
                     class="flex-1 bg-gray-800 text-white py-2 rounded-lg font-bold hover:bg-black transition text-xs flex items-center justify-center gap-1"
                   >
                     <i class="fas fa-barcode"></i> Katalog
-                  </button>
+                  </button>    
                 </div>
               </div>
             </div>
@@ -471,9 +478,58 @@
             </table>
           </div>
         </div>
-      </div>
-    </div>
 
+        <div id="tab-trash" class="hidden flex-1 flex-col p-6 bg-gray-50 overflow-y-auto custom-scroll">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h2 class="text-xl font-bold text-gray-800">Tempat Sampah</h2>
+              <p class="text-xs text-gray-500 mt-1">Kelola data produk dan kategori yang telah dihapus.</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 min-h-0">
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 flex flex-col">
+              <div class="p-4 border-b border-gray-100 bg-red-50">
+                <h3 class="font-bold text-red-700 text-sm flex items-center gap-2">
+                  <i class="fas fa-box"></i> Produk Terhapus
+                </h3>
+              </div>
+              <div class="flex-1 overflow-y-auto custom-scroll">
+                <table class="w-full text-left">
+                  <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                    <tr>
+                      <th class="p-4 font-bold text-xs text-gray-500 uppercase">Nama Produk</th>
+                      <th class="p-4 font-bold text-xs text-gray-500 uppercase text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="trash-products-body" class="divide-y divide-gray-100"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 flex flex-col">
+              <div class="p-4 border-b border-gray-100 bg-red-50">
+                <h3 class="font-bold text-red-700 text-sm flex items-center gap-2">
+                  <i class="fas fa-tags"></i> Kategori Terhapus
+                </h3>
+              </div>
+              <div class="flex-1 overflow-y-auto custom-scroll">
+                <table class="w-full text-left">
+                  <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                    <tr>
+                      <th class="p-4 font-bold text-xs text-gray-500 uppercase">Nama Kategori</th>
+                      <th class="p-4 font-bold text-xs text-gray-500 uppercase text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="trash-categories-body" class="divide-y divide-gray-100"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div> 
+    </div>
+   
     <div
       id="category-modal"
       class="fixed inset-0 bg-black/60 hidden z-[100] flex items-center justify-center p-4 backdrop-blur-sm"
@@ -493,7 +549,7 @@
             >
             <input
               type="text"
-              id="cat-name"
+              id="category-title"
               class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-lumina-gold outline-none"
               placeholder="Contoh: Living Room"
             />
@@ -503,7 +559,7 @@
               >Deskripsi Kategori</label
             >
             <textarea
-              id="cat-desc"
+              id="category-desc"
               class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-lumina-gold outline-none resize-none"
               rows="3"
               placeholder="Contoh: Elevate your living space..."

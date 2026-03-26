@@ -130,95 +130,12 @@
         </p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-        <div
-          class="group relative overflow-hidden rounded-3xl bg-gray-200 h-[400px] cursor-pointer shadow-xl"
-          onclick="
-            filterCategory('Living Room');
-            window.scrollTo({
-              top:
-                document.getElementById('customer-product-grid').offsetTop -
-                100,
-              behavior: 'smooth',
-            });
-          "
-        >
-          <img
-            src="img/living_room.jpg"
-            class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90"
-          />
-          <div
-            class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 text-white"
-          >
-            <h4 class="text-2xl font-bold mb-2">Living Room</h4>
-            <p class="text-sm opacity-80 mb-4">Sofa, Meja Tamu, & Hiburan</p>
-            <span
-              class="bg-lumina-gold text-lumina-dark py-2 px-6 rounded-full font-bold text-xs w-fit"
-              >Lihat Koleksi</span
-            >
-          </div>
-        </div>
+      <div class="flex justify-between items-end mb-10"></div>
 
-        <div
-          class="group relative overflow-hidden rounded-3xl bg-gray-200 h-[400px] cursor-pointer shadow-xl"
-          onclick="
-            filterCategory('Bedroom');
-            window.scrollTo({
-              top:
-                document.getElementById('customer-product-grid').offsetTop -
-                100,
-              behavior: 'smooth',
-            });
-          "
-        >
-          <img
-            src="img/bedroom.jpg"
-            class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90"
-          />
-          <div
-            class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 text-white"
-          >
-            <h4 class="text-2xl font-bold mb-2">Bedroom</h4>
-            <p class="text-sm opacity-80 mb-4">
-              Tempat Tidur, Lemari, & Nyenyak
-            </p>
-            <span
-              class="bg-lumina-gold text-lumina-dark py-2 px-6 rounded-full font-bold text-xs w-fit"
-              >Lihat Koleksi</span
-            >
-          </div>
-        </div>
-
-        <div
-          class="group relative overflow-hidden rounded-3xl bg-gray-200 h-[400px] cursor-pointer shadow-xl"
-          onclick="
-            filterCategory('Workplace');
-            window.scrollTo({
-              top:
-                document.getElementById('customer-product-grid').offsetTop -
-                100,
-              behavior: 'smooth',
-            });
-          "
-        >
-          <img
-            src="img/workplace.jpg"
-            class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90"
-          />
-          <div
-            class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 text-white"
-          >
-            <h4 class="text-2xl font-bold mb-2">Workplace</h4>
-            <p class="text-sm opacity-80 mb-4">
-              Meja Kerja, Kursi, & Produktivitas
-            </p>
-            <span
-              class="bg-lumina-gold text-lumina-dark py-2 px-6 rounded-full font-bold text-xs w-fit"
-              >Lihat Koleksi</span
-            >
-          </div>
-        </div>
-      </div>
+      <div
+        id="category-container"
+        class="flex flex-row flex-nowrap overflow-x-auto gap-6 mb-16 pb-8 snap-x scroll-smooth scrollbar-hide"
+      ></div>
 
       <div
         class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4"
@@ -244,38 +161,7 @@
           <div
             id="landing-category-filters"
             class="flex items-center gap-2 overflow-x-auto scrollbar-hide scroll-smooth px-1 md:max-w-[400px] lg:max-w-[600px]"
-          >
-            <button
-              onclick="filterCategory('Semua')"
-              class="category-btn px-6 py-2 rounded-full border border-lumina-dark bg-lumina-dark text-white font-medium shadow-md text-sm transition whitespace-nowrap"
-            >
-              Semua
-            </button>
-            <button
-              onclick="filterCategory('Living Room')"
-              class="category-btn px-6 py-2 rounded-full border border-gray-300 text-gray-500 font-medium hover:border-lumina-dark hover:text-lumina-dark transition text-sm whitespace-nowrap"
-            >
-              Living Room
-            </button>
-            <button
-              onclick="filterCategory('Bedroom')"
-              class="category-btn px-6 py-2 rounded-full border border-gray-300 text-gray-500 font-medium hover:border-lumina-dark hover:text-lumina-dark transition text-sm whitespace-nowrap"
-            >
-              Bedroom
-            </button>
-            <button
-              onclick="filterCategory('Workplace')"
-              class="category-btn px-6 py-2 rounded-full border border-gray-300 text-gray-500 font-medium hover:border-lumina-dark hover:text-lumina-dark transition text-sm whitespace-nowrap"
-            >
-              Workplace
-            </button>
-            <button
-              onclick="filterCategory('Dining Room')"
-              class="category-btn px-6 py-2 rounded-full border border-gray-300 text-gray-500 font-medium hover:border-lumina-dark hover:text-lumina-dark transition text-sm whitespace-nowrap"
-            >
-              Dining Room
-            </button>
-          </div>
+          ></div>
 
           <button
             onclick="scrollLandingCategories(200)"

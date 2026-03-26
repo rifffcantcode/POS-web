@@ -12,6 +12,96 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const categoriesRef = collection(db, "categories");
+
+// 2. Fungsi untuk mengambil dan merender kategori
+const categoryContainer = document.getElementById("category-container");
+const categoryFiltersContainer = document.getElementById("landing-category-filters");
+
+if (categoryContainer) {
+    onSnapshot(categoriesRef, (snapshot) => {
+        categoryContainer.innerHTML = ""; // Bersihkan card
+        
+        // 1. Ambil data dan FILTER kategori yang tidak dihapus (isDeleted !== true)
+        const activeCategories = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(cat => cat.isDeleted !== true);
+
+        // Siapkan tombol "Semua" sebagai default
+        let buttonsHTML = `
+            <button
+                onclick="filterCategory('Semua')"
+                class="category-btn px-6 py-2 rounded-full border border-lumina-dark bg-lumina-dark text-white font-medium shadow-md text-sm transition whitespace-nowrap"
+            >
+                Semua
+            </button>
+        `;
+        
+        // 2. Jika tidak ada kategori aktif (setelah difilter)
+        if (activeCategories.length === 0) {
+            categoryContainer.innerHTML = `
+                <div class="col-span-1 md:col-span-3 text-center py-10 text-gray-400">
+                    <i class="fas fa-folder-open text-4xl mb-3 opacity-50"></i>
+                    <p>Belum ada kategori yang tersedia.</p>
+                </div>`;
+            if (categoryFiltersContainer) categoryFiltersContainer.innerHTML = buttonsHTML;
+            return;
+        }
+
+        // 3. Looping dari hasil filter (activeCategories)
+        activeCategories.forEach((cat) => {
+            
+            // Inject HTML untuk Card Kategori
+            categoryContainer.innerHTML += `
+                <div
+                  class="group relative overflow-hidden rounded-3xl bg-gray-200 cursor-pointer shadow-xl snap-start"
+                  style="flex: 0 0 auto; width: 85vw; max-width: 350px; height: 400px;"
+                  onclick="
+                    filterCategory('${cat.name}');
+                    const grid = document.getElementById('customer-product-grid');
+                    if(grid) {
+                        window.scrollTo({
+                            top: grid.offsetTop - 100,
+                            behavior: 'smooth',
+                        });
+                    }
+                  "
+                >
+                  <img
+                    src="${cat.image || 'https://via.placeholder.com/400'}"
+                    alt="${cat.name}"
+                    class="w-full h-full object-cover transition duration-500 group-hover:scale-110 opacity-90"
+                  />
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 text-white">
+                    <h4 class="text-2xl font-bold mb-2">${cat.name}</h4>
+                    <p class="text-sm opacity-80 mb-4">${cat.description || ''}</p>
+                    <span class="bg-lumina-gold text-lumina-dark py-2 px-6 rounded-full font-bold text-xs w-fit">
+                        Lihat Koleksi
+                    </span>
+                  </div>
+                </div>
+            `;
+
+            // Tambahkan HTML untuk Tombol Filter Kategori
+            buttonsHTML += `
+                <button
+                    onclick="filterCategory('${cat.name}')"
+                    class="category-btn px-6 py-2 rounded-full border border-gray-300 text-gray-500 font-medium hover:border-lumina-dark hover:text-lumina-dark transition text-sm whitespace-nowrap"
+                >
+                    ${cat.name}
+                </button>
+            `;
+        });
+
+        // Masukkan kumpulan tombol ke container
+        if (categoryFiltersContainer) {
+            categoryFiltersContainer.innerHTML = buttonsHTML;
+        }
+
+    }, (error) => {
+        console.error("Gagal mengambil data kategori dari Firebase:", error);
+    });
+}
 
 // --- STATE MANAGEMENT ---
 let allProducts = [];
@@ -76,7 +166,8 @@ onSnapshot(collection(db, "products"), (snapshot) => {
   allProducts = [];
   snapshot.forEach((doc) => {
     const data = doc.data();
-    if (!data.isDeleted) {
+    
+    if (data.isDeleted !== true) { 
       allProducts.push({ 
         id: doc.id, 
         ...data,
@@ -491,15 +582,56 @@ window.closeLoginModal = () => {
 };
 
 // ============================================================
+// DRAG TO SCROLL (CATEGORY CONTAINER)
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const slider = document.getElementById('category-container');
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+
+    if (!slider) return;
+
+    slider.addEventListener('mousedown', (e) => {
+        isDown = true;
+        slider.classList.add('active'); // Opsional: untuk mengubah kursor
+        slider.style.cursor = 'grabbing';
+        // Menyimpan posisi awal klik
+        startX = e.pageX - slider.offsetLeft;
+        scrollLeft = slider.scrollLeft;
+    });
+
+    slider.addEventListener('mouseleave', () => {
+        isDown = false;
+        slider.classList.remove('active');
+        slider.style.cursor = 'grab';
+    });
+
+    slider.addEventListener('mouseup', () => {
+        isDown = false;
+        slider.classList.remove('active');
+        slider.style.cursor = 'grab';
+    });
+
+    slider.addEventListener('mousemove', (e) => {
+        if (!isDown) return; // Jika tidak sedang diklik, abaikan
+        e.preventDefault(); // Mencegah highlight teks/gambar bawaan browser
+        
+        const x = e.pageX - slider.offsetLeft;
+        const walk = (x - startX) * 2; // Angka 2 adalah kecepatan scroll
+        slider.scrollLeft = scrollLeft - walk;
+    });
+
+    // Set kursor default saat dilewati mouse
+    slider.addEventListener('mouseenter', () => {
+        if(!isDown) slider.style.cursor = 'grab';
+    });
+});
+
+// ============================================================
 // 10. EVENT LISTENERS & STARTUP
 // ============================================================
-window.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const categoryFromUrl = urlParams.get('category');
-    if (categoryFromUrl) { filterCategory(categoryFromUrl); }
-    document.getElementById("cust-name").value = localStorage.getItem("cust_name_saved") || "";
-    document.getElementById("cust-address").value = localStorage.getItem("cust_address_saved") || "";
-});
+// 2. FUNGSI RENDER KATEGORI (Taruh di bagian bawah landing.js)
 
 window.onpopstate = () => {
     const urlParams = new URLSearchParams(window.location.search);

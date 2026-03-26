@@ -6,6 +6,8 @@
     <title>Laporan Penjualan - LUMINA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
@@ -46,6 +48,17 @@
         body {
           background-color: white !important;
         }
+      }
+      #topProductsChart {
+        /* Paksa canvas tidak melebihi container */
+        max-width: 100% !important;
+        max-height: 100% !important;
+        display: block;
+      }
+
+      /* Hilangkan animasi pada card khusus saat loading awal */
+      .card-no-transition {
+        transition: none !important;
       }
     </style>
   </head>
@@ -184,7 +197,7 @@
           >
             <i class="fas fa-crown text-lumina-gold"></i> Produk Terlaris
           </h3>
-          <div class="h-[350px] w-full flex items-center justify-center">
+          <div class="h-[350px] w-full relative overflow-hidden block">
             <canvas id="topProductsChart"></canvas>
           </div>
         </div>
