@@ -1177,7 +1177,7 @@ window.renderTrashCategories = function() {
     tbody.innerHTML = "";
 
     if (!window.deletedCategories || window.deletedCategories.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="2">Kosong</td></tr>`;
+         tbody.innerHTML = `<tr><td colspan="2" class="p-6 text-center text-gray-400 text-sm italic">Tong sampah kategori kosong.</td></tr>`;
         return;
     }
 
@@ -1285,4 +1285,3 @@ if (nameInput) {
 
 // Jalankan fetch pertama kali
 fetchTransactions();
-
