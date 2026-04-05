@@ -521,41 +521,44 @@ window.showToast = (msg, type = "success") => {
 // Fungsi Handle Auth (Menggantikan checkLogin lama)
 window.handleAuthLogin = (e) => {
     e.preventDefault();
-    // Tambahkan .toLowerCase() agar input "Admin@..." tetap bisa masuk
+
     const email = document.getElementById("login-email").value.trim().toLowerCase();
-    
-    // Ambil elemen tombol untuk efek loading sederhana
+    const password = document.getElementById("login-password").value.trim();
+
     const btn = e.target.querySelector('button');
     const originalText = btn.innerHTML;
 
-    if (email === "kasirlumina@gmail.com") {
-        // Notifikasi Selamat Datang Kasir
-        showToast("Akses Diterima! Selamat Datang, Kasir Lumina", "success");
-        
-        // Efek visual pada tombol
+    // Data user (sementara hardcode dulu)
+    const users = [
+        {
+            email: "kasirlumina@gmail.com",
+            password: "kasir123",
+            role: "kasir",
+            redirect: "index.html"
+        },
+        {
+            email: "adminlumina@gmail.com",
+            password: "admin123",
+            role: "admin",
+            redirect: "laporan.html"
+        }
+    ];
+
+    // Cari user yang cocok
+    const user = users.find(u => u.email === email && u.password === password);
+
+    if (user) {
+        showToast(`Akses Diterima! Selamat Datang, ${user.role}`, "success");
+
         btn.innerHTML = "Masuk...";
         btn.disabled = true;
 
-        // Redirect ke halaman Kasir (index.html)
-        setTimeout(() => { 
-            window.location.href = "index.html"; 
+        setTimeout(() => {
+            window.location.href = user.redirect;
         }, 1500);
-    } 
-    else if (email === "adminlumina@gmail.com") {
-        // Notifikasi Selamat Datang Admin
-        showToast("Akses Diterima! Selamat Datang, Admin Utama", "success");
-        
-        btn.innerHTML = "Masuk...";
-        btn.disabled = true;
 
-        // Redirect ke halaman Admin (laporan.html)
-        setTimeout(() => { 
-            window.location.href = "laporan.html"; 
-        }, 1500);
-    } 
-    else {
-        // Feedback jika email salah atau kosong
-        showToast("Email tidak terdaftar dalam sistem!", "error");
+    } else {
+        showToast("Email atau password salah!", "error");
     }
 };
 

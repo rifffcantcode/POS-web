@@ -4,7 +4,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBMsUhXj-UCLLviXzweS1qXVdSaVgkDcu8",
+    apiKey: "AIzaSyB...",
     authDomain: "sistemkasirtokocom.firebaseapp.com",
     projectId: "sistemkasirtokocom",
     storageBucket: "sistemkasirtokocom.firebasestorage.app",
@@ -17,10 +17,13 @@ const db = getFirestore(app);
 
 let salesChart;
 let topProductsChart;
-let isFirstLoad = true; // Kunci rahasia agar animasi jalan
+let isFirstLoad = true;
+let unsubscribeSnapshot;
 
-// --- 1. GRAFIK GARIS (NAIK DARI BAWAH) ---
-function initChart(data) {
+// =======================
+// CHART LINE (EMPTY STATE)
+// =======================
+function initChart(data, isEmpty = false) {
     const canvas = document.getElementById('salesChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -34,56 +37,89 @@ function initChart(data) {
     salesChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: data.labels,
+            labels: isEmpty ? ["-"] : data.labels,
             datasets: [{
                 label: 'Penjualan',
-                data: data.values,
+                data: isEmpty ? [0] : data.values,
                 borderColor: '#D4AF37',
                 backgroundColor: gradient,
                 fill: true,
                 tension: 0.4,
                 borderWidth: 3,
-                pointRadius: 4,
+                pointRadius: isEmpty ? 0 : 4,
                 pointBackgroundColor: '#D4AF37'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            
             animations: {
                 y: {
-                    duration: isFirstLoad ? 2000 : 0, // Hanya animasi jika baru dimuat
+                    duration: isFirstLoad ? 2000 : 800,
                     easing: 'easeOutQuart',
                     from: (ctx) => ctx.chart.scales.y.getPixelForValue(0)
                 }
             },
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: !isEmpty }
+            },
             scales: {
-                y: { beginAtZero: true, ticks: { callback: (v) => 'Rp ' + v.toLocaleString('id-ID') } },
-                x: { grid: { display: false } }
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        display: !isEmpty,
+                        callback: (v) => 'Rp ' + v.toLocaleString('id-ID')
+                    },
+                    grid: { display: !isEmpty }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { display: !isEmpty }
+                }
             }
-        }
+        },
+        plugins: [{
+            id: 'emptyStateText',
+            afterDraw(chart) {
+                if (!isEmpty) return;
+
+                const { ctx, chartArea } = chart;
+                const centerX = (chartArea.left + chartArea.right) / 2;
+                const centerY = (chartArea.top + chartArea.bottom) / 2;
+
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                ctx.font = '600 16px sans-serif';
+                ctx.fillStyle = '#94A3B8';
+                ctx.fillText('Belum ada data', centerX, centerY - 10);
+
+                ctx.font = '400 12px sans-serif';
+                ctx.fillStyle = '#CBD5E1';
+                ctx.fillText('Data akan muncul setelah transaksi', centerX, centerY + 10);
+
+                ctx.restore();
+            }
+        }]
     });
 }
 
-// --- 2. GRAFIK DONAT (VERSI PERBAIKAN) ---
+// =======================
+// DONUT CHART
+// =======================
 function initTopProductsChart(productData) {
     const canvas = document.getElementById('topProductsChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    
-    if (topProductsChart) {
-        topProductsChart.destroy();
-    }
 
-    // LOCK UKURAN: Ambil ukuran parent saat ini agar tidak berubah-ubah
+    if (topProductsChart) topProductsChart.destroy();
+
     const parent = canvas.parentElement;
-    const parentWidth = parent.clientWidth;
-    const parentHeight = parent.clientHeight;
-
-    // Set atribut internal canvas agar fix
-    canvas.width = parentWidth;
-    canvas.height = parentHeight;
+    canvas.width = parent.clientWidth;
+    canvas.height = parent.clientHeight;
 
     setTimeout(() => {
         topProductsChart = new Chart(ctx, {
@@ -98,18 +134,10 @@ function initTopProductsChart(productData) {
                 }]
             },
             options: {
-                // MATIKAN RESPONSIVE OTOMATIS: 
-                // Ini mencegah Chart.js melakukan 'reset' saat zoom 100%
-                responsive: false, 
+                responsive: false,
                 maintainAspectRatio: false,
-                devicePixelRatio: window.devicePixelRatio, // Ikuti zoom browser secara manual
                 cutout: '75%',
-                layout: {
-                    padding: 30
-                },
                 animation: {
-                    animateRotate: true,
-                    animateScale: true,
                     duration: isFirstLoad ? 2000 : 800,
                     easing: 'easeOutQuart'
                 },
@@ -127,28 +155,40 @@ function initTopProductsChart(productData) {
     }, 150);
 }
 
-// --- 3. LOAD DATA ---
+// =======================
+// LOAD DATA
+// =======================
 function loadReport(period = "all") {
+    if (unsubscribeSnapshot) unsubscribeSnapshot();
+
     const q = query(collection(db, "transactions"), orderBy("timestamp", "asc"));
 
-    onSnapshot(q, (snapshot) => {
+    unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+
         const tbody = document.getElementById("report-table-body");
         const productSales = {};
         const dailyData = {};
+
         let totalRev = 0, totalOrd = 0, totalItems = 0;
-        
+
         tbody.innerHTML = "";
+
         const startTime = getStartTime(period);
 
         snapshot.forEach((doc) => {
             const data = doc.data();
             const ts = data.timestamp?.toDate();
+
             if (!ts || ts < startTime) return;
 
             totalRev += data.total;
             totalOrd++;
 
-            const dateLabel = ts.toLocaleDateString("id-ID", { day: 'numeric', month: 'short' });
+            const dateLabel = ts.toLocaleDateString("id-ID", {
+                day: 'numeric',
+                month: 'short'
+            });
+
             dailyData[dateLabel] = (dailyData[dateLabel] || 0) + data.total;
 
             data.items.forEach(i => {
@@ -157,101 +197,91 @@ function loadReport(period = "all") {
             });
 
             const itemsText = data.items.map(i => `${i.name} (x${i.qty})`).join(", ");
+
             const row = `
-                <tr class="hover:bg-slate-50 border-b border-slate-50 transition">
+                <tr class="hover:bg-slate-50 border-b border-slate-50">
                     <td class="px-8 py-5 font-semibold">${ts.toLocaleString('id-ID')}</td>
                     <td class="px-8 py-5 font-mono text-[11px]">${data.trxId}</td>
                     <td class="px-8 py-5 text-xs text-slate-500">${itemsText}</td>
                     <td class="px-8 py-5 text-right font-black">Rp ${data.total.toLocaleString('id-ID')}</td>
                 </tr>`;
+
             tbody.insertAdjacentHTML('afterbegin', row);
         });
 
+        // SUMMARY
         document.getElementById("total-revenue").innerText = `Rp ${totalRev.toLocaleString('id-ID')}`;
         document.getElementById("total-orders").innerText = totalOrd;
         document.getElementById("total-items").innerText = totalItems;
 
+        // ===================
+        // CHART LINE
+        // ===================
         const labels = Object.keys(dailyData);
-        if (labels.length > 0) initChart({ labels, values: Object.values(dailyData) });
 
-        const sorted = Object.entries(productSales).sort((a,b) => b[1] - a[1]).slice(0, 5);
-        if (sorted.length > 0) {
-            initTopProductsChart({ labels: sorted.map(p => p[0]), values: sorted.map(p => p[1]) });
+        if (labels.length > 0) {
+            initChart({ labels, values: Object.values(dailyData) });
+        } else {
+            initChart({}, true); // empty state
         }
 
-        // Setelah render pertama selesai, matikan kunci isFirstLoad agar data update selanjutnya halus
-        if(isFirstLoad) {
-            setTimeout(() => { isFirstLoad = false; }, 3000);
+        // ===================
+        // DONUT
+        // ===================
+        const sorted = Object.entries(productSales)
+            .sort((a,b) => b[1] - a[1])
+            .slice(0, 5);
+
+        if (sorted.length > 0) {
+            initTopProductsChart({
+                labels: sorted.map(p => p[0]),
+                values: sorted.map(p => p[1])
+            });
+        } else {
+            if (topProductsChart) {
+                topProductsChart.destroy();
+                topProductsChart = null;
+            }
+        }
+
+        if (isFirstLoad) {
+            setTimeout(() => { isFirstLoad = false; }, 2000);
         }
     });
 }
 
+// =======================
+// FILTER WAKTU
+// =======================
 function getStartTime(period) {
     const now = new Date();
-    if (period === "today") return new Date(now.setHours(0,0,0,0));
+
+    if (period === "today") {
+        return new Date(now.setHours(0,0,0,0));
+    }
+
     if (period === "week") {
         const d = new Date();
         d.setDate(d.getDate() - 7);
         return d;
     }
+
     if (period === "month") {
         const d = new Date();
         d.setMonth(d.getMonth() - 1);
         return d;
     }
+
     return new Date(0);
 }
 
+// =======================
+// EVENT FILTER
+// =======================
 document.getElementById('period-filter').addEventListener('change', (e) => {
-    isFirstLoad = true; // Izinkan animasi lagi jika ganti filter
+    isFirstLoad = true;
     loadReport(e.target.value);
 });
 
+// INIT
 loadReport();
-
-window.exportToPDF = async function() {
-    const { jsPDF } = window.jspdf;
-    const element = document.querySelector('main'); // Mengambil konten utama saja
-    const button = document.querySelector('button[onclick="exportToPDF()"]');
-    
-    // 1. Beri feedback visual (loading)
-    const originalText = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-    button.disabled = true;
-
-    try {
-        // 2. Konfigurasi html2canvas agar hasilnya tajam
-        const canvas = await html2canvas(element, {
-            scale: 2, // Meningkatkan resolusi PDF
-            useCORS: true, // Untuk gambar dari URL luar jika ada
-            logging: false,
-            backgroundColor: "#f8fafc", // Warna background sesuai CSS kamu
-            ignoreElements: (el) => el.classList.contains('no-print') // Sembunyikan filter & tombol
-        });
-
-        const imgData = canvas.toDataURL('image/png');
-        
-        // 3. Setup Dokumen PDF (A4)
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'px',
-            format: 'a4'
-        });
-
-        const imgProps = pdf.getImageProperties(imgData);
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-        // 4. Masukkan gambar ke PDF
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`Lumina-Sales-Report-${new Date().toLocaleDateString()}.pdf`);
-
-    } catch (error) {
-        console.error("PDF Export Error:", error);
-        alert("Gagal mengekspor PDF. Silakan coba lagi.");
-    } finally {
-        // 5. Kembalikan tombol ke semula
-        button.innerHTML = originalText;
-        button.disabled = false;
-    }
-};

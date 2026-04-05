@@ -47,11 +47,11 @@ window.handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
     
     // Filter dari array allProducts yang sudah ada di memori
-    const filtered = allProducts.filter(p => {
-        const nameMatch = p.name.toLowerCase().includes(query);
-        const Match = p.category.toLowerCase().includes(query);
-        return nameMatch || categoryMatch;
-    });
+   const filtered = allProducts.filter(p => {
+    const nameMatch = p.name.toLowerCase().includes(query);
+    const categoryMatch = p.category.toLowerCase().includes(query);
+    return nameMatch || categoryMatch;
+});
     
     // Tampilkan hasil filter ke grid produk
     renderProductGrid(filtered);
@@ -89,6 +89,7 @@ onSnapshot(productsRef, (snapshot) => {
 
   // Pisahkan yang aktif dan yang terhapus
   allProducts = allDocs.filter((product) => product.isDeleted !== true);
+  window.allProducts = allProducts; 
   window.deletedProducts = allDocs.filter((product) => product.isDeleted === true);
   renderProductGrid(allProducts);
   renderInventoryTable(allProducts); 
@@ -153,7 +154,7 @@ function renderProductGrid(input = allProducts) {
             <button onclick="addToCart('${product.id}')" class="bg-lumina-dark text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-lumina-gold hover:text-lumina-dark transition shadow-md active:scale-95">
                 <i class="fas fa-plus"></i>
             </button>
-        </div>
+        </div> 
     `;
     grid.appendChild(card);
 });
@@ -168,17 +169,29 @@ function renderInventoryTable(products) {
 
     products.forEach(product => {
         const row = document.createElement("tr");
-        row.className = "border-b hover:bg-gray-50 transition";
-        row.innerHTML = `
-            <td class="p-3 font-medium text-gray-800 text-sm">${product.name}</td>
-            <td class="p-3 text-gray-500"><span class="bg-gray-100 px-2 py-1 rounded text-xs border">${product.category}</span></td>
-            <td class="p-3 text-sm">Rp ${parseInt(product.price).toLocaleString()}</td>
-            <td class="p-3 text-center font-bold text-sm ${product.stock < 5 ? 'text-red-500' : 'text-green-600'}">${product.stock}</td>
-            <td class="p-3 text-center space-x-1">
-                <button onclick="editProduct('${product.id}')" class="bg-yellow-50 text-yellow-600 p-2 rounded hover:bg-yellow-100 transition"><i class="fas fa-edit"></i></button>
-                <button onclick="deleteProduct('${product.id}')" class="bg-red-50 text-red-600 p-2 rounded hover:bg-red-100 transition"><i class="fas fa-trash"></i></button>
-            </td>
-        `;
+        row.className = "border-b hover:bg-gray-50/80 transition-all duration-200";
+       // Di dalam fungsi renderInventoryTable(products)
+row.innerHTML = `
+    <td class="p-3 font-medium text-gray-800 text-sm">${product.name}</td>
+    <td class="p-3 text-gray-500"><span class="bg-gray-100 px-2 py-1 rounded text-xs border">${product.category}</span></td>
+    <td class="p-3 text-sm">Rp ${parseInt(product.price).toLocaleString()}</td>
+    <td class="p-3 text-center font-bold text-sm ${product.stock < 5 ? 'text-red-500' : 'text-green-600'}">${product.stock}</td>
+    <td class="p-3 text-center">
+        <div class="flex items-center justify-center gap-1">
+            <button onclick="window.viewBarcode('${product.id}')" class="bg-indigo-50 text-indigo-600 p-2 rounded hover:bg-indigo-600 hover:text-white transition shadow-sm">
+                <i class="fas fa-barcode"></i>
+            </button>
+            
+            <button onclick="editProduct('${product.id}')" class="bg-yellow-50 text-yellow-600 p-2 rounded hover:bg-yellow-100 transition">
+                <i class="fas fa-edit"></i>
+            </button>
+            
+            <button onclick="deleteProduct('${product.id}')" class="bg-red-50 text-red-600 p-2 rounded hover:bg-red-100 transition">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </td>
+`;
         tbody.appendChild(row);
     });
 }
@@ -839,127 +852,234 @@ window.removeItem = function(index) {
 }
 
 // ==========================================
-// 6. CHECKOUT & STRUK & RIWAYAT
+// PROSES CHECKOUT & CETAK STRUK
 // ==========================================
-
 window.processCheckout = async function() {
-    if (cart.length === 0) {
-        alert("Keranjang masih kosong!");
-        return;
-    }
-
-    const confirmCheckout = confirm("Konfirmasi pembayaran dan cetak struk?");
-    if (!confirmCheckout) return;
+    if (cart.length === 0) return alert("Keranjang kosong!");
+    if (!confirm("Proses pembayaran dan lihat preview struk?")) return;
 
     try {
-        const trxId = "TRX-" + Date.now();
-        const dateNow = new Date().toLocaleString("id-ID");
+        let totalVal = 0;
+        let tableRows = "";
 
-        // 1. Tampilkan Data ke Struk (UI)
-        document.getElementById("receipt-trx-id").innerText = trxId;
-        document.getElementById("receipt-date").innerText = dateNow;
-        
-        const listContainer = document.getElementById("receipt-items-list");
-        listContainer.innerHTML = "";
-        
-        let grandTotal = 0;
-
-        // 2. Loop Items: Update Stok & Siapkan data struk
-        const transactionItems = [];
-
-        for (const item of cart) {
-            // Update Stok di Firebase
-            const productRef = doc(db, "products", item.id);
-            // Ambil data terbaru dulu untuk menghindari stok negatif
-            // (Disini kita pakai logic sederhana dulu)
-            const newStock = item.stock - item.qty;
-            await updateDoc(productRef, { stock: newStock });
-
-            // Render baris di modal struk
-            const row = `
+        cart.forEach(item => {
+            const subtotal = item.price * item.qty;
+            totalVal += subtotal;
+            tableRows += `
                 <tr>
-                    <td class="py-2 text-left">${item.name}</td>
-                    <td class="text-center py-2">${item.qty}</td>
-                    <td class="text-right py-2">Rp ${(item.price * item.qty).toLocaleString()}</td>
-                </tr>
-            `;
-            listContainer.innerHTML += row;
-            grandTotal += (item.price * item.qty);
+                    <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;">${item.name}</td>
+                    <td style="text-align: center; color: #666;">${item.qty}</td>
+                    <td style="text-align: right; font-weight: bold;">Rp ${subtotal.toLocaleString()}</td>
+                </tr>`;
+        });
 
-            transactionItems.push({
-                id: item.id,
-                name: item.name,
-                qty: item.qty,
-                price: item.price
-            });
+        // Update Stok Firebase
+        for (const item of cart) {
+            const productRef = doc(db, "products", item.id);
+            await updateDoc(productRef, { stock: item.stock - item.qty });
         }
 
-        document.getElementById("receipt-total").innerText = `Rp ${grandTotal.toLocaleString()}`;
+        // Buka Jendela Preview dengan Desain Baru
+        const printWindow = window.open('', '_blank', 'height=750,width=480');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>PREVIEW_LUMINA_${Date.now()}</title>
+                    <style>
+                        /* KUNCI: Reset default browser agar bersih */
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        
+                        body { 
+                            font-family: 'Inter', -apple-system, sans-serif; 
+                            background-color: #0c1a32; /* Biru Gelap Background Dashboard */
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            min-height: 100vh;
+                            padding: 20px;
+                        }
 
-        // 3. Simpan Transaksi ke Firebase (History)
-        const transactionData = {
-            trxId: trxId,
-            timestamp: serverTimestamp(),
-            items: transactionItems,
-            total: grandTotal,
-            cashier: "Admin Lumina"
-        };
-        await addDoc(transactionsRef, transactionData);
+                        .receipt-card {
+                            background: white;
+                            padding: 30px;
+                            width: 380px;
+                            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+                            border-radius: 12px;
+                            position: relative;
+                            overflow: hidden;
+                        }
+                        
+                        /* Aksen kuning di atas kartu struk */
+                        .receipt-card::before {
+                            content: '';
+                            position: absolute;
+                            top: 0; left: 0; width: 100%; height: 5px;
+                            background-color: #facc15; /* Kuning Logo Lumina */
+                        }
 
-        // 4. Tampilkan Modal Struk & Reset Keranjang
-        document.getElementById("receipt-modal").classList.remove("hidden");
+                        .header { text-align: center; margin-bottom: 25px; }
+                        .logo { 
+                            font-size: 28px; 
+                            font-weight: 900; 
+                            color: #facc15; /* KUNING LOGO LUMINA */
+                            letter-spacing: 2px;
+                            margin: 0;
+                            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+                        }
+                        .slogan { font-size: 11px; color: #666; margin-top: 5px; }
+
+                        .info { font-size: 11px; text-align: center; color: #777; margin-bottom: 20px; background: #f8fafc; padding: 10px; border-radius: 6px; }
+
+                        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 15px; }
+                        th { color: #888; text-transform: uppercase; font-size: 11px; padding: 8px 0; border-bottom: 1px solid #eee; }
+
+                        .total-section { 
+                            margin-top: 15px; 
+                            border-top: 2px solid #facc15; 
+                            padding-top: 15px; 
+                            font-weight: 900; 
+                            font-size: 18px;
+                            display: flex;
+                            justify-content: space-between;
+                            color: #0c1a32; /* Biru Gelap teks */
+                        }
+
+                        .actions {
+                            margin-top: 30px;
+                            display: flex;
+                            gap: 12px;
+                            width: 100%;
+                            position: relative;
+                            z-index: 10;
+                        }
+                        
+                        .btn {
+                            flex: 1;
+                            padding: 14px;
+                            border: none;
+                            border-radius: 8px;
+                            font-weight: 800;
+                            font-size: 13px;
+                            text-transform: uppercase;
+                            cursor: pointer;
+                            transition: all 0.2s ease;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 8px;
+                        }
+
+                        .btn-print { 
+                            background-color: #0c1a32; /* BIRU GELAP TOMBOL PRINT */
+                            color: #facc15; /* Kuning untuk teks tombol */
+                        }
+                        .btn-print:hover { background-color: #1a2f5a; }
+
+                        .btn-close { 
+                            background-color: #e2e8f0; 
+                            color: #475569; 
+                        }
+                        .btn-close:hover { background-color: #cbd5e1; }
+
+                        /* ATURAN SAAT DIPRINT (KERTAS FISIK) */
+                        @media print {
+                            body { background: white !important; padding: 0 !important; min-height: auto !important; }
+                            .receipt-card { box-shadow: none !important; width: 100% !important; padding: 15px !important; border-radius: 0 !important; }
+                            .receipt-card::before { display: none !important; }
+                            .actions { display: none !important; } /* Sembunyikan tombol di kertas */
+                            .logo { color: black !important; text-shadow: none !important; } /* Paksa teks hitam di kertas thermal */
+                        }
+                    </style>
+                    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+                </head>
+                <body>
+                    <div class="receipt-card">
+                        <div class="header">
+                            <h1 class="logo">LUMINA</h1>
+                            <p class="slogan">Lighting Up Your Shopping Experience</p>
+                        </div>
+                        
+                        <div class="info">
+                            <p>TRANSAKSI ID: TRX-${Date.now()}</p>
+                            <p>TGL: ${new Date().toLocaleString('id-ID')}</p>
+                        </div>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th align="left">ITEM</th>
+                                    <th>QTY</th>
+                                    <th align="right">SUB</th>
+                                </tr>
+                            </thead>
+                            <tbody>${tableRows}</tbody>
+                        </table>
+
+                        <div class="total-section">
+                            <span>TOTAL:</span>
+                            <span>Rp ${totalVal.toLocaleString()}</span>
+                        </div>
+
+                        <div class="actions">
+                            <button class="btn btn-print" onclick="window.print()">
+                                🖨️ Cetak
+                            </button>
+                            <button class="btn btn-close" onclick="window.close()">
+                                Tutup
+                            </button>
+                        </div>
+                        
+                        <p style="text-align:center; font-size: 9px; color: #aaa; margin-top: 25px; border-top: 1px dashed #eee; padding-top: 10px;">
+                            Powered by LUMINA System
+                        </p>
+                    </div>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+
+        // Reset Keranjang di Halaman Utama
         cart = [];
         renderCart();
 
     } catch (error) {
-        console.error("Checkout Error:", error);
-        alert("Gagal memproses transaksi. Periksa koneksi internet.");
+        console.error("Error:", error);
+        alert("Gagal memproses transaksi.");
     }
-}
+};
+window.closeReceiptModal = function() {
+    const modal = document.getElementById("receipt-modal");
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+};
+// Fungsi ini sekarang lebih simpel karena data sudah diisi di processCheckout
+window.handlePrintAndClose = function() {
+    // 1. Sembunyikan modal sukses
+    const successModal = document.getElementById("success-payment-modal");
+    if (successModal) {
+        successModal.classList.add("hidden");
+        successModal.classList.remove("flex");
+    }
 
-window.closeReceipt = function() {
-    document.getElementById("receipt-modal").classList.add("hidden");
-}
+    // 2. Tampilkan modal struk
+    const receiptModal = document.getElementById("receipt-modal");
+    if (receiptModal) {
+        // PAKSA MUNCUL: Hapus hidden, tambah flex
+        receiptModal.classList.remove("hidden");
+        receiptModal.style.display = "flex"; 
 
-// Fetch Riwayat Transaksi untuk Dashboard
-window.fetchTransactions = function() {
-    const q = query(transactionsRef, orderBy("timestamp", "desc"));
-    
-    // Perbaikan: Definisi elemen di dalam fungsi
-    const list = document.getElementById("transaction-history-body"); // Pastikan ID ini ada di HTML dashboard
-    const revenueEl = document.getElementById("total-revenue-day"); // Pastikan ID ini ada di HTML dashboard
+        console.log("Modal struk dipaksa muncul...");
 
-    onSnapshot(q, (querySnapshot) => {     
-        let totalRevenue = 0;
-        
-        if (list) list.innerHTML = "";
-
-        querySnapshot.forEach((doc) => {
-            const trx = doc.data();
-            const time = trx.timestamp?.toDate().toLocaleTimeString("id-ID", {
-                hour: '2-digit', minute: '2-digit'
-            }) || "...";
-            
-            totalRevenue += trx.total;
-            const itemNames = trx.items.map(i => `${i.name} (${i.qty})`).join(", ");
-
-            if (list) {
-                const row = `
-                    <tr class="hover:bg-gray-50 transition border-b border-gray-50">
-                        <td class="p-4 text-gray-500 text-xs">${time}</td>
-                        <td class="p-4 font-mono text-xs font-bold text-lumina-dark">${trx.trxId}</td>
-                        <td class="p-4 text-gray-600 text-[11px] truncate max-w-[150px]" title="${itemNames}">${itemNames}</td>
-                        <td class="p-4 text-right font-bold text-gray-800 text-xs">Rp ${trx.total.toLocaleString()}</td>
-                    </tr>
-                `;
-                list.innerHTML += row;
-            }
-        });
-
-        if (revenueEl) revenueEl.innerText = `Rp ${totalRevenue.toLocaleString()}`;
-    });
-}
-
+        // 3. JEDA LEBIH LAMA: Beri waktu 1.5 detik (1500ms) 
+        // agar browser benar-benar menggambar tabel produk di layar
+        setTimeout(() => {
+            window.print();
+        }, 1500);
+    } else {
+        alert("Error: Elemen #receipt-modal tidak ditemukan!");
+    }
+};
 // ==========================================
 // 7. UTILS & HELPERS
 // ==========================================
@@ -1043,41 +1163,53 @@ window.closeProductModal = function() {
 }
 
 // Membuka Modal Katalog dan Merender Semua Barcode
-window.openBarcodeCatalog = function() {
-    const modal = document.getElementById("barcode-catalog-modal");
-    const container = document.getElementById("catalog-content");
-    
-    if (!modal || !container) return;
-    
-    container.innerHTML = ""; // Bersihkan isi lama
-    modal.classList.remove("hidden");
+window.openBarcodePage = function(productId) {
+    // Cari produk dari data global
+    const product = window.allProducts.find(p => p.id === productId);
+    if (!product) return alert("Produk tidak ditemukan!");
 
-    allProducts.forEach(product => {
-        const itemDiv = document.createElement("div");
-        itemDiv.className = "border border-dashed border-gray-300 p-4 flex flex-col items-center justify-center rounded-lg";
-        
-        itemDiv.innerHTML = `
-            <p class="text-[10px] font-bold text-gray-700 mb-1 uppercase text-center truncate w-full">${product.name}</p>
-            <svg id="catalog-barcode-${product.id}"></svg>
-            <p class="text-[9px] text-gray-500 mt-1">Rp ${parseInt(product.price).toLocaleString()}</p>
-        `;
-        
-        container.appendChild(itemDiv);
+    const barcodeValue = product.barcode || product.id;
+    const printWindow = window.open('', '_blank', 'height=600,width=450');
 
-        // Render Barcode menggunakan JsBarcode
-        JsBarcode(`#catalog-barcode-${product.id}`, product.name, {
-            format: "CODE128",
-            width: 1.2,
-            height: 40,
-            displayValue: false, // Kita sudah buat teks manual di atas agar lebih rapi
-            margin: 5
-        });
-    });
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Print Label - ${product.name}</title>
+                <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+                <style>
+                    body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+                    .card { border: 1px solid #eee; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                    h2 { margin: 0 0 5px 0; font-size: 18px; text-transform: uppercase; }
+                    p { margin: 0 0 15px 0; color: #666; font-size: 12px; }
+                    .btn-print { margin-top: 20px; padding: 10px 20px; background: #4f46e5; color: white; border: none; border-radius: 5px; cursor: pointer; }
+                    @media print { .btn-print { display: none; } }
+                </style>
+            </head>
+            <body>
+                <div class="card">
+                    <h2>${product.name}</h2>
+                    <p>SKU: ${barcodeValue}</p>
+                    <svg id="barcode"></svg>
+                    <br>
+                    <button class="btn-print" onclick="window.print()">Cetak Label</button>
+                </div>
+                <script>
+                    JsBarcode("#barcode", "${barcodeValue}", {
+                        format: "CODE128",
+                        displayValue: true,
+                        fontSize: 14
+                    });
+                </script>
+            </body>
+        </html>
+    `);
 }
-
+// Tambahkan fungsi close agar tombol silang (X) berfungsi
 window.closeBarcodeCatalog = function() {
-    document.getElementById("barcode-catalog-modal").classList.add("hidden");
-}
+    const modal = document.getElementById("barcode-catalog-modal");
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+};
 
 window.printCatalog = function() {
     window.print();
@@ -1247,7 +1379,7 @@ onSnapshot(categoriesRef, (snapshot) => {
     }));
 
     // Pisahkan: Kategori Aktif vs Kategori Tempat Sampah
-    allCategories = allDocs.filter(cat => cat.isDeleted !== true);
+    window.allCategories = allDocs.filter(cat => cat.isDeleted !== true);
     window.deletedCategories = allDocs.filter(cat => cat.isDeleted === true);
 
     // 1. Render tabel utama
@@ -1263,6 +1395,225 @@ onSnapshot(categoriesRef, (snapshot) => {
         updateProductCategoryDropdown();
     }
 });
+
+// ============================================================
+// FUNGSI UPDATE DROPDOWN KATEGORI DI FORM PRODUK
+// ============================================================
+window.updateProductCategoryDropdown = function() {
+    const categorySelect = document.getElementById("product-category-select"); 
+    
+    if (!categorySelect) {
+        console.warn("Elemen dropdown kategori tidak ditemukan!");
+        return;
+    }
+
+    // DEBUG: Cek apakah data kategorinya berhasil masuk ke sini
+    console.log("Data Kategori untuk Dropdown:", window.allCategories);
+
+    const currentSelection = categorySelect.value;
+    categorySelect.innerHTML = '<option value="" disabled selected>Pilih Kategori...</option>';
+
+    // Gunakan window.allCategories yang sudah dijamin ada datanya
+    if (window.allCategories && window.allCategories.length > 0) {
+        window.allCategories.forEach(cat => {
+            const option = document.createElement("option");
+            option.value = cat.name; 
+            option.textContent = cat.name;
+            categorySelect.appendChild(option);
+        });
+    } else {
+        console.warn("Daftar window.allCategories kosong atau belum dimuat!");
+    }
+
+    if (currentSelection) {
+        const optionExists = Array.from(categorySelect.options).some(opt => opt.value === currentSelection);
+        if (optionExists) {
+            categorySelect.value = currentSelection;
+        }
+    }
+};
+
+// FUNGSI UNTUK MELIHAT BARCODE PER BARANG
+
+window.viewBarcode = function(productId) {
+
+    if (!window.allProducts || window.allProducts.length === 0) {
+        alert("Data produk belum siap, coba lagi...");
+        return;
+    }
+
+    const product = window.allProducts.find(p => p.id === productId);
+
+    if (!product) {
+        alert("Produk tidak ditemukan!");
+        return;
+    }
+
+    const barcodeContent = product.barcode || product.name;
+
+    const printWindow = window.open('', '_blank');
+
+printWindow.document.write(`
+    <html>
+    <head>
+        <title>Barcode Label - ${product.name}</title>
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+            
+            body { 
+                margin: 0; 
+                padding: 0; 
+                display: flex; 
+                flex-direction: column; 
+                align-items: center; 
+                justify-content: center; 
+                min-height: 100vh; 
+                background-color: #f1f5f9; 
+                font-family: 'Inter', sans-serif;
+            }
+
+            .label-container {
+                background: white;
+                width: 320px;
+                padding: 24px;
+                border-radius: 16px;
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+                border: 1px solid #e2e8f0;
+                text-align: center;
+                position: relative;
+                overflow: hidden;
+            }
+
+            /* Efek aksen warna di pinggir label */
+            .label-container::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 6px;
+                background: linear-gradient(90deg, #faf20a 0%, hsl(49, 100%, 48%) 100%);
+            }
+
+            .brand-name {
+                font-size: 10px;
+                font-weight: 800;
+                color: #94a3b8;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                margin-bottom: 8px;
+            }
+
+            h2 { 
+                margin: 0; 
+                font-size: 18px; 
+                color: #1e293b; 
+                font-weight: 700;
+                line-height: 1.2;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+
+            .category {
+                font-size: 11px;
+                color: #64748b;
+                background: #f8fafc;
+                padding: 4px 12px;
+                border-radius: 99px;
+                display: inline-block;
+                margin-top: 8px;
+                border: 1px solid #e2e8f0;
+            }
+
+            .barcode-wrapper {
+                margin: 20px 0;
+                padding: 10px;
+                background: white;
+            }
+
+            .price-tag {
+                font-size: 24px;
+                font-weight: 800;
+                color: #1e293b;
+                margin-top: 5px;
+            }
+
+            .footer-info {
+                margin-top: 15px;
+                padding-top: 15px;
+                border-top: 1px dashed #e2e8f0;
+                font-size: 10px;
+                color: #94a3b8;
+            }
+
+            .btn-print {
+                margin-top: 25px;
+                background: #1e293b;
+                color: white;
+                border: none;
+                padding: 10px 24px;
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            }
+
+            .btn-print:hover {
+                background: #000;
+                transform: translateY(-1px);
+            }
+
+            /* Aturan cetak agar tombol tidak ikut terprint */
+            @media print {
+                body { background: white; }
+                .label-container { box-shadow: none; border: 1px solid #eee; }
+                .btn-print { display: none; }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="label-container">
+            <div class="brand-name">LUMINA INVENTORY</div>
+            <h2>${product.name}</h2>
+            <div class="category">${product.category}</div>
+            
+            <div class="barcode-wrapper">
+                <svg id="barcode"></svg>
+            </div>
+
+            <div class="price-tag">Rp ${parseInt(product.price).toLocaleString('id-ID')}</div>
+            
+        
+        </div>
+
+        <button class="btn-print" onclick="window.print()">
+            <i class="fas fa-print"></i> Cetak Label
+        </button>
+
+        <script>
+            window.onload = function() {
+                JsBarcode("#barcode", "${barcodeContent}", {
+                    format: "CODE128",
+                    lineColor: "#1e293b",
+                    width: 2,
+                    height: 60,
+                    displayValue: true,
+                    fontSize: 12,
+                    fontOptions: "bold",
+                    margin: 0
+                });
+            };
+        </script>
+    </body>
+    </html>
+`);
+
+    printWindow.document.close();
+};
 // ==========================================
 // 9. EVENT LISTENERS TAMBAHAN
 // ==========================================
@@ -1282,6 +1633,10 @@ const nameInput = document.getElementById("product-name");
 if (nameInput) {
     nameInput.addEventListener("input", window.renderBarcode);
 }
+
+window.fetchTransactions = function() {
+    console.log("fetchTransactions dipanggil");
+};
 
 // Jalankan fetch pertama kali
 fetchTransactions();

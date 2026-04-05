@@ -48,41 +48,38 @@
       }
 
       /* LOGIKA PRINT KHUSUS */
-      @media print {
-        body * {
-          visibility: hidden;
-        }
-        #receipt-modal,
-        #receipt-print-area,
-        #receipt-print-area * {
-          visibility: visible;
-        }
-        #receipt-print-area {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
-          border: none;
-        }
-        #barcode-catalog-modal,
-        #barcode-catalog-modal * {
-          visibility: visible;
-        }
-        #barcode-catalog-modal {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
-          background: white !important;
-        }
-        .print-hidden {
-          display: none !important;
-        }
-        @page {
-          margin: 0.5cm;
-          size: auto;
-        }
-      }
+@media print {
+    /* Sembunyikan SEMUA elemen di body */
+    body > * {
+        display: none !important;
+    }
+    
+    /* Tampilkan HANYA modal struk */
+    #receipt-modal {
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        background: white !important;
+        visibility: visible !important;
+    }
+
+    #receipt-modal * {
+        visibility: visible !important;
+        color: black !important; /* Paksa teks jadi hitam */
+    }
+
+    /* Sembunyikan tombol navigasi saat diprint */
+    .print-hidden {
+        display: none !important;
+    }
+    
+    /* Hilangkan background abu-abu/hitam dari modal */
+    #receipt-modal {
+        background-color: white !important;
+    }
+}
     </style>
   </head>
   <body
@@ -207,7 +204,7 @@
 
     <div
       id="product-modal"
-      class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm"
+      class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4"
     >
       <div
         class="bg-white w-full max-w-5xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
@@ -603,70 +600,6 @@
     </div>
 
     <div
-      id="receipt-modal"
-      class="fixed inset-0 bg-black/80 z-[150] hidden flex items-center justify-center p-4 backdrop-blur-sm"
-    >
-      <div
-        class="bg-white w-full max-w-sm rounded-lg shadow-2xl overflow-hidden animate-fade-in"
-      >
-        <div
-          id="receipt-print-area"
-          class="p-6 bg-white text-gray-800 font-mono text-xs"
-        >
-          <div class="text-center border-b-2 border-dashed pb-4 mb-4">
-            <h2 class="text-2xl font-bold tracking-tighter">LUMINA</h2>
-            <p class="text-[10px] uppercase">Luxury Furniture & Living</p>
-            <p class="text-[10px] mt-1" id="receipt-date"></p>
-          </div>
-          <div class="space-y-1 mb-4">
-            <div class="flex justify-between">
-              <span>No. TRX:</span
-              ><span id="receipt-trx-id" class="font-bold"></span>
-            </div>
-            <div class="flex justify-between">
-              <span>Kasir:</span><span>Admin Lumina</span>
-            </div>
-          </div>
-          <table class="w-full mb-4 border-b border-dashed">
-            <thead>
-              <tr class="border-b border-dashed">
-                <th class="text-left py-2">Item</th>
-                <th class="text-center py-2">Qty</th>
-                <th class="text-right py-2">Total</th>
-              </tr>
-            </thead>
-            <tbody
-              id="receipt-items-list"
-              class="divide-y divide-gray-50"
-            ></tbody>
-          </table>
-          <div class="pt-2 space-y-1">
-            <div class="flex justify-between font-bold text-base">
-              <span>TOTAL</span><span id="receipt-total"></span>
-            </div>
-          </div>
-          <div class="text-center mt-6 pt-4 border-t border-gray-100">
-            <p class="text-[10px]">Terima kasih atas kunjungan Anda</p>
-          </div>
-        </div>
-        <div class="p-4 bg-gray-50 flex gap-2">
-          <button
-            onclick="window.print()"
-            class="flex-1 bg-lumina-dark text-white py-2 rounded-lg font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2"
-          >
-            <i class="fas fa-print"></i> Print Struk
-          </button>
-          <button
-            onclick="closeReceiptModal()"
-            class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-bold hover:bg-gray-300 transition"
-          >
-            Selesai
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div
       id="barcode-catalog-modal"
       class="hidden fixed inset0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
     >
@@ -679,7 +612,7 @@
           <h2 class="text-xl font-bold text-lumina-dark">
             Katalog Barcode Produk
           </h2>
-          <div class="flex gap-2">
+          <div class="flex gap-2 print-hidden">
             <button
               onclick="window.print()"
               class="bg-lumina-dark text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-800 transition flex items-center gap-2"
@@ -702,6 +635,64 @@
         </div>
       </div>
     </div>
+
+   <div id="success-payment-modal" class="hidden fixed inset-0 z-[250] bg-black/60 backdrop-blur-sm items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 text-center transform scale-95 transition-all">
+        <div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="fas fa-check-circle text-5xl"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">Pembayaran Berhasil!</h3>
+        <p class="text-gray-500 mb-8">Apakah Anda ingin mencetak struk belanja ini?</p>
+        <div class="flex flex-col gap-3">
+            <button onclick="handlePrintAndClose()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 flex items-center justify-center gap-2 transition">
+                <i class="fas fa-print"></i> Cetak Struk
+            </button>
+            <button onclick="closeSuccessModal()" class="w-full bg-gray-100 text-gray-700 py-4 rounded-2xl font-bold hover:bg-gray-200 transition">
+                Nanti Saja / Kembali
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="receipt-modal" class="hidden fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div id="receipt-print-area" class="bg-white p-8 w-full max-w-sm rounded-lg shadow-2xl text-gray-800">
+        <div class="text-center mb-4">
+            <h2 class="font-bold text-xl uppercase tracking-widest">LUMINA STORE</h2>
+            <p class="text-[10px] text-gray-400 font-medium">Nota Pembayaran Resmi</p>
+        </div>
+        
+        <div class="text-[10px] border-y border-dashed py-2 mb-4 space-y-1">
+            <p class="flex justify-between"><span>ID Transaksi:</span> <span id="print-trx-id" class="font-mono font-bold text-black"></span></p>
+            <p class="flex justify-between"><span>Tanggal:</span> <span id="print-date" class="text-black"></span></p>
+        </div>
+
+        <table class="w-full text-[11px] mb-4">
+            <thead>
+                <tr class="border-b-2 border-gray-100 text-black">
+                    <th class="text-left py-2">Item</th>
+                    <th class="text-center">Qty</th>
+                    <th class="text-right">Total</th>
+                </tr>
+            </thead>
+            <tbody id="print-items-list" class="text-black">
+                </tbody>
+        </table>
+
+        <div class="border-t-2 border-black pt-3 font-black text-sm flex justify-between uppercase text-black">
+            <span>Total Akhir:</span>
+            <span id="print-total-amount"></span>
+        </div>
+
+        <div class="mt-8 flex gap-2 print-hidden">
+            <button onclick="window.print()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold text-xs hover:bg-blue-700">
+                <i class="fas fa-print mr-2"></i>Cetak
+            </button>
+            <button onclick="closeReceiptModal()" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold text-xs hover:bg-gray-200">
+                Selesai
+            </button>
+        </div>
+    </div>
+</div>
 
     <script type="module" src="/js/script.js"></script>
   </body>
