@@ -9,8 +9,9 @@ import {
     onSnapshot, 
     query, 
     orderBy, 
-    serverTimestamp // <--- PASTIKAN INI ADA
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 // ==========================================
 // 1. KONFIGURASI FIREBASE
 // ==========================================
@@ -26,10 +27,15 @@ const firebaseConfig = {
 
 // Inisialisasi
 const app = initializeApp(firebaseConfig);
-window.db = getFirestore(app);
 const db = getFirestore(app);
+const auth = getAuth(app);
+
+window.db = db;
+window.auth = auth;
+
+// Variabel Referensi Koleksi
 const productsRef = collection(db, "products");
-const transactionsRef = collection(db, "transactions");
+const salesRef = collection(db, "sales"); 
 
 // STATE VARIABLES
 let allProducts = [];
@@ -862,6 +868,8 @@ window.processCheckout = async function() {
         let totalVal = 0;
         let tableRows = "";
 
+        const currentUser = auth.currentUser;
+
         cart.forEach(item => {
             const subtotal = item.price * item.qty;
             totalVal += subtotal;
@@ -872,6 +880,21 @@ window.processCheckout = async function() {
                     <td style="text-align: right; font-weight: bold;">Rp ${subtotal.toLocaleString()}</td>
                 </tr>`;
         });
+
+        const saleData = {
+            userId: currentUser ? currentUser.uid : "guest", // Menyimpan ID User
+            customerName: currentUser ? (currentUser.displayName || currentUser.email) : "Guest",
+            items: cart.map(item => ({
+                id: item.id,
+                name: item.name,
+                qty: item.qty,
+                price: item.price
+            })),
+            totalPrice: totalVal,
+            timestamp: serverTimestamp() // Menggunakan waktu server
+        };
+        
+        await addDoc(collection(db, "sales"), saleData);
 
         // Update Stok Firebase
         for (const item of cart) {
@@ -1044,8 +1067,8 @@ window.processCheckout = async function() {
         renderCart();
 
     } catch (error) {
-        console.error("Error:", error);
-        alert("Gagal memproses transaksi.");
+        console.error("Error Detail:", error);
+        alert("Gagal memproses transaksi: " + error.message);
     }
 };
 window.closeReceiptModal = function() {
@@ -1493,7 +1516,7 @@ printWindow.document.write(`
                 left: 0;
                 width: 100%;
                 height: 6px;
-                background: linear-gradient(90deg, #faf20a 0%, hsl(49, 100%, 48%) 100%);
+        
             }
 
             .brand-name {

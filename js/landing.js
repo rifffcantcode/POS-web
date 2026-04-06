@@ -1,19 +1,38 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// 1. Grouping Firestore (Database) - doc dan setDoc harus di sini
+import { 
+    getFirestore, 
+    collection, 
+    onSnapshot, 
+    doc, 
+    setDoc 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// 2. Grouping Auth (Otentikasi)
+import { 
+    getAuth, 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    updateProfile,
+    onAuthStateChanged,
+    signOut
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBMsUhXj-UCLLviXzweS1qXVdSaVgkDcu8",
-  authDomain: "sistemkasirtokocom.firebaseapp.com",
-  projectId: "sistemkasirtokocom",
-  storageBucket: "sistemkasirtokocom.firebasestorage.app",
-  messagingSenderId: "141722200955",
-  appId: "1:141722200955:web:e07952808590aa7f582bde",
+    apiKey: "AIzaSyBMsUhXj-UCLLviXzweS1qXVdSaVgkDcu8",
+    authDomain: "sistemkasirtokocom.firebaseapp.com",
+    projectId: "sistemkasirtokocom",
+    storageBucket: "sistemkasirtokocom.firebasestorage.app",
+    messagingSenderId: "141722200955",
+    appId: "1:141722200955:web:e07952808590aa7f582bde",
 };
 
+// Inisialisasi
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 const categoriesRef = collection(db, "categories");
-
 // 2. Fungsi untuk mengambil dan merender kategori
 const categoryContainer = document.getElementById("category-container");
 const categoryFiltersContainer = document.getElementById("landing-category-filters");
@@ -515,75 +534,187 @@ window.showToast = (msg, type = "success") => {
 };
 
 // ============================================================
-// 9. MODIFIKASI: SISTEM LOGIN TERBARU (DUAL ACCESS)
+// SISTEM LOGIN & REGISTRASI (FIREBASE AUTH)
 // ============================================================
 
-// Fungsi Handle Auth (Menggantikan checkLogin lama)
-window.handleAuthLogin = (e) => {
-    e.preventDefault();
+// 1. Fungsi untuk Switch Tampilan Login <-> Register
+window.switchAuthMode = (mode) => {
+    const loginView = document.getElementById("login-view");
+    const registerView = document.getElementById("register-view");
+    const authTitle = document.getElementById("auth-title");
+    const authDesc = document.getElementById("auth-desc");
+    const authSideTitle = document.getElementById("auth-side-title");
+    const authSideDesc = document.getElementById("auth-side-desc");
+    const authImage = document.getElementById("auth-image");
 
-    const email = document.getElementById("login-email").value.trim().toLowerCase();
-    const password = document.getElementById("login-password").value.trim();
-
-    const btn = e.target.querySelector('button');
-    const originalText = btn.innerHTML;
-
-    // Data user (sementara hardcode dulu)
-    const users = [
-        {
-            email: "kasirlumina@gmail.com",
-            password: "kasir123",
-            role: "kasir",
-            redirect: "index.html"
-        },
-        {
-            email: "adminlumina@gmail.com",
-            password: "admin123",
-            role: "admin",
-            redirect: "laporan.html"
-        }
-    ];
-
-    // Cari user yang cocok
-    const user = users.find(u => u.email === email && u.password === password);
-
-    if (user) {
-        showToast(`Akses Diterima! Selamat Datang, ${user.role}`, "success");
-
-        btn.innerHTML = "Masuk...";
-        btn.disabled = true;
-
-        setTimeout(() => {
-            window.location.href = user.redirect;
-        }, 1500);
-
+    if (mode === "register") {
+        loginView.classList.add("hidden");
+        registerView.classList.remove("hidden");
+        authTitle.innerText = "Create Account";
+        authDesc.innerText = "Gunakan akun akses resmi Lumina.";
+        authSideTitle.innerText = "Portal Akses";
+        authSideDesc.innerText = "Desain yang Berbicara, Kenyamanan yang Merangkul. Estetika Tanpa Batas untuk Rumah Masa Kini.";
+        authImage.src = "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=1632&auto=format&fit=crop";
     } else {
-        showToast("Email atau password salah!", "error");
+        registerView.classList.add("hidden");
+        loginView.classList.remove("hidden");
+        authTitle.innerText = "Welcome Back";
+        authDesc.innerText = "Gunakan akun akses resmi Lumina.";
+        authSideTitle.innerText = "Portal Akses";
+        authSideDesc.innerText = "Desain yang Berbicara, Kenyamanan yang Merangkul. Estetika Tanpa Batas untuk Rumah Masa Kini.";
+        authImage.src = "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=1632&auto=format&fit=crop";
     }
 };
 
-window.openLoginModal = () => {
-  const modal = document.getElementById("login-modal");
-  if(modal) {
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
+// 2. Fungsi Handle Registrasi (Simulasi)
+window.handleAuthRegister = async (e) => {
+    e.preventDefault();
+    const name = document.getElementById("reg-name").value;
+    const email = document.getElementById("reg-email").value;
+    const password = document.getElementById("reg-password").value;
+    const confirm = document.getElementById("reg-confirm").value;
     
-    // Focus ke input email saat terbuka agar user bisa langsung mengetik
-    setTimeout(() => {
-        const input = document.getElementById("login-email");
-        if(input) input.focus();
-    }, 200);
-  }
+    // Ambil data tambahan (pastikan ID ini ada di HTML-mu)
+    const phone = document.getElementById("reg-phone")?.value || "-";
+    const address = document.getElementById("reg-address")?.value || "-";
+
+    if (password !== confirm) {
+        alert("Konfirmasi password tidak cocok!");
+        return;
+    }
+
+    const btn = e.target.querySelector('button');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Memproses...';
+
+    try {
+        // 1. Daftarkan di Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // 2. Update Nama di Profile Auth
+        await updateProfile(user, { displayName: name });
+
+        // 3. Simpan data lengkap ke Firestore (Koleksi 'users')
+        await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            fullName: name,
+            email: email,
+            phone: phone,
+            address: address,
+            role: "customer", // Default role
+            createdAt: new Date().toISOString()
+        });
+
+        alert("Registrasi Berhasil! Data profil telah disimpan.");
+        window.switchAuthMode('login'); 
+
+    } catch (error) {
+        console.error(error);
+        alert("Gagal mendaftar: " + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Buat Akun Baru <i class="fas fa-user-plus text-xs"></i>';
+    }
+};
+// --- FUNGSI LOGIN NYATA ---
+window.handleAuthLogin = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("login-email").value;
+    const password = document.getElementById("login-password").value;
+
+    const btn = e.target.querySelector('button');
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Memverifikasi...';
+    btn.disabled = true;
+
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        
+        // --- PERUBAHAN DI SINI ---
+        alert("Login Berhasil!");
+        window.closeLoginModal(); // Tutup modal login saja, jangan pindah page
+        // -------------------------
+
+    } catch (error) {
+        console.error(error);
+        alert("Login Gagal: " + error.message);
+    } finally {
+        btn.innerHTML = 'Masuk ke Sistem <i class="fas fa-arrow-right text-xs"></i>';
+        btn.disabled = false;
+    }
+};
+// Pantau status login user
+onAuthStateChanged(auth, (user) => {
+    const authBtnContainer = document.getElementById("auth-buttons"); // Pastikan ID ini ada di HTML-mu
+    
+    if (user) {
+        // Jika user LOGIN: Ganti tombol Login jadi Profil & Logout
+        console.log("User sudah login:", user.email);
+        if(authBtnContainer) {
+            authBtnContainer.innerHTML = `
+                <button onclick="location.href='profile.html'" class="px-6 py-2 bg-lumina-gold text-white rounded-full font-bold">Profil</button>
+                <button onclick="handleLogout()" class="px-6 py-2 border border-red-500 text-red-500 rounded-full">Keluar</button>
+            `;
+        }
+    } else {
+        // Jika user LOGOUT: Tampilkan tombol Login lagi
+        if(authBtnContainer) {
+            authBtnContainer.innerHTML = `
+                <button onclick="openLoginModal()" class="px-6 py-2 bg-lumina-dark text-white rounded-full font-bold">Masuk / Daftar</button>
+            `;
+        }
+    }
+});
+window.handleLogout = async () => {
+    if (confirm("Apakah anda yakin ingin keluar?")) {
+        try {
+            await signOut(auth);
+            window.location.href = "landing.html"; // Balik ke landing page
+        } catch (error) {
+            alert("Gagal Logout: " + error.message);
+        }
+    }
+};
+// 3. Update Fungsi openLoginModal agar selalu reset ke 'login' saat dibuka
+window.openLoginModal = () => {
+    const modal = document.getElementById("login-modal");
+    if (modal) {
+        // Setiap kali dibuka, pastikan tampilan kembali ke 'login' dulu
+        if (typeof window.switchAuthMode === "function") {
+            window.switchAuthMode('login');
+        }
+        
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+        
+        // Focus otomatis ke email agar user bisa langsung ngetik
+        setTimeout(() => {
+            document.getElementById("login-email")?.focus();
+        }, 300);
+    }
 };
 
 window.closeLoginModal = () => {
-  const modal = document.getElementById("login-modal");
-  if(modal) {
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
-  }
+    const modal = document.getElementById("login-modal");
+    if (modal) {
+        // Tambahkan animasi keluar jika perlu, tapi sederhananya:
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+    }
 };
 
+document.getElementById("login-modal")?.addEventListener("click", (e) => {
+    // Jika yang diklik adalah backgroundnya (bukan kotak putihnya)
+    if (e.target.id === "login-modal") {
+        window.closeLoginModal();
+    }
+});
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        window.closeLoginModal();
+    }
+});
 // ============================================================
 // DRAG TO SCROLL (CATEGORY CONTAINER)
 // ============================================================

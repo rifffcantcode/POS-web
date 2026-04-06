@@ -278,88 +278,111 @@
       </div>
     </div>
 
-    <div
-      id="login-modal"
-      class="fixed inset-0 bg-lumina-dark/80 backdrop-blur-md z-[200] hidden flex items-center justify-center p-4 animate-fade-in"
+  <div
+  id="login-modal"
+  class="fixed inset-0 bg-lumina-dark/80 backdrop-blur-md z-[200] hidden items-center justify-center p-4 animate-fade-in"
+>
+  <div
+    class="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[550px] relative animate-zoom-in"
+  >
+    <button
+      onclick="closeLoginModal()"
+      class="absolute top-4 right-4 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:text-lumina-dark transition z-10"
     >
-      <div
-        class="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[500px] relative animate-zoom-in"
-      >
-        <button
-          onclick="closeLoginModal()"
-          class="absolute top-4 right-4 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:text-lumina-dark transition z-10"
-        >
-          <i class="fas fa-times"></i>
-        </button>
+      <i class="fas fa-times"></i>
+    </button>
 
-        <div class="md:w-1/2 relative hidden md:block">
-          <img
-            src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=1632&auto=format&fit=crop"
-            class="absolute inset-0 w-full h-full object-cover"
-          />
-          <div
-            class="absolute inset-0 bg-lumina-dark/40 flex flex-col justify-end p-10 text-white"
-          >
-            <h2 class="text-3xl font-bold mb-2">Portal Akses</h2>
-            <p class="text-sm opacity-80">
-              Desain yang Berbicara, Kenyamanan yang Merangkul. Estetika Tanpa
-              Batas untuk Rumah Masa Kini.
-            </p>
-          </div>
-        </div>
-
-        <div class="md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-white">
-          <div class="mb-8">
-            <div class="flex items-center gap-2 mb-2">
-              <i class="fas fa-couch text-xl text-lumina-gold"></i>
-              <span
-                class="text-lg font-black tracking-tight text-lumina-gold uppercase"
-                >Lumina</span
-              >
-            </div>
-            <h3 class="text-2xl font-bold text-gray-800">Welcome Back</h3>
-            <p class="text-gray-400 text-xs">
-              Gunakan akun akses resmi Lumina.
-            </p>
-          </div>
-
-          <form onsubmit="handleAuthLogin(event)" class="space-y-4">
-            <div>
-              <label
-                class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1"
-                >Email Access</label
-              >
-              <input
-                type="email"
-                id="login-email"
-                required
-                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-lumina-gold focus:outline-none transition text-sm"
-                placeholder="lumina@gmail.com"
-              />
-            </div>
-            <div>
-              <label
-                class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1"
-                >Password</label
-              >
-              <input
-                type="password"
-                id="login-password"
-                required
-                class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-lumina-gold focus:outline-none transition text-sm"
-                placeholder="••••••••"
-              />
-            </div>
-            <button
-              type="submit"
-              class="w-full bg-lumina-dark text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg flex items-center justify-center gap-2 mt-2"
-            >
-              Masuk ke Sistem <i class="fas fa-arrow-right text-xs"></i>
-            </button>
-          </form>
-        </div>
+    <div class="md:w-1/2 relative hidden md:block">
+      <img
+        id="auth-image"
+        src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=1632&auto=format&fit=crop"
+        class="absolute inset-0 w-full h-full object-cover transition-all duration-500"
+      />
+      <div class="absolute inset-0 bg-lumina-dark/40 flex flex-col justify-end p-10 text-white">
+        <h2 id="auth-side-title" class="text-3xl font-bold mb-2">Portal Akses</h2>
+        <p id="auth-side-desc" class="text-sm opacity-80 leading-relaxed">
+          Desain yang Berbicara, Kenyamanan yang Merangkul. Estetika Tanpa Batas untuk Rumah Masa Kini.
+        </p>
       </div>
     </div>
+
+    <div class="md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-white relative">
+      <div class="mb-8">
+        <div class="flex items-center gap-2 mb-2">
+          <i class="fas fa-couch text-xl text-lumina-gold"></i>
+          <span class="text-lg font-black tracking-tight text-lumina-gold uppercase">Lumina</span>
+        </div>
+        <h3 id="auth-title" class="text-2xl font-bold text-gray-800 transition-all">Welcome Back</h3>
+        <p id="auth-desc" class="text-gray-400 text-xs">Gunakan akun akses resmi Lumina.</p>
+      </div>
+
+      <div id="login-view">
+        <form onsubmit="handleAuthLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Email Access</label>
+            <input type="email" id="login-email" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-lumina-gold focus:outline-none transition text-sm" placeholder="johndoe@gmail.com" />
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Password</label>
+            <input type="password" id="login-password" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-lumina-gold focus:outline-none transition text-sm" placeholder="••••••••" />
+          </div>
+          <button type="submit" class="w-full bg-lumina-dark text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg flex items-center justify-center gap-2 mt-2">
+            Masuk ke Sistem <i class="fas fa-arrow-right text-xs"></i>
+          </button>
+        </form>
+        <p class="text-center mt-6 text-xs text-gray-500">
+          Belum punya akun? 
+          <button onclick="switchAuthMode('register')" class="text-lumina-dark font-bold hover:underline decoration-lumina-gold decoration-2">Daftar sekarang</button>
+        </p>
+      </div>
+
+<div id="register-view" class="hidden">
+  <form onsubmit="handleAuthRegister(event)" class="space-y-4">
+    <div>
+      <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Nama Lengkap</label>
+      <input type="text" id="reg-name" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-lumina-gold focus:outline-none transition text-sm" placeholder="John Doe" />
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Email</label>
+        <input type="email" id="reg-email" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-lumina-gold focus:outline-none transition text-sm" placeholder="johndoe@email.com" />
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">No. Telepon</label>
+        <input type="tel" id="reg-phone" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-lumina-gold focus:outline-none transition text-sm" placeholder="0812..." />
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Alamat Lengkap</label>
+      <input type="text" id="reg-address" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-lumina-gold focus:outline-none transition text-sm" placeholder="Jl. Terang No. 123..." />
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Password</label>
+        <input type="password" id="reg-password" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-lumina-gold focus:outline-none transition text-sm" placeholder="••••••••" />
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">Konfirmasi</label>
+        <input type="password" id="reg-confirm" required class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-lumina-gold focus:outline-none transition text-sm" placeholder="••••••••" />
+      </div>
+    </div>
+
+    <button type="submit" class="w-full bg-lumina-dark text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg flex items-center justify-center gap-2 mt-2">
+      Buat Akun Baru <i class="fas fa-user-plus text-xs"></i>
+    </button>
+  </form>
+  
+  <p class="text-center mt-6 text-xs text-gray-500">
+    Sudah punya akun? 
+    <button onclick="switchAuthMode('login')" class="text-lumina-dark font-bold hover:underline decoration-lumina-gold decoration-2">Masuk di sini</button>
+  </p>
+</div>
+    </div>
+  </div>
+</div>
 
     <footer class="bg-lumina-dark text-white py-16 text-center">
       <h4 class="text-2xl font-black text-lumina-gold mb-4 tracking-widest">
