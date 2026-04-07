@@ -645,33 +645,46 @@ window.handleAuthLogin = async (e) => {
 };
 // Pantau status login user
 onAuthStateChanged(auth, (user) => {
-    const authBtnContainer = document.getElementById("auth-buttons"); // Pastikan ID ini ada di HTML-mu
+    // Ambil SEMUA elemen yang memiliki class auth-container
+    const authContainers = document.querySelectorAll(".auth-container");
     
-    if (user) {
-        // Jika user LOGIN: Ganti tombol Login jadi Profil & Logout
-        console.log("User sudah login:", user.email);
-        if(authBtnContainer) {
-            authBtnContainer.innerHTML = `
-                <button onclick="location.href='profile.html'" class="px-6 py-2 bg-lumina-gold text-white rounded-full font-bold">Profil</button>
-                <button onclick="handleLogout()" class="px-6 py-2 border border-red-500 text-red-500 rounded-full">Keluar</button>
+    authContainers.forEach(container => {
+        if (user) {
+            const userName = user.displayName || "Member";
+            
+            container.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <a href="profile.html" class="flex items-center gap-2 group">
+                        <div class="w-8 h-8 bg-lumina-gold text-lumina-dark rounded-full flex items-center justify-center font-black shadow-sm group-hover:bg-white transition text-xs">
+                            ${userName.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="flex flex-col text-left">
+                            <span class="text-[10px] text-gray-400 uppercase font-bold tracking-tighter leading-none">Welcome back</span>
+                            <span class="text-sm font-bold text-white group-hover:text-lumina-gold transition">${userName}</span>
+                        </div>
+                    </a>
+                    <button onclick="handleLogout()" class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-700 text-gray-400 hover:text-red-500 hover:border-red-500 transition shadow-sm" title="Logout">
+                        <i class="fas fa-sign-out-alt text-xs"></i>
+                    </button>
+                </div>
+            `;
+        } else {
+            container.innerHTML = `
+                <button onclick="openLoginModal()" class="bg-lumina-gold text-lumina-dark px-6 py-2 rounded-full hover:bg-white font-bold transition shadow-md text-sm flex items-center gap-2">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
             `;
         }
-    } else {
-        // Jika user LOGOUT: Tampilkan tombol Login lagi
-        if(authBtnContainer) {
-            authBtnContainer.innerHTML = `
-                <button onclick="openLoginModal()" class="px-6 py-2 bg-lumina-dark text-white rounded-full font-bold">Masuk / Daftar</button>
-            `;
-        }
-    }
+    });
 });
+// Memastikan fungsi logout bisa dipanggil dari HTML (onclick)
 window.handleLogout = async () => {
-    if (confirm("Apakah anda yakin ingin keluar?")) {
+    if (confirm("Apakah Anda yakin ingin keluar dari Lumina?")) {
         try {
             await signOut(auth);
-            window.location.href = "landing.html"; // Balik ke landing page
+            // Tombol akan otomatis berubah kembali ke "Login" karena onAuthStateChanged
         } catch (error) {
-            alert("Gagal Logout: " + error.message);
+            console.error("Gagal Logout:", error);
         }
     }
 };
