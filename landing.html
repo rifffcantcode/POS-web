@@ -59,20 +59,39 @@
       <i class="fa-solid fa-couch"></i> LUMINA
     </h1>
     
-    <div class="flex items-center gap-6">
-      <button onclick="toggleCartModal()" class="relative p-2 text-white hover:text-lumina-gold transition">
-        <i class="fas fa-shopping-bag text-xl"></i>
-        <span id="cart-count" class="absolute -top-1 -right-1 bg-lumina-gold text-lumina-dark text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
-      </button>
+    <div class="flex items-center gap-3 md:gap 6">
+<button onclick="toggleCartModal()" 
+  class="hidden md:block relative p-2 text-white hover:text-lumina-gold transition">
+  
+  <i class="fas fa-shopping-bag text-xl"></i>
+
+  <span id="cart-count" 
+    class="absolute -top-1 -right-1 bg-lumina-gold text-lumina-dark text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center hidden">
+    0
+  </span>
+
+</button>
 
       <div class="auth-container">
-        <button onclick="openLoginModal()" class="bg-lumina-gold text-lumina-dark px-6 py-2 rounded-full hover:bg-white font-bold transition shadow-md text-sm flex items-center gap-2">
+        <button onclick="openLoginModal()" class="hidden md:flex bg-lumina-gold text-lumina-dark px-6 py-2 rounded-full hover:bg-white font-bold transition shadow-md text-sm flex items-center gap-2">
           <i class="fas fa-sign-in-alt"></i> Login
         </button>
       </div>
       </div>
   </div>
 </nav>
+
+    <!-- MOBILE HEADER -->
+<div class="md:hidden px-4 py-3 bg-white shadow-sm flex items-center gap-3 sticky top-[64px] z-40">
+
+  <input
+    type="text"
+    placeholder="Cari furnitur..."
+    oninput="handleSearch(event)"
+    class="flex-1 px-4 py-2 rounded-full border text-sm focus:outline-none focus:border-lumina-gold"
+  />
+
+</div>
 
     <header
       class="bg-lumina-dark text-white py-24 px-6 relative overflow-hidden"
@@ -124,11 +143,11 @@
 
       <div
         id="category-container"
-        class="flex flex-row flex-nowrap overflow-x-auto gap-6 mb-16 pb-8 snap-x scroll-smooth scrollbar-hide"
+        class="flex overflow-x-auto gap-4 md:gap-6 mb-12 md:mb-16 pb-4 md:pb-8 px-2 md:px-0 snap-x scroll-smooth scrollbar-hide"
       ></div>
 
       <div
-        class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4"
+        class="flex flex-col md:flex-row justify-between items-stretch md:items-center mb-6 md:mb-8 gap-4"
         id="katalog"
       >
         <div>
@@ -161,7 +180,7 @@
           </button>
         </div>
 
-        <div class="relative w-full md:w-64">
+        <div class=" hidden md:block relative w-full md:w-64">
           <input
             type="text"
             oninput="handleSearch(event)"
@@ -174,7 +193,7 @@
 
       <div
         id="customer-product-grid"
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+        class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 md:gap-6"
       >
         <div id="loading-status" class="col-span-full text-center py-20">
           <i class="fas fa-circle-notch fa-spin text-4xl text-lumina-gold"></i>
@@ -208,7 +227,7 @@
       class="fixed inset-0 bg-black/50 z-[110] hidden justify-end transition-opacity"
     >
       <div
-        class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col animate-slide-in-right"
+        class="bg-white w-full md:max-w-md h-full shadow-2xl flex flex-col animate-slide-in-right"
       >
         <div
           class="bg-lumina-dark p-6 flex justify-between items-center text-white"
@@ -472,7 +491,8 @@
         &copy; 2026 LUMINA Furniture. All Rights Reserved.
       </p>
     </footer>
-    
+
+    <!-- MOBILE NAVIGATION -->
     <nav
       class="mobile-nav fixed bottom-0 left-0 right-0 h-16 md:hidden flex justify-around items-center z-[100] px-2 pb-safe bg-white border-t"
     >
@@ -505,20 +525,9 @@
           >0</span
         >
       </button>
-
-      <div class="auth-container">
-        <button onclick="openLoginModal()" class="...">
-          <i class="fas fa-sign-in-alt"></i> Login
-        </button>
-      </div>
     </nav>
 
     <style>
-      @media (max-width: 768px) {
-        body {
-          padding-bottom: 5rem;
-        }
-      }
       /* Custom Scrollbar for Cart */
       .custom-scroll::-webkit-scrollbar {
         width: 6px;

@@ -246,10 +246,14 @@ window.renderProducts = (withAnimation = true) => {
                     <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Price</p>
                     <p class="text-lg font-black text-lumina-gold">Rp ${p.price.toLocaleString('id-ID')}</p>
                 </div>
-                <button onclick="addToCartCustomer('${p.id}', event)" ${availableStock <= 0 ? 'disabled' : ''} 
-                    class="${availableStock > 0 ? 'bg-lumina-dark text-white hover:bg-black shadow-lg' : 'bg-gray-200 text-gray-400 cursor-not-allowed'} w-11 h-11 rounded-xl flex items-center justify-center transition-all active:scale-95">
-                    <i class="fas fa-plus"></i>
-                </button>
+<button 
+  onclick="addToCartCustomer('${p.id}', event)" 
+  ${availableStock <= 0 ? 'disabled' : ''} 
+  class="hidden md:flex ${availableStock > 0 ? 'bg-lumina-dark text-white hover:bg-black shadow-lg' : 'bg-gray-200 text-gray-400 cursor-not-allowed'} w-11 h-11 rounded-xl items-center justify-center transition-all active:scale-95">
+  
+  <i class="fas fa-plus"></i>
+
+</button>
             </div>
         </div>
     </div>`;
@@ -279,7 +283,6 @@ window.openProductDetail = (productId) => {
 
   const itemInCart = cart.find(item => item.id === productId);
   const availableStock = product.stock - (itemInCart ? itemInCart.quantity : 0);
-
   detailContent.innerHTML = `
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       <div class="bg-gray-50 rounded-2xl p-8 flex items-center justify-center"><img src="${product.image}" class="max-h-80 object-contain mix-blend-multiply" onerror="this.src='https://via.placeholder.com/300'"></div>
@@ -595,83 +598,141 @@ window.handleAuthRegister = async (e) => {
 };
 // --- FUNGSI LOGIN NYATA ---
 window.handleAuthLogin = async (e) => {
-    e.preventDefault();
-    const email = document.getElementById("login-email").value;
-    const password = document.getElementById("login-password").value;
+  e.preventDefault();
 
-    const btn = e.target.querySelector('button');
-    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Memverifikasi...';
-    btn.disabled = true;
+  const email = document.getElementById("login-email").value.trim();
+  const password = document.getElementById("login-password").value.trim();
 
-    try {
-        // 1. Proses Login
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
+  const btn = e.target.querySelector("button");
+  btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Memverifikasi...';
+  btn.disabled = true;
 
-        // 2. Ambil data role dari Firestore
-        const userDocRef = doc(db, "users", user.uid);
-        const userDocSnap = await getDoc(userDocRef);
+  try {
+    // 1. LOGIN FIREBASE AUTH
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
 
-        if (userDocSnap.exists()) {
-            const userData = userDocSnap.data();
-            const role = userData.role;
+    // 2. AMBIL DATA USER DARI FIRESTORE
+    const userDocRef = doc(db, "users", user.uid);
+    const userDocSnap = await getDoc(userDocRef);
 
-            alert(`Login Berhasil! Selamat datang, ${role}`);
-
-            // 3. Logika Pengalihan Halaman (Redirection)
-            if (role === "admin") {
-                window.location.href = "laporan.html";
-            } else if (role === "kasir") {
-                window.location.href = "index.html";
-            } else {
-                // Role customer atau lainnya tetap di landing page
-                window.location.href = "landing.html";
-            }
-        } else {
-            alert("Data user tidak ditemukan di database.");
-        }
-
-    } catch (error) {
-        console.error(error);
-        alert("Login Gagal: " + error.message);
-    } finally {
-        btn.innerHTML = 'Masuk ke Sistem <i class="fas fa-arrow-right text-xs"></i>';
-        btn.disabled = false;
+    if (!userDocSnap.exists()) {
+      alert("Data user tidak ditemukan di database.");
+      await signOut(auth); // 🔥 biar ga nyangkut login
+      return;
     }
+
+    const userData = userDocSnap.data();
+    const role = userData.role?.toLowerCase(); // 🔥 biar aman case-sensitive
+
+    console.log("Role user:", role);
+
+    // 3. VALIDASI ROLE
+    if (!role) {
+      alert("Role user belum diatur!");
+      return;
+    }
+
+    // 4. REDIRECT BERDASARKAN ROLE
+    switch (role) {
+      case "admin":
+        window.location.href = "laporan.html";
+        break;
+
+      case "kasir":
+        window.location.href = "index.html";
+        break;
+
+      case "customer":
+        window.location.href = "landing.html";
+        break;
+
+      default:
+        alert("Role tidak dikenali!");
+        window.location.href = "landing.html";
+    }
+
+  } catch (error) {
+    console.error("Login error:", error);
+
+    // 🔥 ERROR HANDLING LEBIH JELAS
+    if (error.code === "auth/user-not-found") {
+      alert("Email tidak terdaftar!");
+    } else if (error.code === "auth/wrong-password") {
+      alert("Password salah!");
+    } else if (error.code === "auth/invalid-email") {
+      alert("Format email tidak valid!");
+    } else {
+      alert("Login gagal, coba lagi.");
+    }
+
+  } finally {
+    btn.innerHTML = 'Masuk ke Sistem <i class="fas fa-arrow-right text-xs"></i>';
+    btn.disabled = false;
+  }
 };
 // Pantau status login user
-onAuthStateChanged(auth, (user) => {
-    // Ambil SEMUA elemen yang memiliki class auth-container
-    const authContainers = document.querySelectorAll(".auth-container");
-    
-    authContainers.forEach(container => {
-        if (user) {
-            const userName = user.displayName || "Member";
-            
-            container.innerHTML = `
-                <div class="flex items-center gap-4">
-                    <a href="profile.html" class="flex items-center gap-2 group">
-                        <div class="w-8 h-8 bg-lumina-gold text-lumina-dark rounded-full flex items-center justify-center font-black shadow-sm group-hover:bg-white transition text-xs">
-                            ${userName.charAt(0).toUpperCase()}
-                        </div>
-                        <div class="flex flex-col text-left">
-                            <span class="text-[10px] text-gray-400 uppercase font-bold tracking-tighter leading-none">Welcome back</span>
-                            <span class="text-sm font-bold text-white group-hover:text-lumina-gold transition">${userName}</span>
-                        </div>
-                    </a>
-                    <button onclick="handleLogout()" class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-700 text-gray-400 hover:text-red-500 hover:border-red-500 transition shadow-sm" title="Logout">
-                        <i class="fas fa-sign-out-alt text-xs"></i>
-                    </button>
-                </div>
-            `;
-        } else {
-            container.innerHTML = `
-                <button onclick="openLoginModal()" class="bg-lumina-gold text-lumina-dark px-6 py-2 rounded-full hover:bg-white font-bold transition shadow-md text-sm flex items-center gap-2">
-                    <i class="fas fa-sign-in-alt"></i> Login
-                </button>
-            `;
+onAuthStateChanged(auth, async (user) => {
+  const authContainers = document.querySelectorAll(".auth-container");
+
+  for (const container of authContainers) {
+    if (user) {
+      const userName = user.displayName || "Member";
+
+      // 🔥 AMBIL ROLE DARI FIRESTORE
+      let role = "customer"; // default
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          role = userDoc.data().role || "customer";
         }
-    });
+      } catch (err) {
+        console.error("Gagal ambil role:", err);
+      }
+
+      localStorage.setItem("role", role);
+
+      container.innerHTML = `
+        <div class="flex items-center gap-4">
+          <a href="profile.html" class="flex items-center gap-2 group">
+            <div class="w-8 h-8 bg-lumina-gold text-lumina-dark rounded-full flex items-center justify-center font-black shadow-sm group-hover:bg-white transition text-xs">
+              ${userName.charAt(0).toUpperCase()}
+            </div>
+            <div class="flex flex-col text-left">
+              <span class="text-[10px] text-gray-400 uppercase font-bold tracking-tighter leading-none">
+                ${role}
+              </span>
+              <span class="text-sm font-bold text-white group-hover:text-lumina-gold transition">
+                ${userName}
+              </span>
+            </div>
+          </a>
+
+          ${
+            role === "admin"
+              ? `<a href="laporan.html" class="text-xs text-lumina-gold font-bold">Dashboard</a>`
+              : ""
+          }
+                 ${
+            role === "kasir"
+              ? `<a href="index.html" class="text-xs text-lumina-gold font-bold">Cashier</a>`
+              : ""
+          }
+
+          <button onclick="handleLogout()" class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-700 text-gray-400 hover:text-red-500 hover:border-red-500 transition shadow-sm" title="Logout">
+            <i class="fas fa-sign-out-alt text-xs"></i>
+          </button>
+        </div>
+      `;
+    } else {
+      container.innerHTML = `
+        <button onclick="openLoginModal()" class="bg-lumina-gold text-lumina-dark px-6 py-2 rounded-full hover:bg-white font-bold transition shadow-md text-sm flex items-center gap-2">
+          <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+      `;
+    }
+  }
 });
 // Memastikan fungsi logout bisa dipanggil dari HTML (onclick)
 window.handleLogout = async () => {
@@ -779,7 +840,7 @@ window.payNow = async function () {
       alert("Kamu harus login dulu!");
       return;
     }
-    
+
     const cart = JSON.parse(localStorage.getItem("lumina_cart")) || [];
 
     if (cart.length === 0) {

@@ -157,9 +157,10 @@ function renderProductGrid(input = allProducts) {
                 <p class="text-[10px] text-gray-400 font-bold uppercase">Harga</p>
                 <span class="font-black text-lumina-dark text-lg">Rp ${parseInt(product.price).toLocaleString("id-ID")}</span>
             </div>
-            <button onclick="addToCart('${product.id}')" class="bg-lumina-dark text-white w-10 h-10 rounded-xl flex items-center justify-center hover:bg-lumina-gold hover:text-lumina-dark transition shadow-md active:scale-95">
-                <i class="fas fa-plus"></i>
-            </button>
+<button onclick="addToCart('${product.id}')" 
+class="hidden md:flex bg-lumina-dark text-white w-10 h-10 rounded-xl items-center justify-center hover:bg-lumina-gold hover:text-lumina-dark transition shadow-md active:scale-95">
+  <i class="fas fa-plus"></i>
+</button>
         </div> 
     `;
     grid.appendChild(card);

@@ -58,16 +58,17 @@ app.post("/create-transaction", async (req, res) => {
 
     console.log("Create TX:", finalOrderId);
 
-    // 🔥 simpan ke Firestore
-    await db.collection("sales").add({
-      orderId: finalOrderId,
-      userId: userId || "guest",
-      items: cart,
-      total,
-      status: "pending",
-      snapToken: transaction.token,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
+const now = Date.now();
+
+await db.collection("sales").add({
+  orderId: finalOrderId,
+  userId: userId || "guest",
+  items: cart,
+  total,
+  status: "pending",
+  snapToken: transaction.token,
+  date: new Date()
+});
 
     res.json({
       token: transaction.token,
