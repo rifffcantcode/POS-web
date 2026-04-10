@@ -2,7 +2,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Konfigurasi Firebase (HARUS SAMA PERSIS dengan di landing.js)
 const firebaseConfig = {
     apiKey: "AIzaSyBMsUhXj-UCLLviXzweS1qXVdSaVgkDcu8",
     authDomain: "sistemkasirtokocom.firebaseapp.com",
@@ -16,117 +15,125 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// Proteksi Halaman: Jika belum login, tendang ke index.html
+// ================= AUTH =================
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
-        window.location.href = "landing.html"; // Ganti dengan nama file utamamu jika berbeda
+        window.location.href = "landing.html";
         return;
     }
 
-    // 1. Tampilkan Data Basic (Auth)
     const userName = user.displayName || "Member Lumina";
     document.getElementById("profile-name").innerText = userName;
     document.getElementById("profile-email").innerText = user.email;
     document.getElementById("profile-initial").innerText = userName.charAt(0).toUpperCase();
 
-    // 2. Ambil Data Tambahan (No HP & Alamat) dari Firestore 'users'
-    try {
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
-        
-        if (userDoc.exists()) {
-            const userData = userDoc.data();
-            document.getElementById("profile-phone").innerText = userData.phone || "Belum ada no telepon";
-            document.getElementById("profile-address").innerText = userData.address || "Belum ada alamat";
-        } else {
-            document.getElementById("profile-phone").innerText = "-";
-            document.getElementById("profile-address").innerText = "Data tidak ditemukan di sistem.";
-        }
-    } catch (error) {
-        console.error("Gagal mengambil profil:", error);
+    // ambil data tambahan
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (userDoc.exists()) {
+        const data = userDoc.data();
+        document.getElementById("profile-phone").innerText = data.phone || "-";
+        document.getElementById("profile-address").innerText = data.address || "-";
     }
 
-    // 3. Ambil Riwayat Transaksi dari Firestore 'sales'
     fetchOrderHistory(user.uid);
 });
 
-// Fungsi Menarik Riwayat Transaksi
+// ================= FETCH TRANSAKSI =================
 async function fetchOrderHistory(userId) {
-    const historyContainer = document.getElementById("order-history");
-    
-    try {
-        // Query: Cari di tabel "sales" di mana "userId" sama dengan ID user yang login
-        const salesRef = collection(db, "sales");
-        const q = query(salesRef, where("userId", "==", userId));
-        const querySnapshot = await getDocs(q);
+    const container = document.getElementById("order-history");
 
-        historyContainer.innerHTML = ""; // Bersihkan loading
+    const q = query(collection(db, "sales"), where("userId", "==", userId));
+    const snapshot = await getDocs(q);
 
-        if (querySnapshot.empty) {
-            historyContainer.innerHTML = `
-                <div class="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                    <i class="fas fa-box-open text-4xl text-gray-300 mb-3"></i>
-                    <p class="text-sm font-medium text-gray-500">Belum ada riwayat transaksi.</p>
-                    <a href="landing.html" class="inline-block mt-3 text-xs text-lumina-gold font-bold hover:underline">Mulai Belanja</a>
-                </div>
-            `;
-            return;
+    container.innerHTML = "";
+
+    if (snapshot.empty) {
+        container.innerHTML = `<p class="text-center text-gray-500">Belum ada transaksi</p>`;
+        return;
+    }
+
+    snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+
+        const total = `Rp ${data.total?.toLocaleString("id-ID") || 0}`;
+
+        let statusClass = "";
+        let statusText = "";
+
+        if (data.status === "pending") {
+            statusClass = "bg-yellow-100 text-yellow-700";
+            statusText = "Menunggu";
+        } else if (data.status === "success") {
+            statusClass = "bg-green-100 text-green-700";
+            statusText = "Sukses";
+        } else {
+            statusClass = "bg-red-100 text-red-700";
+            statusText = "Gagal";
         }
 
-        // Looping data transaksi yang ditemukan
-        querySnapshot.forEach((doc) => {
-            const sale = doc.data();
-            
-            // Format tanggal (Jika menggunakan timestamp Firebase)
-            let dateStr = "Tanggal tidak diketahui";
-            if (sale.date && sale.date.toDate) {
-                dateStr = sale.date.toDate().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute:'2-digit' });
-            } else if (typeof sale.date === 'string') {
-                dateStr = sale.date;
-            }
+        let bayarButton = "";
+        if (data.status === "pending" && data.snapToken) {
+            bayarButton = `
+                <button 
+                  onclick="payAgain('${data.snapToken}')"
+                  class="mt-2 px-3 py-1 bg-black text-white text-xs rounded"
+                >
+                  Bayar Lagi
+                </button>
+            `;
+        }
 
-            // Hitung total harga
-            const totalBayar = sale.total ? `Rp ${sale.total.toLocaleString('id-ID')}` : "Rp 0";
-
-            historyContainer.innerHTML += `
-                <div class="p-4 border border-gray-100 rounded-2xl hover:shadow-md transition bg-white">
-                    <div class="flex justify-between items-start mb-3 border-b border-gray-50 pb-3">
-                        <div>
-                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">ID Transaksi: ${doc.id.substring(0,8)}</span>
-                            <span class="text-xs font-medium text-gray-600"><i class="far fa-clock mr-1"></i> ${dateStr}</span>
-                        </div>
-                        <span class="bg-green-100 text-green-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase">Selesai</span>
+        container.innerHTML += `
+            <div class="p-4 border rounded-xl bg-white">
+                <div class="flex justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400">ID: ${data.orderId}</p>
+                        <p class="text-sm font-medium">${total}</p>
                     </div>
-                    
-                    <div class="flex justify-between items-end">
-                        <div class="text-sm text-gray-500 font-medium">
-                            Total Belanja:
-                        </div>
-                        <div class="text-lg font-black text-lumina-dark">${totalBayar}</div>
+                    <div class="text-right">
+                        <span class="${statusClass} text-xs px-2 py-1 rounded-full font-bold">
+                            ${statusText}
+                        </span>
+                        ${bayarButton}
                     </div>
                 </div>
-            `;
-        });
-
-    } catch (error) {
-        console.error("Gagal mengambil transaksi:", error);
-        historyContainer.innerHTML = `<p class="text-red-500 text-sm text-center py-4">Gagal memuat riwayat belanja.</p>`;
-    }
+            </div>
+        `;
+    });
 }
 
-// Fungsi Buka/Tutup Modal
+// ================= BAYAR LAGI =================
+window.payAgain = function (token) {
+    if (!token) {
+        alert("Snap token tidak ditemukan!");
+        return;
+    }
+
+    window.snap.pay(token, {
+        onSuccess: function () {
+            alert("Pembayaran berhasil!");
+            location.reload();
+        },
+        onPending: function () {
+            alert("Masih menunggu pembayaran");
+        },
+        onError: function () {
+            alert("Pembayaran gagal");
+        }
+    });
+};
+
+// ================= EDIT PROFILE =================
 window.toggleEditModal = () => {
     const modal = document.getElementById('edit-modal');
     modal.classList.toggle('hidden');
     modal.classList.toggle('flex');
 };
 
-// Fungsi Mengisi Data Lama ke Input Modal
 window.openEditModal = async () => {
     const user = auth.currentUser;
     if (!user) return;
 
-    // Ambil data terbaru dari Firestore
     const userDoc = await getDoc(doc(db, "users", user.uid));
     if (userDoc.exists()) {
         const data = userDoc.data();
@@ -134,54 +141,31 @@ window.openEditModal = async () => {
         document.getElementById('edit-phone').value = data.phone || "";
         document.getElementById('edit-address').value = data.address || "";
     }
+
     toggleEditModal();
 };
 
-// Handle Submit Form Edit
 document.getElementById('edit-profile-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+
     const user = auth.currentUser;
-    if (!user) return;
 
     const newName = document.getElementById('edit-name').value;
     const newPhone = document.getElementById('edit-phone').value;
     const newAddress = document.getElementById('edit-address').value;
 
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
-    submitBtn.disabled = true;
+    await updateProfile(user, { displayName: newName });
 
-    try {
-        // 1. Update Nama di Firebase Auth
-        await updateProfile(user, { displayName: newName });
+    await updateDoc(doc(db, "users", user.uid), {
+        phone: newPhone,
+        address: newAddress
+    });
 
-        // 2. Update No HP & Alamat di Firestore
-        const userRef = doc(db, "users", user.uid);
-        await updateDoc(userRef, {
-            phone: newPhone,
-            address: newAddress,
-            updatedAt: new Date().toISOString()
-        });
-
-        alert("Profil berhasil diperbarui!");
-        location.reload(); // Refresh untuk melihat perubahan
-    } catch (error) {
-        console.error("Error update profil:", error);
-        alert("Gagal memperbarui profil.");
-    } finally {
-        submitBtn.innerHTML = 'Simpan Perubahan';
-        submitBtn.disabled = false;
-    }
+    alert("Profil berhasil diupdate");
+    location.reload();
 });
 
-// Global Fungsi Logout
+// ================= LOGOUT =================
 window.handleLogout = async () => {
-    if (confirm("Apakah Anda yakin ingin keluar dari akun Anda?")) {
-        try {
-            await signOut(auth);
-            // Otomatis akan dilempar ke index.html karena onAuthStateChanged di atas
-        } catch (error) {
-            console.error("Gagal Logout:", error);
-        }
-    }
+    await signOut(auth);
 };

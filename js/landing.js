@@ -6,7 +6,8 @@ import {
     collection, 
     onSnapshot, 
     doc, 
-    setDoc 
+    setDoc,
+    getDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 2. Grouping Auth (Otentikasi)
@@ -450,31 +451,6 @@ window.toggleCartModal = () => {
   }
 };
 
-window.checkoutWhatsApp = () => {
-    if (!cart.length) return alert("Keranjang masih kosong!");
-    const form = document.getElementById("checkout-form");
-    if (form.classList.contains("hidden")) {
-        form.classList.remove("hidden");
-        form.scrollIntoView({ behavior: 'smooth' });
-        showToast("Silakan isi data pengiriman dulu ya!");
-        return;
-    }
-    const name = document.getElementById("cust-name").value;
-    const address = document.getElementById("cust-address").value;
-    if (!name || !address) { showToast("Nama dan Alamat harus diisi!", "error"); return; }
-
-    let msg = `*PESANAN BARU - LUMINA*\n--------------------------\n *Nama:* ${name}\n *Alamat:* ${address}\n--------------------------\n`;
-    let total = 0;
-    cart.forEach(i => {
-        msg += `• ${i.name} (${i.quantity}x) - Rp ${(i.price * i.quantity).toLocaleString()}\n`;
-        total += (i.price * i.quantity);
-    });
-    msg += `--------------------------\n*Total: Rp ${total.toLocaleString('id-ID')}*`;
-    const waNumber = "6281210680152"; 
-    window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`);
-    localStorage.setItem("cust_name_saved", name);
-    localStorage.setItem("cust_address_saved", address);
-};
 
 // ============================================================
 // 8. NAVIGASI, FILTER & UTILS
@@ -628,12 +604,32 @@ window.handleAuthLogin = async (e) => {
     btn.disabled = true;
 
     try {
-        await signInWithEmailAndPassword(auth, email, password);
-        
-        // --- PERUBAHAN DI SINI ---
-        alert("Login Berhasil!");
-        window.closeLoginModal(); // Tutup modal login saja, jangan pindah page
-        // -------------------------
+        // 1. Proses Login
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // 2. Ambil data role dari Firestore
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            const role = userData.role;
+
+            alert(`Login Berhasil! Selamat datang, ${role}`);
+
+            // 3. Logika Pengalihan Halaman (Redirection)
+            if (role === "admin") {
+                window.location.href = "laporan.html";
+            } else if (role === "kasir") {
+                window.location.href = "index.html";
+            } else {
+                // Role customer atau lainnya tetap di landing page
+                window.location.href = "landing.html";
+            }
+        } else {
+            alert("Data user tidak ditemukan di database.");
+        }
 
     } catch (error) {
         console.error(error);
@@ -774,6 +770,87 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!isDown) slider.style.cursor = 'grab';
     });
 });
+
+window.payNow = async function () {
+  try {
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("Kamu harus login dulu!");
+      return;
+    }
+    
+    const cart = JSON.parse(localStorage.getItem("lumina_cart")) || [];
+
+    if (cart.length === 0) {
+      alert("Keranjang kosong!");
+      return;
+    }
+  
+    const total = cart.reduce((sum, item) => {
+      return sum + item.price * item.quantity;
+    }, 0);
+    
+    const orderId = "INV-" + Date.now();
+
+    const response = await fetch("http://localhost:3000/create-transaction", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        cart,
+        orderId,
+        userId: user.uid,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!data.token) {
+      alert("Gagal mendapatkan token pembayaran!");
+      return;
+    }
+
+    
+    window.snap.pay(data.token, {
+
+      onSuccess: function (result) {
+        alert("Pembayaran berhasil!");
+        localStorage.removeItem("lumina_cart");
+        location.reload();
+      },
+
+      onPending: function (result) {
+        console.log("Pending:", result);
+
+     
+        localStorage.removeItem("lumina_cart");
+
+        alert("Pesanan dibuat! Silakan selesaikan pembayaran.");
+      },
+
+      onError: function (result) {
+        console.log("Error:", result);
+        alert("Pembayaran gagal!");
+      },
+
+      onClose: function () {
+        console.log("User menutup popup");
+
+    
+        localStorage.removeItem("lumina_cart");
+
+        alert("Pesanan dibuat! Segera selesaikan pembayaranmu ya.");
+      }
+
+    });
+
+  } catch (err) {
+    console.error(err);
+    alert("Gagal connect ke server!");
+  }
+};
 
 // ============================================================
 // 10. EVENT LISTENERS & STARTUP
