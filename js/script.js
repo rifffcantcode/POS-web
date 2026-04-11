@@ -1187,53 +1187,6 @@ window.closeProductModal = function() {
 }
 
 // Membuka Modal Katalog dan Merender Semua Barcode
-window.openBarcodePage = function(productId) {
-    // Cari produk dari data global
-    const product = window.allProducts.find(p => p.id === productId);
-    if (!product) return alert("Produk tidak ditemukan!");
-
-    const barcodeValue = product.barcode || product.id;
-    const printWindow = window.open('', '_blank', 'height=600,width=450');
-
-    printWindow.document.write(`
-        <html>
-            <head>
-                <title>Print Label - ${product.name}</title>
-                <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-                <style>
-                    body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-                    .card { border: 1px solid #eee; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-                    h2 { margin: 0 0 5px 0; font-size: 18px; text-transform: uppercase; }
-                    p { margin: 0 0 15px 0; color: #666; font-size: 12px; }
-                    .btn-print { margin-top: 20px; padding: 10px 20px; background: #4f46e5; color: white; border: none; border-radius: 5px; cursor: pointer; }
-                    @media print { .btn-print { display: none; } }
-                </style>
-            </head>
-            <body>
-                <div class="card">
-                    <h2>${product.name}</h2>
-                    <p>SKU: ${barcodeValue}</p>
-                    <svg id="barcode"></svg>
-                    <br>
-                    <button class="btn-print" onclick="window.print()">Cetak Label</button>
-                </div>
-                <script>
-                    JsBarcode("#barcode", "${barcodeValue}", {
-                        format: "CODE128",
-                        displayValue: true,
-                        fontSize: 14
-                    });
-                </script>
-            </body>
-        </html>
-    `);
-}
-// Tambahkan fungsi close agar tombol silang (X) berfungsi
-window.closeBarcodeCatalog = function() {
-    const modal = document.getElementById("barcode-catalog-modal");
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
-};
 
 window.printCatalog = function() {
     window.print();
