@@ -12,12 +12,10 @@ app.use(cors());
 app.use(express.json());
 
 // ================= FIREBASE INIT =================
+const serviceAccount = require("../config/sistemkasirtokocom-firebase-adminsdk-fbsvc-66445ad25e.json");
+
 admin.initializeApp({
-  credential: admin.credential.cert({
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-  }),
+  credential: admin.credential.cert(serviceAccount),
 });
 
 const db = admin.firestore();
@@ -37,13 +35,28 @@ app.post("/create-transaction", async (req, res) => {
       return res.status(400).json({ error: "Cart kosong" });
     }
 
-    // 💰 hitung total dari backend (lebih aman)
     const total = cart.reduce((sum, item) => {
       return sum + item.price * item.quantity;
     }, 0);
 
     const finalOrderId = orderId || "INV-" + Date.now();
 
+    console.log("🧾 Order ID:", finalOrderId);
+
+    // 🔥 1. SIMPAN DULU KE FIRESTORE
+    const docRef = await db.collection("sales").add({
+      orderId: finalOrderId,
+      userId: userId || "guest",
+      items: cart,
+      total,
+      status: "pending",
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      expiredAt: Date.now() + 15 * 60 * 1000,
+    });
+
+    console.log("✅ Saved to Firestore:", docRef.id);
+
+    // 🔥 2. BARU KE MIDTRANS
     const parameter = {
       transaction_details: {
         order_id: finalOrderId,
@@ -56,26 +69,17 @@ app.post("/create-transaction", async (req, res) => {
 
     const transaction = await snap.createTransaction(parameter);
 
-    console.log("Create TX:", finalOrderId);
-
-const now = Date.now();
-
-await db.collection("sales").add({
-  orderId: finalOrderId,
-  userId: userId || "guest",
-  items: cart,
-  total,
-  status: "pending",
-  snapToken: transaction.token,
-  date: new Date()
-});
+    // 🔥 3. UPDATE TOKEN
+    await docRef.update({
+      snapToken: transaction.token,
+    });
 
     res.json({
       token: transaction.token,
     });
 
   } catch (error) {
-    console.error("ERROR CREATE TX:", error);
+    console.error("❌ ERROR CREATE TX:", error);
     res.status(500).json({ error: "Gagal create transaksi" });
   }
 });
@@ -88,7 +92,7 @@ app.post("/midtrans-webhook", async (req, res) => {
     const orderId = notif.order_id;
     const status = notif.transaction_status;
 
-    console.log("Webhook:", orderId, status);
+    console.log("🔔 Webhook:", orderId, status);
 
     let finalStatus = "pending";
 
@@ -96,11 +100,16 @@ app.post("/midtrans-webhook", async (req, res) => {
     else if (status === "expire" || status === "cancel") finalStatus = "failed";
 
     // 🔥 update Firestore
-    const snapshot = await db.collection("sales")
+    const snapshot = await db
+      .collection("sales")
       .where("orderId", "==", orderId)
       .get();
 
-    snapshot.forEach(doc => {
+    if (snapshot.empty) {
+      console.warn("⚠️ Transaksi tidak ditemukan:", orderId);
+    }
+
+    snapshot.forEach((doc) => {
       doc.ref.update({
         status: finalStatus,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -110,19 +119,63 @@ app.post("/midtrans-webhook", async (req, res) => {
     res.sendStatus(200);
 
   } catch (error) {
-    console.error("WEBHOOK ERROR:", error);
+    console.error("❌ WEBHOOK ERROR:", error);
     res.sendStatus(500);
+  }
+});
+
+// ================= CANCEL TRANSACTION =================
+app.post("/cancel-transaction", async (req, res) => {
+  try {
+    const { orderId } = req.body;
+
+    const snapshot = await db
+      .collection("sales")
+      .where("orderId", "==", orderId)
+      .get();
+
+    snapshot.forEach((doc) => {
+      doc.ref.update({
+        status: "failed",
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+
+    res.json({ success: true });
+
+  } catch (error) {
+    console.error("❌ CANCEL ERROR:", error);
+    res.status(500).json({ error: "Gagal cancel transaksi" });
+  }
+});
+
+// ================= DELETE TRANSACTION =================
+app.post("/delete-transaction", async (req, res) => {
+  try {
+    const { docId } = req.body;
+
+    if (!docId) {
+      return res.status(400).json({ error: "docId diperlukan" });
+    }
+
+    await db.collection("sales").doc(docId).delete();
+
+    res.json({ success: true });
+
+  } catch (error) {
+    console.error("❌ DELETE ERROR:", error);
+    res.status(500).json({ error: "Gagal hapus transaksi" });
   }
 });
 
 // ================= HEALTH CHECK =================
 app.get("/", (req, res) => {
-  res.send("API jalan 🚀");
+  res.send("🚀 API LUMINA RUNNING");
 });
 
 // ================= START SERVER =================
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`Server jalan di http://localhost:${PORT}`);
+  console.log(`🚀 Server jalan di http://localhost:${PORT}`);
 });
