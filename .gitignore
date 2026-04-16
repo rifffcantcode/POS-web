@@ -2,3 +2,11 @@ backend/config/sistemkasirtokocom-firebase-adminsdk-fbsvc-c926d0c3a8.json
 
 backend/node_modules 
 node_modules/
+
+# Environment files
+.env
+backend/.env
+
+# Firebase service account keys
+config/*.json
+backend/config/*.json
