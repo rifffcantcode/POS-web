@@ -19,6 +19,7 @@ import {
     onAuthStateChanged,
     signOut
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { showPopup, showConfirmModal } from "./notify.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBMsUhXj-UCLLviXzweS1qXVdSaVgkDcu8",
@@ -128,12 +129,22 @@ let allProducts = [];
 let cart = [];
 let currentCategory = "Semua";
 let searchQuery = "";
+const CART_STORAGE_KEY = "lumina_cart";
+const CART_OWNER_KEY = "lumina_cart_owner";
+
+function clearCartState() {
+  cart = [];
+  localStorage.removeItem(CART_STORAGE_KEY);
+  updateCartCount();
+  renderProducts(false);
+  renderCart();
+}
 
 // ============================================================
-// 1. INITIAL LOAD & FIX GHOST ITEM
+// 1. INITIAL LOAD 
 // ============================================================
 try {
-  const savedCart = localStorage.getItem("lumina_cart");
+  const savedCart = localStorage.getItem(CART_STORAGE_KEY);
   if (savedCart) {
     const parsed = JSON.parse(savedCart);
     cart = parsed
@@ -143,12 +154,12 @@ try {
         price: Number(item.price) || 0,
         quantity: Number(item.quantity) || 1
       }));
-    localStorage.setItem("lumina_cart", JSON.stringify(cart));
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
   }
 } catch (e) { 
   console.error("Data keranjang corrupt, reset total.", e);
   cart = []; 
-  localStorage.removeItem("lumina_cart");
+  localStorage.removeItem(CART_STORAGE_KEY);
 }
 
 // ============================================================
@@ -377,7 +388,7 @@ window.removeFromCart = (id) => {
 };
 
 window.saveAndRefresh = (animate = true) => {
-    localStorage.setItem('lumina_cart', JSON.stringify(cart));
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
     updateCartCount();
     renderProducts(false); 
     const cartModal = document.getElementById("cart-modal");
@@ -558,7 +569,7 @@ window.handleAuthRegister = async (e) => {
     const address = document.getElementById("reg-address")?.value || "-";
 
     if (password !== confirm) {
-        alert("Konfirmasi password tidak cocok!");
+        showPopup("Konfirmasi password tidak cocok!");
         return;
     }
 
@@ -585,12 +596,12 @@ window.handleAuthRegister = async (e) => {
             createdAt: new Date().toISOString()
         });
 
-        alert("Registrasi Berhasil! Data profil telah disimpan.");
+        showPopup("Registrasi Berhasil! Data profil telah disimpan.");
         window.switchAuthMode('login'); 
 
     } catch (error) {
         console.error(error);
-        alert("Gagal mendaftar: " + error.message);
+        showPopup("Gagal mendaftar: " + error.message);
     } finally {
         btn.disabled = false;
         btn.innerHTML = 'Buat Akun Baru <i class="fas fa-user-plus text-xs"></i>';
@@ -617,7 +628,7 @@ window.handleAuthLogin = async (e) => {
     const userDocSnap = await getDoc(userDocRef);
 
     if (!userDocSnap.exists()) {
-      alert("Data user tidak ditemukan di database.");
+      showPopup("Data user tidak ditemukan di database.");
       await signOut(auth); // 🔥 biar ga nyangkut login
       return;
     }
@@ -629,7 +640,7 @@ window.handleAuthLogin = async (e) => {
 
     // 3. VALIDASI ROLE
     if (!role) {
-      alert("Role user belum diatur!");
+      showPopup("Role user belum diatur!");
       return;
     }
 
@@ -648,7 +659,7 @@ window.handleAuthLogin = async (e) => {
         break;
 
       default:
-        alert("Role tidak dikenali!");
+        showPopup("Role tidak dikenali!");
         window.location.href = "landing.html";
     }
 
@@ -657,13 +668,13 @@ window.handleAuthLogin = async (e) => {
 
     // 🔥 ERROR HANDLING LEBIH JELAS
     if (error.code === "auth/user-not-found") {
-      alert("Email tidak terdaftar!");
+      showPopup("Email tidak terdaftar!");
     } else if (error.code === "auth/wrong-password") {
-      alert("Password salah!");
+      showPopup("Password salah!");
     } else if (error.code === "auth/invalid-email") {
-      alert("Format email tidak valid!");
+      showPopup("Format email tidak valid!");
     } else {
-      alert("Login gagal, coba lagi.");
+      showPopup("Login gagal, coba lagi.");
     }
 
   } finally {
@@ -674,12 +685,23 @@ window.handleAuthLogin = async (e) => {
 // Pantau status login user
 onAuthStateChanged(auth, async (user) => {
   const authContainers = document.querySelectorAll(".auth-container");
+  const previousOwner = localStorage.getItem(CART_OWNER_KEY) || "";
+  const currentOwner = user?.uid || "";
+
+  if (previousOwner !== currentOwner) {
+    clearCartState();
+  }
+
+  if (currentOwner) {
+    localStorage.setItem(CART_OWNER_KEY, currentOwner);
+  } else {
+    localStorage.removeItem(CART_OWNER_KEY);
+  }
 
   for (const container of authContainers) {
     if (user) {
       const userName = user.displayName || "Member";
 
-      // 🔥 AMBIL ROLE DARI FIRESTORE
       let role = "customer"; // default
 
       try {
@@ -736,13 +758,21 @@ onAuthStateChanged(auth, async (user) => {
 });
 // Memastikan fungsi logout bisa dipanggil dari HTML (onclick)
 window.handleLogout = async () => {
-    if (confirm("Apakah Anda yakin ingin keluar dari Lumina?")) {
-        try {
-            await signOut(auth);
-            // Tombol akan otomatis berubah kembali ke "Login" karena onAuthStateChanged
-        } catch (error) {
-            console.error("Gagal Logout:", error);
-        }
+    const confirmed = await showConfirmModal({
+        title: "Keluar Dari Akun",
+        message: "Apakah Anda yakin ingin keluar dari Lumina?",
+        confirmText: "Ya, Logout",
+        cancelText: "Batal",
+    });
+
+    if (!confirmed) return;
+
+    try {
+        await signOut(auth);
+        // Tombol akan otomatis berubah kembali ke "Login" karena onAuthStateChanged
+    } catch (error) {
+        console.error("Gagal Logout:", error);
+        showPopup("Gagal logout. Silakan coba lagi.", "error");
     }
 };
 // 3. Update Fungsi openLoginModal agar selalu reset ke 'login' saat dibuka
@@ -831,27 +861,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!isDown) slider.style.cursor = 'grab';
     });
 });
-
 window.payNow = async function () {
   try {
     const user = auth.currentUser;
 
     if (!user) {
-      alert("Kamu harus login dulu!");
+      showPopup("Kamu harus login dulu!");
       return;
     }
 
-    const cart = JSON.parse(localStorage.getItem("lumina_cart")) || [];
+    const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY)) || [];
 
     if (cart.length === 0) {
-      alert("Keranjang kosong!");
+      showPopup("Keranjang kosong!");
       return;
     }
-  
-    const total = cart.reduce((sum, item) => {
-      return sum + item.price * item.quantity;
-    }, 0);
-    
+
     const orderId = "INV-" + Date.now();
 
     const response = await fetch("http://localhost:3000/create-transaction", {
@@ -869,50 +894,59 @@ window.payNow = async function () {
     const data = await response.json();
 
     if (!data.token) {
-      alert("Gagal mendapatkan token pembayaran!");
+      showPopup("Gagal mendapatkan token pembayaran!");
       return;
     }
 
-    
     window.snap.pay(data.token, {
+      onSuccess: async function () {
+        showPopup("Pembayaran berhasil!");
 
-      onSuccess: function (result) {
-        alert("Pembayaran berhasil!");
-        localStorage.removeItem("lumina_cart");
+        // ✅ UPDATE STATUS KE FIRESTORE
+        await fetch("http://localhost:3000/update-status-by-token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            token: data.token, // 🔥 WAJIB pakai ini
+            status: "success",
+          }),
+        });
+
+        localStorage.removeItem(CART_STORAGE_KEY);
         location.reload();
       },
 
-      onPending: function (result) {
-        console.log("Pending:", result);
+      onPending: async function () {
+        await fetch("http://localhost:3000/update-status-by-token", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            token: data.token,
+            status: "pending",
+          }),
+        });
 
-     
-        localStorage.removeItem("lumina_cart");
-
-        alert("Pesanan dibuat! Silakan selesaikan pembayaran.");
+        showPopup("Menunggu pembayaran...");
       },
 
-      onError: function (result) {
-        console.log("Error:", result);
-        alert("Pembayaran gagal!");
+      onError: function () {
+        showPopup("Pembayaran gagal!");
       },
 
       onClose: function () {
-        console.log("User menutup popup");
-
-    
-        localStorage.removeItem("lumina_cart");
-
-        alert("Pesanan dibuat! Segera selesaikan pembayaranmu ya.");
-      }
-
+        showPopup("Kamu menutup pembayaran.");
+      },
     });
 
   } catch (err) {
-    console.error(err);
-    alert("Gagal connect ke server!");
+    console.error("ERROR PAY:", err);
+    showPopup("Gagal connect ke server!");
   }
 };
-
 // ============================================================
 // 10. EVENT LISTENERS & STARTUP
 // ============================================================

@@ -6,12 +6,14 @@ import {
     updateDoc, 
     deleteDoc,
     doc, 
+    runTransaction,
     onSnapshot, 
     query, 
     orderBy, 
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { showPopup, showConfirmModal } from "./notify.js";
 // ==========================================
 // 1. KONFIGURASI FIREBASE
 // ==========================================
@@ -309,10 +311,10 @@ window.softDeleteCategory = async (id) => {
             isDeleted: true
         });
 
-        alert("Kategori dipindahkan ke tempat sampah!");
+        showPopup("Kategori dipindahkan ke tempat sampah!");
     } catch (error) {
         console.error("Error:", error);
-        alert("Gagal menghapus kategori.");
+        showPopup("Gagal menghapus kategori.");
     }
 };
 
@@ -326,10 +328,10 @@ window.restoreCategory = async (id) => {
             isDeleted: false
         });
 
-        alert("Kategori berhasil dikembalikan!");
+        showPopup("Kategori berhasil dikembalikan!");
     } catch (error) {
         console.error(error);
-        alert("Gagal restore kategori.");
+        showPopup("Gagal restore kategori.");
     }
 };
 
@@ -367,7 +369,7 @@ window.saveProduct = async function() {
 
     // Validasi
     if (!name || price === "" || stock === "" || !category) { 
-        alert("Mohon lengkapi semua data!");
+        showPopup("Mohon lengkapi semua data!");
         return;
     }
 
@@ -389,7 +391,7 @@ window.saveProduct = async function() {
         }
         
         // JIKA BERHASIL: Munculkan pesan sukses dulu
-        alert("Produk berhasil disimpan!");
+        showPopup("Produk berhasil disimpan!");
         
         // BARU BERSIHKAN FORM (Gunakan fungsi resetForm yang sudah diperbaiki)
         resetForm();
@@ -397,7 +399,7 @@ window.saveProduct = async function() {
     } catch (error) {
         // Hanya muncul jika benar-benar gagal ke Firebase
         console.error("Detail Error:", error);
-        alert("Gagal menyimpan produk ke database.");
+        showPopup("Gagal menyimpan produk ke database.");
     }
 }
 
@@ -599,7 +601,7 @@ window.saveCategory = async () => {
     const descVal = descEl.value.trim();
 
     if (!titleVal || !imageBase64) {
-        alert("Judul & gambar wajib diisi!");
+        showPopup("Judul & gambar wajib diisi!");
         return;
     }
 
@@ -613,7 +615,7 @@ window.saveCategory = async () => {
                 updatedAt: serverTimestamp()
             });
 
-            alert("Kategori berhasil diupdate!");
+            showPopup("Kategori berhasil diupdate!");
             editingCategoryId = null;
 
         } else {
@@ -626,14 +628,14 @@ window.saveCategory = async () => {
                 createdAt: serverTimestamp()
             });
 
-            alert("Kategori berhasil dibuat!");
+            showPopup("Kategori berhasil dibuat!");
         }
 
         closeCategoryModal();
 
     } catch (error) {
         console.error(error);
-        alert("Gagal menyimpan kategori.");
+        showPopup("Gagal menyimpan kategori.");
     }
 };
 
@@ -752,26 +754,38 @@ window.editCategory = function(id) {
 };
 
 window.hardDeleteProduct = async (id) => {
-  if (!confirm("Hapus PERMANEN produk ini? (tidak bisa dikembalikan)")) return;
+  const confirmed = await showConfirmModal({
+    title: "Hapus Produk Permanen",
+    message: "Produk akan dihapus permanen dan tidak bisa dikembalikan. Lanjutkan?",
+    confirmText: "Ya, Hapus",
+    cancelText: "Batal",
+  });
+  if (!confirmed) return;
 
   try {
     await deleteDoc(doc(db, "products", id));
-    alert("Produk berhasil dihapus permanen!");
+    showPopup("Produk berhasil dihapus permanen!");
   } catch (error) {
     console.error(error);
-    alert("Gagal menghapus produk.");
+    showPopup("Gagal menghapus produk.");
   }
 };
 
 window.hardDeleteCategory = async (id) => {
-  if (!confirm("Hapus PERMANEN kategori ini?")) return;
+  const confirmed = await showConfirmModal({
+    title: "Hapus Kategori Permanen",
+    message: "Kategori akan dihapus permanen dari database. Lanjutkan?",
+    confirmText: "Ya, Hapus",
+    cancelText: "Batal",
+  });
+  if (!confirmed) return;
 
   try {
     await deleteDoc(doc(db, "categories", id));
-    alert("Kategori berhasil dihapus permanen!");
+    showPopup("Kategori berhasil dihapus permanen!");
   } catch (error) {
     console.error(error);
-    alert("Gagal menghapus kategori.");
+    showPopup("Gagal menghapus kategori.");
   }
 };
 
@@ -783,7 +797,7 @@ window.hardDeleteCategory = async (id) => {
 window.addToCart = function(id) {
     const product = allProducts.find(p => p.id === id);
     if (product.stock <= 0) {
-        alert("Stok habis!");
+        showPopup("Stok habis!");
         return;
     }
 
@@ -792,7 +806,7 @@ window.addToCart = function(id) {
         if (existingItem.qty < product.stock) {
             existingItem.qty++;
         } else {
-            alert("Mencapai batas stok!");
+            showPopup("Mencapai batas stok!");
         }
     } else {
         cart.push({ ...product, qty: 1 });
@@ -844,7 +858,7 @@ window.updateQty = function(index, change) {
     const product = allProducts.find(p => p.id === item.id);
     
     if (change === 1 && item.qty >= product.stock) {
-        alert("Stok tidak mencukupi");
+        showPopup("Stok tidak mencukupi");
         return;
     }
     
@@ -861,248 +875,258 @@ window.removeItem = function(index) {
 // ==========================================
 // PROSES CHECKOUT & CETAK STRUK
 // ==========================================
-window.processCheckout = async function() {
-    if (cart.length === 0) return alert("Keranjang kosong!");
-    if (!confirm("Proses pembayaran dan lihat preview struk?")) return;
+async function reduceProductStockAfterSuccess(purchasedItems) {
+    if (!Array.isArray(purchasedItems) || purchasedItems.length === 0) return;
 
-    try {
-        let totalVal = 0;
-        let tableRows = "";
+    await runTransaction(db, async (transaction) => {
+        const refs = purchasedItems.map((item) => ({
+            ref: doc(db, "products", item.id),
+            qty: Number(item.qty || 0),
+            name: item.name || item.id,
+        }));
 
-        const currentUser = auth.currentUser;
+        const currentStocks = [];
 
-        cart.forEach(item => {
-            const subtotal = item.price * item.qty;
-            totalVal += subtotal;
-            tableRows += `
-                <tr>
-                    <td style="padding: 10px 0; border-bottom: 1px solid #f0f0f0;">${item.name}</td>
-                    <td style="text-align: center; color: #666;">${item.qty}</td>
-                    <td style="text-align: right; font-weight: bold;">Rp ${subtotal.toLocaleString()}</td>
-                </tr>`;
-        });
+        for (const item of refs) {
+            const snap = await transaction.get(item.ref);
+            if (!snap.exists()) {
+                throw new Error(`Produk tidak ditemukan: ${item.name}`);
+            }
 
-        const saleData = {
-            userId: currentUser ? currentUser.uid : "guest", // Menyimpan ID User
-            customerName: currentUser ? (currentUser.displayName || currentUser.email) : "Guest",
-            items: cart.map(item => ({
-                id: item.id,
-                name: item.name,
-                qty: item.qty,
-                price: item.price
-            })),
-            totalPrice: totalVal,
-            timestamp: serverTimestamp() // Menggunakan waktu server
-        };
-        
-        await addDoc(collection(db, "sales"), saleData);
+            const data = snap.data();
+            const currentStock = Number(data.stock || 0);
 
-        // Update Stok Firebase
-        for (const item of cart) {
-            const productRef = doc(db, "products", item.id);
-            await updateDoc(productRef, { stock: item.stock - item.qty });
+            if (currentStock < item.qty) {
+                throw new Error(`Stok tidak cukup untuk ${item.name}. Sisa: ${currentStock}`);
+            }
+
+            currentStocks.push({ item, currentStock });
         }
 
-        // Buka Jendela Preview dengan Desain Baru
-        const printWindow = window.open('', '_blank', 'height=750,width=480');
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>PREVIEW_LUMINA_${Date.now()}</title>
-                    <style>
-                        /* KUNCI: Reset default browser agar bersih */
-                        * { margin: 0; padding: 0; box-sizing: border-box; }
-                        
-                        body { 
-                            font-family: 'Inter', -apple-system, sans-serif; 
-                            background-color: #0c1a32; /* Biru Gelap Background Dashboard */
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            justify-content: center;
-                            min-height: 100vh;
-                            padding: 20px;
-                        }
+        for (const entry of currentStocks) {
+            transaction.update(entry.item.ref, {
+                stock: entry.currentStock - entry.item.qty,
+                updatedAt: serverTimestamp(),
+            });
+        }
+    });
+}
 
-                        .receipt-card {
-                            background: white;
-                            padding: 30px;
-                            width: 380px;
-                            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-                            border-radius: 12px;
-                            position: relative;
-                            overflow: hidden;
-                        }
-                        
-                        /* Aksen kuning di atas kartu struk */
-                        .receipt-card::before {
-                            content: '';
-                            position: absolute;
-                            top: 0; left: 0; width: 100%; height: 5px;
-                            background-color: #facc15; /* Kuning Logo Lumina */
-                        }
+window.processCheckout = async function () {
+    if (cart.length === 0) return showPopup("Keranjang kosong!");
 
-                        .header { text-align: center; margin-bottom: 25px; }
-                        .logo { 
-                            font-size: 28px; 
-                            font-weight: 900; 
-                            color: #facc15; /* KUNING LOGO LUMINA */
-                            letter-spacing: 2px;
-                            margin: 0;
-                            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-                        }
-                        .slogan { font-size: 11px; color: #666; margin-top: 5px; }
+    try {
+        const orderId = "INV-" + Date.now();
 
-                        .info { font-size: 11px; text-align: center; color: #777; margin-bottom: 20px; background: #f8fafc; padding: 10px; border-radius: 6px; }
+        const response = await fetch("http://localhost:3000/create-transaction", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                cart: cart.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.qty
+                })),
+                orderId,
+                userId: auth.currentUser?.uid || "guest"
+            }),
+        });
 
-                        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 15px; }
-                        th { color: #888; text-transform: uppercase; font-size: 11px; padding: 8px 0; border-bottom: 1px solid #eee; }
+        const data = await response.json();
 
-                        .total-section { 
-                            margin-top: 15px; 
-                            border-top: 2px solid #facc15; 
-                            padding-top: 15px; 
-                            font-weight: 900; 
-                            font-size: 18px;
-                            display: flex;
-                            justify-content: space-between;
-                            color: #0c1a32; /* Biru Gelap teks */
-                        }
+        if (!data.token) {
+            showPopup("Gagal membuat transaksi");
+            return;
+        }
 
-                        .actions {
-                            margin-top: 30px;
-                            display: flex;
-                            gap: 12px;
-                            width: 100%;
-                            position: relative;
-                            z-index: 10;
-                        }
-                        
-                        .btn {
-                            flex: 1;
-                            padding: 14px;
-                            border: none;
-                            border-radius: 8px;
-                            font-weight: 800;
-                            font-size: 13px;
-                            text-transform: uppercase;
-                            cursor: pointer;
-                            transition: all 0.2s ease;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            gap: 8px;
-                        }
+        // 🔥 SNAP MIDTRANS
+        window.snap.pay(data.token, {
+    onSuccess: async function(result) {
+        console.log("Pembayaran sukses:", result);
+        if (window.snap && typeof window.snap.hide === "function") {
+            try { window.snap.hide(); } catch (e) { console.warn("snap.hide gagal:", e); }
+        }
 
-                        .btn-print { 
-                            background-color: #0c1a32; /* BIRU GELAP TOMBOL PRINT */
-                            color: #facc15; /* Kuning untuk teks tombol */
-                        }
-                        .btn-print:hover { background-color: #1a2f5a; }
+        // ✅ tampilkan struk dulu agar tidak ketahan error network/backend
+        const cartSnapshot = cart.map(item => ({ ...item }));
+        if (typeof window.showReceipt === "function") {
+            window.showReceipt(cartSnapshot, orderId);
+        } else {
+            showReceipt(cartSnapshot, orderId);
+        }
 
-                        .btn-close { 
-                            background-color: #e2e8f0; 
-                            color: #475569; 
-                        }
-                        .btn-close:hover { background-color: #cbd5e1; }
+        // ✅ update status ke backend (non-blocking UI)
+        try {
+            await fetch("http://localhost:3000/update-status-by-token", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    token: data.token,
+                    status: "success",
+                }),
+            });
+        } catch (updateErr) {
+            console.error("Gagal update status token:", updateErr);
+        }
 
-                        /* ATURAN SAAT DIPRINT (KERTAS FISIK) */
-                        @media print {
-                            body { background: white !important; padding: 0 !important; min-height: auto !important; }
-                            .receipt-card { box-shadow: none !important; width: 100% !important; padding: 15px !important; border-radius: 0 !important; }
-                            .receipt-card::before { display: none !important; }
-                            .actions { display: none !important; } /* Sembunyikan tombol di kertas */
-                            .logo { color: black !important; text-shadow: none !important; } /* Paksa teks hitam di kertas thermal */
-                        }
-                    </style>
-                    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-                </head>
-                <body>
-                    <div class="receipt-card">
-                        <div class="header">
-                            <h1 class="logo">LUMINA</h1>
-                            <p class="slogan">Lighting Up Your Shopping Experience</p>
-                        </div>
-                        
-                        <div class="info">
-                            <p>TRANSAKSI ID: TRX-${Date.now()}</p>
-                            <p>TGL: ${new Date().toLocaleString('id-ID')}</p>
-                        </div>
+        // ✅ kurangi stok produk di Firestore
+        try {
+            await reduceProductStockAfterSuccess(cartSnapshot);
+        } catch (stockErr) {
+            console.error("Gagal update stok produk:", stockErr);
+            showPopup(`Pembayaran sukses, tapi update stok gagal: ${stockErr.message}`);
+        }
 
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th align="left">ITEM</th>
-                                    <th>QTY</th>
-                                    <th align="right">SUB</th>
-                                </tr>
-                            </thead>
-                            <tbody>${tableRows}</tbody>
-                        </table>
-
-                        <div class="total-section">
-                            <span>TOTAL:</span>
-                            <span>Rp ${totalVal.toLocaleString()}</span>
-                        </div>
-
-                        <div class="actions">
-                            <button class="btn btn-print" onclick="window.print()">
-                                🖨️ Cetak
-                            </button>
-                            <button class="btn btn-close" onclick="window.close()">
-                                Tutup
-                            </button>
-                        </div>
-                        
-                        <p style="text-align:center; font-size: 9px; color: #aaa; margin-top: 25px; border-top: 1px dashed #eee; padding-top: 10px;">
-                            Powered by LUMINA System
-                        </p>
-                    </div>
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
-
-        // Reset Keranjang di Halaman Utama
+        // ✅ reset keranjang
         cart = [];
         renderCart();
+    },
+
+    onPending: function(result) {
+        console.log("Pending:", result);
+        showPopup("Pembayaran pending");
+    },
+
+    onError: function(result) {
+        console.log("Error:", result);
+        showPopup("Pembayaran gagal");
+    }
+});
+
+        function resetCart() {
+            cart = [];
+            renderCart();
+        }
 
     } catch (error) {
-        console.error("Error Detail:", error);
-        alert("Gagal memproses transaksi: " + error.message);
+        console.error(error);
+        showPopup("Terjadi kesalahan");
     }
 };
+function showReceipt(cart, orderId) {
+    let total = 0;
+    let rows = "";
+
+    cart.forEach(item => {
+        const subtotal = item.price * item.qty;
+        total += subtotal;
+
+        rows += `
+            <div class="flex justify-between">
+                <span>${item.name} x${item.qty}</span>
+                <span>${subtotal}</span>
+            </div>
+        `;
+    });
+
+    const html = `
+        <div>
+            <h3 class="text-center font-bold">LUMINA STORE</h3>
+            <p class="text-center">-------------------</p>
+
+            <p>ID: ${orderId}</p>
+            <p>${new Date().toLocaleString("id-ID")}</p>
+
+            <hr class="my-2">
+
+            ${rows}
+
+            <hr class="my-2">
+
+            <div class="flex justify-between font-bold">
+                <span>Total</span>
+                <span>Rp ${total.toLocaleString()}</span>
+            </div>
+
+            <hr class="my-2">
+
+            <p class="text-center">Terima kasih 🙏</p>
+        </div>
+    `;
+
+    const receiptContent = document.getElementById("receipt-content");
+    if (!receiptContent) {
+        console.error("Element #receipt-content tidak ditemukan.");
+        return;
+    }
+    receiptContent.innerHTML = html;
+
+    const modal = document.getElementById("receipt-modal");
+    if (!modal) {
+        console.error("Element #receipt-modal tidak ditemukan.");
+        return;
+    }
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    modal.style.display = "";
+    modal.style.zIndex = "";
+}
+window.showReceipt = showReceipt;
 window.closeReceiptModal = function() {
     const modal = document.getElementById("receipt-modal");
+    if (!modal) return;
     modal.classList.add("hidden");
     modal.classList.remove("flex");
-};
+    modal.style.display = "";
+}
+window.closeReceipt = window.closeReceiptModal;
 // Fungsi ini sekarang lebih simpel karena data sudah diisi di processCheckout
-window.handlePrintAndClose = function() {
-    // 1. Sembunyikan modal sukses
-    const successModal = document.getElementById("success-payment-modal");
-    if (successModal) {
-        successModal.classList.add("hidden");
-        successModal.classList.remove("flex");
-    }
+window.printReceipt = function () {
+    const receiptContent = document.getElementById("receipt-content");
+    if (!receiptContent) return;
+    const content = receiptContent.innerHTML;
 
-    // 2. Tampilkan modal struk
-    const receiptModal = document.getElementById("receipt-modal");
-    if (receiptModal) {
-        // PAKSA MUNCUL: Hapus hidden, tambah flex
-        receiptModal.classList.remove("hidden");
-        receiptModal.style.display = "flex"; 
+    const printWindow = window.open("", "", "width=300,height=600");
 
-        console.log("Modal struk dipaksa muncul...");
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Print</title>
+            <style>
+                @page {
+                    size: 58mm auto;
+                    margin: 4mm;
+                }
 
-        // 3. JEDA LEBIH LAMA: Beri waktu 1.5 detik (1500ms) 
-        // agar browser benar-benar menggambar tabel produk di layar
-        setTimeout(() => {
-            window.print();
-        }, 1500);
-    } else {
-        alert("Error: Elemen #receipt-modal tidak ditemukan!");
-    }
+                * {
+                    box-sizing: border-box;
+                }
+
+                body {
+                    margin: 0;
+                    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+                    font-size: 11px;
+                    line-height: 1.35;
+                    width: 58mm;
+                    padding: 0;
+                    color: #000;
+                }
+
+                hr {
+                    border: 0;
+                    border-top: 1px dashed #000;
+                    margin: 6px 0;
+                }
+            </style>
+        </head>
+        <body>
+            ${content}
+            <script>
+                window.onload = function() {
+                    window.print();
+                    setTimeout(() => window.close(), 500);
+                }
+            </script>
+        </body>
+        </html>
+    `);
+
+    printWindow.document.close();
 };
 // ==========================================
 // 7. UTILS & HELPERS
@@ -1321,7 +1345,7 @@ window.restoreProduct = async (id) => {
                 isDeleted: false, 
                 updatedAt: serverTimestamp() 
             });
-            alert("Produk berhasil dipulihkan!");
+            showPopup("Produk berhasil dipulihkan!");
             // Tabel otomatis render ulang berkat onSnapshot
         } catch (e) {
             console.error("Error restoring product:", e);
@@ -1336,7 +1360,7 @@ window.restoreCategory = async (id) => {
                 isDeleted: false, 
                 updatedAt: serverTimestamp() 
             });
-            alert("Kategori berhasil dipulihkan!");
+            showPopup("Kategori berhasil dipulihkan!");
         } catch (e) {
             console.error("Error restoring category:", e);
         }
@@ -1415,14 +1439,14 @@ window.updateProductCategoryDropdown = function() {
 window.viewBarcode = function(productId) {
 
     if (!window.allProducts || window.allProducts.length === 0) {
-        alert("Data produk belum siap, coba lagi...");
+        showPopup("Data produk belum siap, coba lagi...");
         return;
     }
 
     const product = window.allProducts.find(p => p.id === productId);
 
     if (!product) {
-        alert("Produk tidak ditemukan!");
+        showPopup("Produk tidak ditemukan!");
         return;
     }
 
@@ -1617,3 +1641,4 @@ window.fetchTransactions = function() {
 
 // Jalankan fetch pertama kali
 fetchTransactions();
+

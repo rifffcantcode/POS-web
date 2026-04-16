@@ -8,11 +8,11 @@ const admin = require("firebase-admin");
 const app = express();
 
 // ================= MIDDLEWARE =================
-app.use(cors());
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 // ================= FIREBASE INIT =================
-const serviceAccount = require("../config/sistemkasirtokocom-firebase-adminsdk-fbsvc-66445ad25e.json");
+const serviceAccount = require("./config/sistemkasirtokocom-firebase-adminsdk-fbsvc-c926d0c3a8.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -29,6 +29,8 @@ const snap = new midtransClient.Snap({
 // ================= CREATE TRANSACTION =================
 app.post("/create-transaction", async (req, res) => {
   try {
+    console.log("🔥 CREATE TRANSACTION");
+
     const { cart, orderId, userId } = req.body;
 
     if (!cart || cart.length === 0) {
@@ -41,22 +43,6 @@ app.post("/create-transaction", async (req, res) => {
 
     const finalOrderId = orderId || "INV-" + Date.now();
 
-    console.log("🧾 Order ID:", finalOrderId);
-
-    // 🔥 1. SIMPAN DULU KE FIRESTORE
-    const docRef = await db.collection("sales").add({
-      orderId: finalOrderId,
-      userId: userId || "guest",
-      items: cart,
-      total,
-      status: "pending",
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      expiredAt: Date.now() + 15 * 60 * 1000,
-    });
-
-    console.log("✅ Saved to Firestore:", docRef.id);
-
-    // 🔥 2. BARU KE MIDTRANS
     const parameter = {
       transaction_details: {
         order_id: finalOrderId,
@@ -65,22 +51,70 @@ app.post("/create-transaction", async (req, res) => {
       credit_card: {
         secure: true,
       },
+      item_details: cart.map((item) => ({
+        id: item.id || item.name,
+        price: item.price,
+        quantity: item.quantity,
+        name: item.name,
+      })),
+      customer_details: {
+        first_name: "Customer",
+      },
     };
 
     const transaction = await snap.createTransaction(parameter);
 
-    // 🔥 3. UPDATE TOKEN
-    await docRef.update({
+    console.log("✅ TX CREATED:", finalOrderId);
+
+    await db.collection("sales").add({
+      orderId: finalOrderId,
+      userId: userId || "guest",
+      items: cart,
+      total,
+      status: "pending",
       snapToken: transaction.token,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      expiredAt: Date.now() + 15 * 60 * 1000, // 15 menit
     });
 
-    res.json({
-      token: transaction.token,
-    });
+    res.json({ token: transaction.token });
 
   } catch (error) {
     console.error("❌ ERROR CREATE TX:", error);
     res.status(500).json({ error: "Gagal create transaksi" });
+  }
+});
+
+// ================= UPDATE STATUS BY TOKEN =================
+app.post("/update-status-by-token", async (req, res) => {
+  try {
+    const { token, status } = req.body;
+
+    const snapshot = await db
+      .collection("sales")
+      .where("snapToken", "==", token)
+      .get();
+
+    if (snapshot.empty) {
+      return res.status(404).json({ error: "Token tidak ditemukan" });
+    }
+
+    const batch = db.batch();
+
+    snapshot.forEach((doc) => {
+      batch.update(doc.ref, {
+        status,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+
+    await batch.commit();
+
+    res.json({ success: true });
+
+  } catch (error) {
+    console.error("❌ ERROR UPDATE STATUS:", error);
+    res.status(500).json({ error: "Gagal update status" });
   }
 });
 
@@ -92,29 +126,28 @@ app.post("/midtrans-webhook", async (req, res) => {
     const orderId = notif.order_id;
     const status = notif.transaction_status;
 
-    console.log("🔔 Webhook:", orderId, status);
+    console.log("🔔 WEBHOOK:", orderId, status);
 
     let finalStatus = "pending";
 
     if (status === "settlement") finalStatus = "success";
     else if (status === "expire" || status === "cancel") finalStatus = "failed";
 
-    // 🔥 update Firestore
     const snapshot = await db
       .collection("sales")
       .where("orderId", "==", orderId)
       .get();
 
-    if (snapshot.empty) {
-      console.warn("⚠️ Transaksi tidak ditemukan:", orderId);
-    }
+    const batch = db.batch();
 
     snapshot.forEach((doc) => {
-      doc.ref.update({
+      batch.update(doc.ref, {
         status: finalStatus,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
     });
+
+    await batch.commit();
 
     res.sendStatus(200);
 
@@ -134,12 +167,16 @@ app.post("/cancel-transaction", async (req, res) => {
       .where("orderId", "==", orderId)
       .get();
 
+    const batch = db.batch();
+
     snapshot.forEach((doc) => {
-      doc.ref.update({
+      batch.update(doc.ref, {
         status: "failed",
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
     });
+
+    await batch.commit();
 
     res.json({ success: true });
 
@@ -168,13 +205,34 @@ app.post("/delete-transaction", async (req, res) => {
   }
 });
 
+// ================= GET ALL SALES (UNTUK LAPORAN) =================
+app.get("/sales", async (req, res) => {
+  try {
+    const snapshot = await db
+      .collection("sales")
+      .orderBy("createdAt", "desc")
+      .get();
+
+    const data = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    res.json(data);
+
+  } catch (error) {
+    console.error("❌ ERROR GET SALES:", error);
+    res.status(500).json({ error: "Gagal ambil data sales" });
+  }
+});
+
 // ================= HEALTH CHECK =================
 app.get("/", (req, res) => {
-  res.send("🚀 API LUMINA RUNNING");
+  res.send("API LUMINA RUNNING 🚀");
 });
 
 // ================= START SERVER =================
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
   console.log(`🚀 Server jalan di http://localhost:${PORT}`);

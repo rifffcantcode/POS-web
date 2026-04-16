@@ -42,9 +42,9 @@
           0 8px 10px -6px rgba(0, 0, 0, 0.05);
       }
       #topProductsChart {
-        margin-top: 10px;
-        max-width: 100% ;
-        max-height: 100% ;
+        margin: 6px auto 0;
+        max-width: 96%;
+        max-height: 96%;
         display: block;
       }
 
@@ -63,7 +63,7 @@
           <i class="fas fa-chart-line text-lumina-gold text-xl"></i>
           <h1 class="text-xl font-bold tracking-tight">
             <span class="text-lumina-gold">LUMINA</span>
-            <span class="text-gray-300 font-light ml-1">REPORTS</span>
+            <span class="text-gray-300 font-light ml-1">ADMIN</span>
           </h1>
         </div>
 
@@ -189,9 +189,10 @@
           >
             <i class="fas fa-crown text-lumina-gold"></i> Produk Terlaris
           </h3>
-          <div class="h-[350px] w-full relative overflow-hidden block">
+          <div class="h-[320px] w-full relative overflow-hidden block">
             <canvas id="topProductsChart"></canvas>
           </div>
+          <div id="top-products-legend" class="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-slate-600 font-medium"></div>
         </div>
       </div>
 
@@ -225,6 +226,53 @@
               id="report-table-body"
               class="text-sm divide-y divide-slate-50 text-slate-600"
             ></tbody>
+          </table>
+        </div>
+        <div id="report-pagination" class="px-8 py-5 border-t border-slate-100 bg-white"></div>
+      </div>
+
+      <div
+        class="bg-white rounded-[2rem] card-shadow border border-slate-100 overflow-hidden mt-10 no-print"
+      >
+        <div
+          class="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/50"
+        >
+          <div>
+            <h3 class="font-bold text-slate-800 text-lg">
+              Manajemen Role Akun
+            </h3>
+            <p class="text-xs text-slate-500 mt-1">
+              Atur role user langsung dari dashboard laporan.
+            </p>
+          </div>
+          <span
+            class="text-[10px] text-slate-400 font-bold px-3 py-1 bg-white rounded-full border border-slate-100 uppercase tracking-wider"
+            >Admin Only</span
+          >
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead
+              class="bg-slate-50 text-[11px] uppercase font-bold text-slate-400 tracking-widest"
+            >
+              <tr>
+                <th class="px-8 py-5">Nama</th>
+                <th class="px-8 py-5">Email</th>
+                <th class="px-8 py-5">Role Saat Ini</th>
+                <th class="px-8 py-5">Ubah Role</th>
+                <th class="px-8 py-5 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody
+              id="role-user-table-body"
+              class="text-sm divide-y divide-slate-50 text-slate-600"
+            >
+              <tr>
+                <td colspan="5" class="px-8 py-10 text-center text-slate-400 text-sm font-medium">
+                  Memuat data user...
+                </td>
+              </tr>
+            </tbody>
           </table>
         </div>
       </div>
