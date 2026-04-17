@@ -252,7 +252,7 @@ window.payAgain = function (token) {
       showPopup("Pembayaran berhasil!");
 
       try {
-        await fetch("http://localhost:3000/update-status-by-token", {
+        await fetch("http://localhost:3002/update-status-by-token", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

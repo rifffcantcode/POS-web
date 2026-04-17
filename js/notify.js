@@ -24,11 +24,11 @@ function ensurePopupStyle() {
       min-width: 280px;
       max-width: min(92vw, 420px);
       border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.6);
-      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      background: rgba(248, 249, 250, 0.95);
       backdrop-filter: blur(8px);
-      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.2);
-      color: #0f172a;
+      box-shadow: 0 16px 40px rgba(26, 42, 64, 0.15);
+      color: #2c3e50;
       display: flex;
       align-items: flex-start;
       gap: 12px;
@@ -82,7 +82,7 @@ function ensurePopupStyle() {
     }
 
     .lumina-popup.success .lumina-popup__icon,
-    .lumina-popup.success .lumina-popup__progress { background: #10b981; }
+    .lumina-popup.success .lumina-popup__progress { background: #d4af37; }
 
     .lumina-popup.error .lumina-popup__icon,
     .lumina-popup.error .lumina-popup__progress { background: #ef4444; }
@@ -91,7 +91,7 @@ function ensurePopupStyle() {
     .lumina-popup.warning .lumina-popup__progress { background: #f59e0b; }
 
     .lumina-popup.info .lumina-popup__icon,
-    .lumina-popup.info .lumina-popup__progress { background: #3b82f6; }
+    .lumina-popup.info .lumina-popup__progress { background: #1a2a40; }
 
     @keyframes lumina-popup-progress {
       from { transform: scaleX(1); }
