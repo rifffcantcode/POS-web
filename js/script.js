@@ -607,7 +607,7 @@ window.saveCategory = async () => {
 
     try {
         if (editingCategoryId) {
-            // ✏️ EDIT MODE
+            //  EDIT MODE
             await updateDoc(doc(db, "categories", editingCategoryId), {
                 name: titleVal,
                 description: descVal,
@@ -942,7 +942,7 @@ window.processCheckout = async function () {
             return;
         }
 
-        // 🔥 SNAP MIDTRANS
+        // SNAP MIDTRANS
         window.snap.pay(data.token, {
     onSuccess: async function(result) {
         console.log("Pembayaran sukses:", result);
@@ -950,7 +950,7 @@ window.processCheckout = async function () {
             try { window.snap.hide(); } catch (e) { console.warn("snap.hide gagal:", e); }
         }
 
-        // ✅ tampilkan struk dulu agar tidak ketahan error network/backend
+        // tampilkan struk dulu agar tidak ketahan error network/backend
         const cartSnapshot = cart.map(item => ({ ...item }));
         if (typeof window.showReceipt === "function") {
             window.showReceipt(cartSnapshot, orderId);
@@ -958,7 +958,7 @@ window.processCheckout = async function () {
             showReceipt(cartSnapshot, orderId);
         }
 
-        // ✅ update status ke backend (non-blocking UI)
+        // update status ke backend (non-blocking UI)
         try {
             await fetch("https://lumina-kz2q.onrender.com/update-status-by-token", {
                 method: "POST",

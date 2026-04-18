@@ -252,7 +252,7 @@ window.payAgain = function (token) {
       showPopup("Pembayaran berhasil!");
 
       try {
-        await fetch("http://localhost:3002/update-status-by-token", {
+        await fetch("https://lumina-kz2q.onrender.com/update-status-by-token", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -266,10 +266,8 @@ window.payAgain = function (token) {
         console.error("Gagal update status:", err);
       }
 
-      // 🔥 INI YANG KURANG
       localStorage.removeItem("lumina_cart");
 
-      // 🔥 OPTIONAL BIAR LANGSUNG UPDATE TANPA RELOAD
       cart = [];
       renderCart();
 

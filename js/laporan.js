@@ -561,12 +561,11 @@ document.getElementById("export-pdf-btn").addEventListener("click", async () => 
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membuat PDF...';
     btn.disabled = true;
 
-    // 🔥 ambil bagian yang mau di print (MAIN CONTENT)
     const element = document.querySelector("main");
 
-    // 🔥 convert ke canvas
+
     const canvas = await html2canvas(element, {
-      scale: 2, // biar HD
+      scale: 2, 
       useCORS: true
     });
 
@@ -574,7 +573,7 @@ document.getElementById("export-pdf-btn").addEventListener("click", async () => 
 
     const { jsPDF } = window.jspdf;
 
-    // 🔥 buat PDF
+
     const pdf = new jsPDF("p", "mm", "a4");
 
     const imgWidth = 210; // A4 width
@@ -585,11 +584,9 @@ document.getElementById("export-pdf-btn").addEventListener("click", async () => 
     let heightLeft = imgHeight;
     let position = 0;
 
-    // 🔥 halaman pertama
     pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
     heightLeft -= pageHeight;
 
-    // 🔥 kalau konten panjang → multi halaman
     while (heightLeft > 0) {
       position = heightLeft - imgHeight;
       pdf.addPage();
@@ -597,7 +594,6 @@ document.getElementById("export-pdf-btn").addEventListener("click", async () => 
       heightLeft -= pageHeight;
     }
 
-    // 🔥 download file
     pdf.save("laporan-penjualan.pdf");
 
   } catch (error) {

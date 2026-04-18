@@ -629,12 +629,12 @@ window.handleAuthLogin = async (e) => {
 
     if (!userDocSnap.exists()) {
       showPopup("Data user tidak ditemukan di database.");
-      await signOut(auth); // 🔥 biar ga nyangkut login
+      await signOut(auth); 
       return;
     }
 
     const userData = userDocSnap.data();
-    const role = userData.role?.toLowerCase(); // 🔥 biar aman case-sensitive
+    const role = userData.role?.toLowerCase(); 
 
     console.log("Role user:", role);
 
@@ -666,7 +666,6 @@ window.handleAuthLogin = async (e) => {
   } catch (error) {
     console.error("Login error:", error);
 
-    // 🔥 ERROR HANDLING LEBIH JELAS
     if (error.code === "auth/user-not-found") {
       showPopup("Email tidak terdaftar!");
     } else if (error.code === "auth/wrong-password") {
@@ -902,14 +901,14 @@ window.payNow = async function () {
       onSuccess: async function () {
         showPopup("Pembayaran berhasil!");
 
-        // ✅ UPDATE STATUS KE FIRESTORE
+        // UPDATE STATUS KE FIRESTORE
         await fetch("https://lumina-kz2q.onrender.com/update-status-by-token", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            token: data.token, // 🔥 WAJIB pakai ini
+            token: data.token, 
             status: "success",
           }),
         });
