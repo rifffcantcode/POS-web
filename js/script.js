@@ -918,7 +918,7 @@ window.processCheckout = async function () {
     try {
         const orderId = "INV-" + Date.now();
 
-        const response = await fetch("http://localhost:3002/create-transaction", {
+        const response = await fetch("https://lumina-kz2q.onrender.com/create-transaction", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -960,7 +960,7 @@ window.processCheckout = async function () {
 
         // ✅ update status ke backend (non-blocking UI)
         try {
-            await fetch("http://localhost:3002/update-status-by-token", {
+            await fetch("https://lumina-kz2q.onrender.com/update-status-by-token", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
