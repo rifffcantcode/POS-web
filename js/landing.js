@@ -647,11 +647,11 @@ window.handleAuthLogin = async (e) => {
     // 4. REDIRECT BERDASARKAN ROLE
     switch (role) {
       case "admin":
-        window.location.href = "laporan.html";
+        window.location.href = "admin.html";
         break;
 
       case "kasir":
-        window.location.href = "index.html";
+        window.location.href = "cashier.html";
         break;
 
       case "customer":
@@ -732,12 +732,12 @@ onAuthStateChanged(auth, async (user) => {
 
           ${
             role === "admin"
-              ? `<a href="laporan.html" class="text-xs text-lumina-gold font-bold">Dashboard</a>`
+              ? `<a href="admin.html" class="text-xs text-lumina-gold font-bold">Dashboard</a>`
               : ""
           }
                  ${
             role === "kasir"
-              ? `<a href="index.html" class="text-xs text-lumina-gold font-bold">Cashier</a>`
+              ? `<a href="cashier.html" class="text-xs text-lumina-gold font-bold">Cashier</a>`
               : ""
           }
 

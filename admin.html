@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Laporan Penjualan - LUMINA</title>
+    <title>Admin Penjualan - LUMINA</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -61,8 +61,11 @@
       <div class="flex items-center gap-6">
         <div class="flex items-center gap-3">
           <i class="fas fa-chart-line text-lumina-gold text-xl"></i>
-          <h1 class="text-xl font-bold tracking-tight">
-            <span class="text-lumina-gold">LUMINA</span>
+          <h1
+            class="text-2xl font-black tracking-widest text-lumina-gold cursor-pointer"
+            onclick="location.reload()"
+          >
+            LUMINA
             <span class="text-gray-300 font-light ml-1">ADMIN</span>
           </h1>
         </div>
@@ -242,7 +245,7 @@
               Manajemen Role Akun
             </h3>
             <p class="text-xs text-slate-500 mt-1">
-              Atur role user langsung dari dashboard laporan.
+              Atur role user langsung dari dashboard admin.
             </p>
           </div>
           <span
@@ -278,6 +281,6 @@
       </div>
     </main>
 
-    <script type="module" src="js/laporan.js"></script>
+    <script type="module" src="js/admin.js"></script>
   </body>
 </html>

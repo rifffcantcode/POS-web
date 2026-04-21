@@ -154,15 +154,21 @@ function renderProductGrid(input = allProducts) {
         </div>
         <h3 class="font-bold text-gray-800 text-sm mb-1 line-clamp-2 h-10">${product.name}</h3>
         <p class="text-xs text-gray-500 mb-3 bg-gray-100 w-fit px-2 py-1 rounded-full">${product.category}</p>
-        <div class="mt-auto flex justify-between items-end">
+        <div class="mt-auto flex items-end justify-between gap-3">
             <div>
                 <p class="text-[10px] text-gray-400 font-bold uppercase">Harga</p>
                 <span class="font-black text-lumina-dark text-lg">Rp ${parseInt(product.price).toLocaleString("id-ID")}</span>
             </div>
-<button onclick="addToCart('${product.id}')" 
-class="hidden md:flex bg-lumina-dark text-white w-10 h-10 rounded-xl items-center justify-center hover:bg-lumina-gold hover:text-lumina-dark transition shadow-md active:scale-95">
-  <i class="fas fa-plus"></i>
-</button>
+            <div class="flex gap-2">
+                <button onclick="addToCart('${product.id}')" 
+                    class="add-to-cart-mobile bg-lumina-dark text-white px-4 py-2 rounded-xl flex items-center justify-center hover:bg-lumina-gold hover:text-lumina-dark transition shadow-md active:scale-95" style="display:none">
+                    <i class="fas fa-plus"></i> Tambah ke Keranjang
+                </button>
+                <button onclick="addToCart('${product.id}')" 
+                    class="add-to-cart-desktop hidden md:flex bg-lumina-dark text-white w-10 h-10 rounded-xl items-center justify-center hover:bg-lumina-gold hover:text-lumina-dark transition shadow-md active:scale-95">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
         </div> 
     `;
     grid.appendChild(card);
@@ -1077,56 +1083,7 @@ window.closeReceiptModal = function() {
 window.closeReceipt = window.closeReceiptModal;
 // Fungsi ini sekarang lebih simpel karena data sudah diisi di processCheckout
 window.printReceipt = function () {
-    const receiptContent = document.getElementById("receipt-content");
-    if (!receiptContent) return;
-    const content = receiptContent.innerHTML;
-
-    const printWindow = window.open("", "", "width=300,height=600");
-
-    printWindow.document.write(`
-        <html>
-        <head>
-            <title>Print</title>
-            <style>
-                @page {
-                    size: 58mm auto;
-                    margin: 4mm;
-                }
-
-                * {
-                    box-sizing: border-box;
-                }
-
-                body {
-                    margin: 0;
-                    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-                    font-size: 11px;
-                    line-height: 1.35;
-                    width: 58mm;
-                    padding: 0;
-                    color: #000;
-                }
-
-                hr {
-                    border: 0;
-                    border-top: 1px dashed #000;
-                    margin: 6px 0;
-                }
-            </style>
-        </head>
-        <body>
-            ${content}
-            <script>
-                window.onload = function() {
-                    window.print();
-                    setTimeout(() => window.close(), 500);
-                }
-            </script>
-        </body>
-        </html>
-    `);
-
-    printWindow.document.close();
+    window.print();
 };
 // ==========================================
 // 7. UTILS & HELPERS
@@ -1437,182 +1394,92 @@ window.updateProductCategoryDropdown = function() {
 // FUNGSI UNTUK MELIHAT BARCODE PER BARANG
 
 window.viewBarcode = function(productId) {
-
     if (!window.allProducts || window.allProducts.length === 0) {
         showPopup("Data produk belum siap, coba lagi...");
         return;
     }
-
     const product = window.allProducts.find(p => p.id === productId);
-
     if (!product) {
         showPopup("Produk tidak ditemukan!");
         return;
     }
-
     const barcodeContent = product.barcode || product.name;
+    // Siapkan konten label barcode
+    const labelHTML = `
+        <div class="brand-name text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-2">LUMINA INVENTORY</div>
+        <h2 class="text-lg font-bold text-slate-800 text-center mb-1">${product.name}</h2>
+        <div class="category text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full inline-block border border-slate-200 mb-2">${product.category}</div>
+        <div class="barcode-wrapper my-4 bg-white p-2 w-full flex justify-center">
+            <svg id="barcode-modal-svg"></svg>
+        </div>
+        <div class="price-tag text-2xl font-extrabold text-slate-800 mt-2">Rp ${parseInt(product.price).toLocaleString('id-ID')}</div>
+    `;
+    // Masukkan ke modal
+    const modal = document.getElementById('barcode-modal');
+    const content = document.getElementById('barcode-label-content');
+    if (content) content.innerHTML = labelHTML;
+    // Tampilkan modal
+    if (modal) modal.classList.remove('hidden');
+    // Render barcode
+    setTimeout(() => {
+        if (window.JsBarcode) {
+            JsBarcode("#barcode-modal-svg", barcodeContent, {
+                format: "CODE128",
+                lineColor: "#1e293b",
+                width: 2,
+                height: 60,
+                displayValue: true,
+                fontSize: 12,
+                fontOptions: "bold",
+                margin: 0
+            });
+        }
+    }, 100);
+    // Simpan data produk untuk print
+    window._barcodeModalProduct = product;
+};
 
+// Tutup modal barcode
+window.closeBarcodeModal = function() {
+    const modal = document.getElementById('barcode-modal');
+    if (modal) modal.classList.add('hidden');
+    // Bersihkan konten
+    const content = document.getElementById('barcode-label-content');
+    if (content) content.innerHTML = '';
+    window._barcodeModalProduct = null;
+};
+
+// Print label barcode dari modal
+window.printBarcodeLabel = function() {
+    const product = window._barcodeModalProduct;
+    if (!product) return;
+    // Ambil SVG barcode
+    const svg = document.getElementById('barcode-modal-svg');
+    if (!svg) return;
+    // Siapkan HTML print
     const printWindow = window.open('', '_blank');
-
-printWindow.document.write(`
-    <html>
-    <head>
-        <title>Barcode Label - ${product.name}</title>
-        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    printWindow.document.write(`
+        <html><head><title>Barcode Label - ${product.name}</title>
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-            
-            body { 
-                margin: 0; 
-                padding: 0; 
-                display: flex; 
-                flex-direction: column; 
-                align-items: center; 
-                justify-content: center; 
-                min-height: 100vh; 
-                background-color: #f1f5f9; 
-                font-family: 'Inter', sans-serif;
-            }
-
-            .label-container {
-                background: white;
-                width: 320px;
-                padding: 24px;
-                border-radius: 16px;
-                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-                border: 1px solid #e2e8f0;
-                text-align: center;
-                position: relative;
-                overflow: hidden;
-            }
-
-            /* Efek aksen warna di pinggir label */
-            .label-container::before {
-                content: "";
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 6px;
-        
-            }
-
-            .brand-name {
-                font-size: 10px;
-                font-weight: 800;
-                color: #94a3b8;
-                text-transform: uppercase;
-                letter-spacing: 2px;
-                margin-bottom: 8px;
-            }
-
-            h2 { 
-                margin: 0; 
-                font-size: 18px; 
-                color: #1e293b; 
-                font-weight: 700;
-                line-height: 1.2;
-                display: -webkit-box;
-                -webkit-line-clamp: 2;
-                -webkit-box-orient: vertical;
-                overflow: hidden;
-            }
-
-            .category {
-                font-size: 11px;
-                color: #64748b;
-                background: #f8fafc;
-                padding: 4px 12px;
-                border-radius: 99px;
-                display: inline-block;
-                margin-top: 8px;
-                border: 1px solid #e2e8f0;
-            }
-
-            .barcode-wrapper {
-                margin: 20px 0;
-                padding: 10px;
-                background: white;
-            }
-
-            .price-tag {
-                font-size: 24px;
-                font-weight: 800;
-                color: #1e293b;
-                margin-top: 5px;
-            }
-
-            .footer-info {
-                margin-top: 15px;
-                padding-top: 15px;
-                border-top: 1px dashed #e2e8f0;
-                font-size: 10px;
-                color: #94a3b8;
-            }
-
-            .btn-print {
-                margin-top: 25px;
-                background: #1e293b;
-                color: white;
-                border: none;
-                padding: 10px 24px;
-                border-radius: 8px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.2s;
-                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-            }
-
-            .btn-print:hover {
-                background: #000;
-                transform: translateY(-1px);
-            }
-
-            /* Aturan cetak agar tombol tidak ikut terprint */
-            @media print {
-                body { background: white; }
-                .label-container { box-shadow: none; border: 1px solid #eee; }
-                .btn-print { display: none; }
-            }
-        </style>
-    </head>
-    <body>
+            body { background: #f1f5f9; font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+            .label-container { background: white; width: 320px; padding: 24px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; text-align: center; }
+            .brand-name { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+            h2 { margin: 0; font-size: 18px; color: #1e293b; font-weight: 700; line-height: 1.2; overflow: hidden; }
+            .category { font-size: 11px; color: #64748b; background: #f8fafc; padding: 4px 12px; border-radius: 99px; display: inline-block; margin-top: 8px; border: 1px solid #e2e8f0; }
+            .barcode-wrapper { margin: 20px 0; padding: 10px; background: white; }
+            .price-tag { font-size: 24px; font-weight: 800; color: #1e293b; margin-top: 5px; }
+            @media print { body { background: white; } .label-container { box-shadow: none; border: 1px solid #eee; } }
+        </style></head><body>
         <div class="label-container">
             <div class="brand-name">LUMINA INVENTORY</div>
             <h2>${product.name}</h2>
             <div class="category">${product.category}</div>
-            
-            <div class="barcode-wrapper">
-                <svg id="barcode"></svg>
-            </div>
-
+            <div class="barcode-wrapper">${svg.outerHTML}</div>
             <div class="price-tag">Rp ${parseInt(product.price).toLocaleString('id-ID')}</div>
-            
-        
         </div>
-
-        <button class="btn-print" onclick="window.print()">
-            <i class="fas fa-print"></i> Cetak Label
-        </button>
-
-        <script>
-            window.onload = function() {
-                JsBarcode("#barcode", "${barcodeContent}", {
-                    format: "CODE128",
-                    lineColor: "#1e293b",
-                    width: 2,
-                    height: 60,
-                    displayValue: true,
-                    fontSize: 12,
-                    fontOptions: "bold",
-                    margin: 0
-                });
-            };
-        </script>
-    </body>
-    </html>
-`);
-
+        <script>window.onload = function() { window.print(); };</script>
+        </body></html>
+    `);
     printWindow.document.close();
 };
 // ==========================================
