@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { 
-    getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc
+    getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { showPopup } from "./notify.js";
@@ -105,7 +105,7 @@ function renderRoleUsersTable(users) {
     if (!users.length) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" class="px-8 py-10 text-center text-slate-400 text-sm font-medium">
+                <td colspan="6" class="px-8 py-10 text-center text-slate-400 text-sm font-medium">
                     Belum ada data user pada koleksi users.
                 </td>
             </tr>
@@ -130,12 +130,18 @@ function renderRoleUsersTable(users) {
                 <td class="px-8 py-5">
                     ${getRoleSelectHtml(user.id, role)}
                 </td>
-                <td class="px-8 py-5 text-right">
+                <td class="px-8 py-5 text-right flex items-center gap-2 justify-end">
                     <button
                         onclick="updateUserRole('${user.id}')"
                         class="bg-lumina-dark text-lumina-gold px-4 py-2 rounded-lg text-xs font-bold hover:bg-[#243447] transition"
                     >
                         Simpan
+                    </button>
+                    <button
+                        onclick="deleteUserAccount('${user.id}', '${escapeHtml(displayName)}')"
+                        class="bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-red-700 transition"
+                    >
+                        Hapus
                     </button>
                 </td>
             </tr>
@@ -193,6 +199,31 @@ window.updateUserRole = async function(userId) {
     } catch (error) {
         console.error("Gagal update role user:", error);
         showPopup("Gagal mengubah role user.", "error");
+    }
+};
+
+window.deleteUserAccount = async function(userId, userName) {
+    const confirmed = confirm(`Apakah Anda yakin ingin menghapus akun "${userName}"? Tindakan ini tidak dapat dibatalkan.`);
+    
+    if (!confirmed) return;
+
+    try {
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+
+        await deleteDoc(doc(db, "users", userId));
+        
+        showPopup(`Akun "${userName}" berhasil dihapus.`, "success");
+    } catch (error) {
+        console.error("Gagal menghapus akun user:", error);
+        showPopup("Gagal menghapus akun user.", "error");
+        
+        if (event && event.target) {
+            event.target.innerHTML = '<i class="fas fa-trash text-sm"></i> Hapus';
+            event.target.disabled = false;
+        }
     }
 };
 
@@ -304,7 +335,14 @@ function initChart(data, isEmpty = false) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            
+            layout: {
+                padding: {
+                    top: 15,
+                    right: 15,
+                    bottom: 25,
+                    left: 15
+                }
+            },
             animations: {
                 y: {
                     duration: isFirstLoad ? 2000 : 800,
@@ -321,13 +359,20 @@ function initChart(data, isEmpty = false) {
                     beginAtZero: true,
                     ticks: {
                         display: !isEmpty,
-                        callback: (v) => 'Rp ' + v.toLocaleString('id-ID')
+                        callback: (v) => 'Rp ' + v.toLocaleString('id-ID'),
+                        padding: 8
                     },
                     grid: { display: !isEmpty }
                 },
                 x: {
                     grid: { display: false },
-                    ticks: { display: !isEmpty }
+                    ticks: {
+                        display: !isEmpty,
+                        maxRotation: 45,
+                        minRotation: 0,
+                        maxTicksLimit: 12,
+                        padding: 8
+                    }
                 }
             }
         },
@@ -367,10 +412,6 @@ function initTopProductsChart(productData) {
     const ctx = canvas.getContext('2d');
 
     if (topProductsChart) topProductsChart.destroy();
-
-    const parent = canvas.parentElement;
-    canvas.width = parent.clientWidth;
-    canvas.height = parent.clientHeight;
 
     setTimeout(() => {
         topProductsChart = new Chart(ctx, {

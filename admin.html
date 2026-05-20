@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LUMINA | Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+      tailwind.config = {
+          theme: {
+              extend: {
+                  colors: {
+                      lumina: {
+                          dark: "#1a2a40",
+                          gold: "#d4af37",
+                          light: "#f8f9fa",
+                      },
+                  },
+                  fontFamily: { sans: ["Poppins", "sans-serif"] },
+              },
+          },
+      };
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              lumina: {
+                dark: "#1a2a40",
+                gold: "#d4af37",
+                light: "#f8f9fa",
+              },
+            },
+            fontFamily: { sans: ["Poppins", "sans-serif"] },
+          },
+        },
+      };
+    </script>
+    <style>
+      /* Style Scrollbar */
+      .custom-scroll::-webkit-scrollbar {
+        width: 5px;
+      }
+      .custom-scroll::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* Chart Container */
+      .chart-container {
+        position: relative;
+        width: 100%;
+        height: 300px;
+      }
+
+      .chart-container canvas {
+        display: block !important;
+        max-height: 300px !important;
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-900 font-sans">
+    <div class="min-h-screen">
+      <!-- Header -->
+      <nav class="bg-[#1e293b] text-white py-4 shadow-md z-30">
+        <div
+          class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center"
+        >
+          <div class="flex items-center gap-6">
+            <div class="flex items-center gap-3">
+              <i class="fas fa-user-shield text-lumina-gold text-xl"></i>
+              <h1
+                class="text-2xl font-black tracking-widest text-lumina-gold cursor-pointer"
+                onclick="location.reload()"
+              >
+                LUMINA <span class="text-gray-300 font-light ml-1">ADMIN</span>
+              </h1>
+            </div>
+            <div class="h-6 w-[1px] bg-gray-700"></div>
+            <a
+              href="landing.html"
+              class="bg-gray-800/50 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-gray-300 hover:text-white transition text-xs flex items-center gap-2 border border-gray-700"
+            >
+              <i class="fas fa-arrow-left text-[10px]"></i> Ke Landing Page
+            </a>
+          </div>
+
+          <div class="flex items-center gap-6"></div>
+        </div>
+      </nav>
+
+      <!-- Main Content -->
+      <main class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div
+            class="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-slate-500 text-sm font-medium">
+                  Total Pendapatan
+                </p>
+                <p
+                  class="text-2xl font-black text-lumina-dark mt-2"
+                  id="total-revenue"
+                >
+                  Rp 0
+                </p>
+              </div>
+              <div
+                class="w-12 h-12 rounded-lg bg-lumina-gold/10 flex items-center justify-center"
+              >
+                <i class="fas fa-money-bill-wave text-lumina-gold text-xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-slate-500 text-sm font-medium">Total Pesanan</p>
+                <p
+                  class="text-2xl font-black text-lumina-dark mt-2"
+                  id="total-orders"
+                >
+                  0
+                </p>
+              </div>
+              <div
+                class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center"
+              >
+                <i class="fas fa-shopping-cart text-blue-600 text-xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-slate-500 text-sm font-medium">Total Item</p>
+                <p
+                  class="text-2xl font-black text-lumina-dark mt-2"
+                  id="total-items"
+                >
+                  0
+                </p>
+              </div>
+              <div
+                class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center"
+              >
+                <i class="fas fa-box text-green-600 text-xl"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Section -->
+       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+  
+  <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-lg font-bold text-lumina-dark">
+        Grafik Penjualan
+      </h2>
+      <select
+        id="period-filter"
+        class="px-3 py-2 border border-slate-200 rounded-lg text-sm font-medium bg-white text-slate-700 hover:border-lumina-gold focus:outline-none focus:ring-2 focus:ring-lumina-gold"
+      >
+        <option value="all">Semua Waktu</option>
+        <option value="today">Hari Ini</option>
+        <option value="week">7 Hari Terakhir</option>
+        <option value="month">1 Bulan Terakhir</option>
+      </select>
+    </div>
+    
+    <div class="chart-container relative h-[300px] w-full">
+      <canvas id="salesChart"></canvas>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+    <div>
+      <h2 class="text-lg font-bold text-lumina-dark mb-6">
+        Produk Terlaris
+      </h2>
+      
+      <div class="chart-container relative h-[250px] w-full">
+        <canvas id="topProductsChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+    </div>
+
+        <!-- Tabs Section -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-8">
+          <div class="flex border-b border-slate-200">
+            <button
+              class="flex-1 px-6 py-4 text-center font-bold text-lumina-dark border-b-2 border-lumina-gold bg-lumina-light/30"
+              data-tab="report"
+            >
+              <i class="fas fa-chart-bar mr-2"></i>Laporan Penjualan
+            </button>
+            <button
+              class="flex-1 px-6 py-4 text-center font-bold text-slate-500 hover:text-slate-700 border-b-2 border-transparent transition"
+              data-tab="users"
+            >
+              <i class="fas fa-users mr-2"></i>Manajemen User
+            </button>
+          </div>
+
+          <!-- Report Tab -->
+          <div id="report-tab" class="p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-lg font-bold text-lumina-dark">
+                Daftar Transaksi
+              </h3>
+              <button
+                id="export-pdf-btn"
+                class="px-4 py-2 bg-lumina-dark text-lumina-gold rounded-lg font-bold text-sm hover:bg-[#243447] transition flex items-center gap-2"
+              >
+                <i class="fas fa-file-pdf text-sm"></i> Ekspor PDF
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="border-b border-slate-200">
+                    <th
+                      class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
+                    >
+                      Waktu
+                    </th>
+                    <th
+                      class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
+                    >
+                      ID Pesanan
+                    </th>
+                    <th
+                      class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
+                    >
+                      Item
+                    </th>
+                    <th
+                      class="px-8 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider"
+                    >
+                      Total
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="report-table-body">
+                  <tr>
+                    <td
+                      colspan="4"
+                      class="px-8 py-10 text-center text-slate-400 text-sm font-medium"
+                    >
+                      Loading...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div
+              id="report-pagination"
+              class="mt-6 flex items-center justify-between"
+            ></div>
+          </div>
+
+          <!-- Users Tab -->
+          <div id="users-tab" class="p-6 hidden">
+            <h3 class="text-lg font-bold text-lumina-dark mb-6">
+              Manajemen Role User
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="border-b border-slate-200">
+                    <th
+                      class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
+                    >
+                      Nama
+                    </th>
+                    <th
+                      class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
+                    >
+                      Email
+                    </th>
+                    <th
+                      class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
+                    >
+                      Role Saat Ini
+                    </th>
+                    <th
+                      class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
+                    >
+                      Ubah Role
+                    </th>
+                    <th
+                      class="px-8 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider"
+                    >
+                      Aksi
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="role-user-table-body">
+                  <tr>
+                    <td
+                      colspan="5"
+                      class="px-8 py-10 text-center text-slate-400 text-sm font-medium"
+                    >
+                      Loading...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Tab Switching Script -->
+    <script>
+      document.querySelectorAll("[data-tab]").forEach((button) => {
+        button.addEventListener("click", function () {
+          const tabName = this.dataset.tab;
+
+          // Hide all tabs
+          document.getElementById("report-tab").classList.add("hidden");
+          document.getElementById("users-tab").classList.add("hidden");
+
+          // Remove active styles from all buttons
+          document.querySelectorAll("[data-tab]").forEach((btn) => {
+            btn.classList.remove(
+              "border-b-2",
+              "border-lumina-gold",
+              "bg-lumina-light/30",
+              "text-lumina-dark",
+            );
+            btn.classList.add(
+              "border-b-2",
+              "border-transparent",
+              "text-slate-500",
+              "hover:text-slate-700",
+            );
+          });
+
+          // Show selected tab
+          document.getElementById(tabName + "-tab").classList.remove("hidden");
+
+          // Add active styles to clicked button
+          this.classList.remove(
+            "border-b-2",
+            "border-transparent",
+            "text-slate-500",
+            "hover:text-slate-700",
+          );
+          this.classList.add(
+            "border-b-2",
+            "border-lumina-gold",
+            "bg-lumina-light/30",
+            "text-lumina-dark",
+          );
+        });
+      });
+    </script>
+
+    <!-- Import Admin JS -->
+    <script type="module" src="./js/admin.js"></script>
+  </body>
+</html>
