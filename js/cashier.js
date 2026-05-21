@@ -731,7 +731,6 @@ function renderTrashTables() {
         productTrashBody.appendChild(tr);
     });
 
-    // Lakukan hal yang sama untuk kategori jika kamu punya status 'isDeleted' di kategori
 }
 
 window.editCategory = function(id) {
@@ -980,7 +979,7 @@ window.processCheckout = async function () {
             console.error("Gagal update status token:", updateErr);
         }
 
-        // ✅ kurangi stok produk di Firestore
+        //  kurangi stok produk di Firestore
         try {
             await reduceProductStockAfterSuccess(cartSnapshot);
         } catch (stockErr) {
@@ -988,7 +987,7 @@ window.processCheckout = async function () {
             showPopup(`Pembayaran sukses, tapi update stok gagal: ${stockErr.message}`);
         }
 
-        // ✅ reset keranjang
+        //  reset keranjang
         cart = [];
         renderCart();
     },
@@ -1051,7 +1050,7 @@ function showReceipt(cart, orderId) {
 
             <hr class="my-2">
 
-            <p class="text-center">Terima kasih 🙏</p>
+            <p class="text-center">Terima kasih Sudah Berbelanja!</p>
         </div>
     `;
 
