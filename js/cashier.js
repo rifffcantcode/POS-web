@@ -342,7 +342,7 @@ window.restoreCategory = async (id) => {
 };
 
 // ==========================================
-// 4. CRUD PRODUCT (VERSI PERBAIKAN)
+// 4. CRUD PRODUCT 
 // ==========================================
 
 window.saveProduct = async function() {
@@ -416,7 +416,7 @@ window.resetForm = function() {
         "product-name", 
         "product-price", 
         "product-stock", 
-        "product-image", // Ini sekarang berfungsi sebagai penampung Base64
+        "product-image", 
         "product-desc", 
         "product-category-input"
     ];

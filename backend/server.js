@@ -40,13 +40,13 @@ const snap = new midtransClient.Snap({
 });
 
 if (!process.env.MIDTRANS_SERVER_KEY) {
-  console.error("❌ MIDTRANS_SERVER_KEY tidak ditemukan. Pastikan backend/.env berisi kunci Midtrans yang valid.");
+  console.error("MIDTRANS_SERVER_KEY tidak ditemukan. Pastikan backend/.env berisi kunci Midtrans yang valid.");
 }
 
 // ================= CREATE TRANSACTION =================
 app.post("/create-transaction", async (req, res) => {
   try {
-    console.log("🔥 CREATE TRANSACTION");
+    console.log("CREATE TRANSACTION");
 
     const { cart, orderId, userId } = req.body;
 
@@ -81,7 +81,7 @@ app.post("/create-transaction", async (req, res) => {
 
     const transaction = await snap.createTransaction(parameter);
 
-    console.log("✅ TX CREATED:", finalOrderId);
+    console.log("TX CREATED:", finalOrderId);
 
     await db.collection("sales").add({
       orderId: finalOrderId,
@@ -97,7 +97,7 @@ app.post("/create-transaction", async (req, res) => {
     res.json({ token: transaction.token });
 
   } catch (error) {
-    console.error("❌ ERROR CREATE TX:", error);
+    console.error("ERROR CREATE TX:", error);
     res.status(500).json({ error: "Gagal create transaksi" });
   }
 });
@@ -130,7 +130,7 @@ app.post("/update-status-by-token", async (req, res) => {
     res.json({ success: true });
 
   } catch (error) {
-    console.error("❌ ERROR UPDATE STATUS:", error);
+    console.error(" ERROR UPDATE STATUS:", error);
     res.status(500).json({ error: "Gagal update status" });
   }
 });
@@ -143,7 +143,7 @@ app.post("/midtrans-webhook", async (req, res) => {
     const orderId = notif.order_id;
     const status = notif.transaction_status;
 
-    console.log("🔔 WEBHOOK:", orderId, status);
+    console.log(" WEBHOOK:", orderId, status);
 
     let finalStatus = "pending";
 
@@ -169,7 +169,7 @@ app.post("/midtrans-webhook", async (req, res) => {
     res.sendStatus(200);
 
   } catch (error) {
-    console.error("❌ WEBHOOK ERROR:", error);
+    console.error("WEBHOOK ERROR:", error);
     res.sendStatus(500);
   }
 });
@@ -198,7 +198,7 @@ app.post("/cancel-transaction", async (req, res) => {
     res.json({ success: true });
 
   } catch (error) {
-    console.error("❌ CANCEL ERROR:", error);
+    console.error("CANCEL ERROR:", error);
     res.status(500).json({ error: "Gagal cancel transaksi" });
   }
 });
@@ -217,7 +217,7 @@ app.post("/delete-transaction", async (req, res) => {
     res.json({ success: true });
 
   } catch (error) {
-    console.error("❌ DELETE ERROR:", error);
+    console.error("DELETE ERROR:", error);
     res.status(500).json({ error: "Gagal hapus transaksi" });
   }
 });
@@ -238,19 +238,19 @@ app.get("/sales", async (req, res) => {
     res.json(data);
 
   } catch (error) {
-    console.error("❌ ERROR GET SALES:", error);
+    console.error("ERROR GET SALES:", error);
     res.status(500).json({ error: "Gagal ambil data sales" });
   }
 });
 
 // ================= HEALTH CHECK =================
 app.get("/", (req, res) => {
-  res.send("API LUMINA RUNNING 🚀");
+  res.send("API LUMINA RUNNING");
 });
 
 // ================= START SERVER =================
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server jalan di http://localhost:${PORT}`);
+  console.log(`Server jalan di http://localhost:${PORT}`);
 });

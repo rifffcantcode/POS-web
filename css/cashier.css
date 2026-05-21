@@ -84,22 +84,21 @@ body {
     gap: 15px !important; 
     margin-bottom: 25px !important; 
     width: 100% !important;
-    padding-right: 10px; /* Opsional: agar tidak terlalu menempel garis keranjang */
+    padding-right: 10px; 
 }
 
 /* Container untuk tombol-tombol di kanan */
 .filter-section-wrapper .flex {
     display: flex !important;
     gap: 12px !important;
-    flex-shrink: 0 !important; /* Jangan biarkan tombol mengecil */
+    flex-shrink: 0 !important; 
 }
 
 /* 1. Search Bar */
 .search-wrapper {
     position: relative !important;
-    /* UBAH INI: Hilangkan width fix 400px, ganti jadi flex: 1 */
     flex: 1 !important; 
-    max-width: 600px !important; /* Batasi agar tidak terlalu lebar di layar Ultra-Wide */
+    max-width: 600px !important; 
     margin: 0 !important; 
 }
 .search-wrapper i {
@@ -116,7 +115,7 @@ body {
     width: 100% !important;
     height: 45px !important; 
     padding: 0 15px 0 45px !important;
-    border-radius: 30px !important; /* Disamakan dengan dropdown */
+    border-radius: 30px !important; 
     border: 1.5px solid #e2e8f0 !important;
     font-size: 14px !important;
     box-sizing: border-box !important;
@@ -133,24 +132,24 @@ body {
 /* 2. Dropdown Kategori Baru */
 .category-dropdown-wrapper {
     position: relative !important;
-    min-width: 220px !important; /* Lebar minimum agar tulisan kategori muat */
-    height: 45px !important; /* Sama tinggi dengan Search Bar */
+    min-width: 220px !important; 
+    height: 45px !important; 
 }
 
 .category-dropdown-wrapper select {
     width: 100% !important;
     height: 100% !important;
-    appearance: none !important; /* Menghilangkan panah default browser */
+    appearance: none !important; 
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
     padding: 0 45px 0 20px !important;
-    border-radius: 30px !important; /* Bulat elegan */
+    border-radius: 30px !important; 
     border: 1.5px solid #e2e8f0 !important;
     background-color: #ffffff !important;
     font-family: inherit !important;
     font-size: 14px !important;
     font-weight: 600 !important;
-    color: #1a2a40 !important; /* Warna teks gelap khas Lumina */
+    color: #1a2a40 !important; 
     cursor: pointer !important;
     box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important;
     transition: all 0.3s ease !important;
@@ -172,7 +171,7 @@ body {
     top: 50% !important;
     transform: translateY(-50%) !important;
     color: #94a3b8 !important;
-    pointer-events: none !important; /* Agar klik tetap menembus ke select */
+    pointer-events: none !important; 
     font-size: 14px !important;
 }
 
