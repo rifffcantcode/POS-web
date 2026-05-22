@@ -10,7 +10,8 @@ import {
     onSnapshot, 
     query, 
     orderBy, 
-    serverTimestamp
+    serverTimestamp,
+    Timestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { showPopup, showConfirmModal } from "./notify.js";
@@ -38,6 +39,58 @@ window.auth = auth;
 // Variabel Referensi Koleksi
 const productsRef = collection(db, "products");
 const salesRef = collection(db, "sales"); 
+
+async function saveSaleRecord(sale) {
+    if (!sale || !sale.orderId) {
+        console.warn("Tidak ada data transaksi yang valid untuk disimpan.");
+        return null;
+    }
+
+    // FIX: Pastikan customerName diambil dari parameter sale, bukan dari DOM
+    // (DOM bisa sudah di-clear saat fungsi ini dipanggil secara async)
+    const customerName = (sale.customerName || "").trim() || "-";
+
+    try {
+        const saleData = {
+            orderId: sale.orderId,
+            userId: auth.currentUser?.uid || "guest",
+            customerName,                           // FIX: gunakan variabel lokal
+            customerPhone: sale.customerPhone || "-",
+            paymentMethod: sale.paymentMethod || "unknown",
+            cashReceived: sale.cashReceived || 0,
+            change: sale.change || 0,
+            totalAmount: sale.totalAmount || sale.total || 0,
+            total: sale.totalAmount || sale.total || 0, // FIX: simpan keduanya agar admin.js bisa baca
+            itemCount: Array.isArray(sale.items) ? sale.items.length : 0,
+            items: Array.isArray(sale.items)
+                ? sale.items.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    price: Number(item.price) || 0,
+                    quantity: Number(item.qty || item.quantity) || 0,
+                    subtotal: Number(item.price || 0) * Number(item.qty || item.quantity || 0)
+                }))
+                : [],
+            status: sale.status || "success",
+            createdAt: serverTimestamp(),
+        };
+
+        console.log("[saveSaleRecord] DATA YANG AKAN DIKIRIM KE FIREBASE:", JSON.stringify({
+            ...saleData,
+            createdAt: "serverTimestamp()"
+        }));
+
+        const docRef = await addDoc(collection(db, "sales"), saleData);
+
+        console.log("[saveSaleRecord] BERHASIL DISIMPAN. Doc ID:", docRef.id, "| customerName:", customerName);
+
+        return docRef.id;
+    } catch (error) {
+        console.error("[saveSaleRecord] Gagal menyimpan riwayat transaksi:", error);
+        showPopup("Transaksi berhasil, tetapi riwayat belum tersimpan.");
+        return null;
+    }
+}
 
 // STATE VARIABLES
 let allProducts = [];
@@ -858,6 +911,56 @@ window.renderCart = function() {
     totalEl.innerText = `Rp ${total.toLocaleString()}`;
 }
 
+window.getCartTotal = function() {
+    return cart.reduce((sum, item) => sum + Number(item.price) * Number(item.qty), 0);
+}
+
+window.onPaymentMethodChange = function() {
+    const paymentMethod = document.getElementById("payment-method").value;
+    const cashInput = document.getElementById("cash-received");
+    const cashChange = document.getElementById("cash-change");
+
+    if (!cashInput || !cashChange) return;
+
+    if (paymentMethod === "cash") {
+        cashInput.disabled = false;
+        cashInput.classList.remove("bg-gray-100");
+        cashInput.placeholder = "Jumlah tunai yang diterima";
+    } else {
+        cashInput.disabled = true;
+        cashInput.value = "";
+        cashChange.innerText = "Rp 0";
+    }
+}
+
+window.updateCashChange = function() {
+    const total = window.getCartTotal();
+    const cashReceived = Number(document.getElementById("cash-received").value || 0);
+    const change = cashReceived - total;
+    const cashChange = document.getElementById("cash-change");
+
+    if (cashChange) {
+        cashChange.innerText = `Rp ${Math.max(0, change).toLocaleString("id-ID")}`;
+    }
+}
+
+window.resetCustomerPaymentForm = function() {
+    const customerName = document.getElementById("customer-name");
+    const customerPhone = document.getElementById("customer-phone");
+    const paymentMethod = document.getElementById("payment-method");
+    const cashInput = document.getElementById("cash-received");
+    const cashChange = document.getElementById("cash-change");
+
+    if (customerName) customerName.value = "";
+    if (customerPhone) customerPhone.value = "";
+    if (paymentMethod) paymentMethod.value = "cash";
+    if (cashInput) {
+        cashInput.value = "";
+        cashInput.disabled = false;
+    }
+    if (cashChange) cashChange.innerText = "Rp 0";
+}
+
 window.updateQty = function(index, change) {
     const item = cart[index];
     const product = allProducts.find(p => p.id === item.id);
@@ -917,124 +1020,310 @@ async function reduceProductStockAfterSuccess(purchasedItems) {
     });
 }
 
-window.processCheckout = async function () {
+window.processCheckout = function () {
     if (cart.length === 0) return showPopup("Keranjang kosong!");
+    openPaymentModal();
+};
+
+window.openPaymentModal = function() {
+    const modal = document.getElementById("payment-modal");
+    if (!modal) return;
+
+    const stepMethod = document.getElementById("payment-step-method");
+    const stepDetails = document.getElementById("payment-step-details");
+    const paymentMethodInput = document.getElementById("payment-method");
+    const nameInput = document.getElementById("customer-name");
+    const phoneInput = document.getElementById("customer-phone");
+    const cashInput = document.getElementById("cash-received");
+    const cashChange = document.getElementById("cash-change");
+    const totalAmount = document.getElementById("modal-total-amount");
+    const paymentLabel = document.getElementById("payment-method-label");
+
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+
+    if (stepMethod) stepMethod.classList.remove("hidden");
+    if (stepDetails) stepDetails.classList.add("hidden");
+    if (paymentMethodInput) paymentMethodInput.value = "";
+    if (nameInput) nameInput.value = "";
+    if (phoneInput) phoneInput.value = "";
+    if (cashInput) {
+        cashInput.value = "";
+        cashInput.disabled = false;
+    }
+    if (cashChange) cashChange.innerText = "Rp 0";
+    if (paymentLabel) paymentLabel.innerText = "Pilih metode terlebih dahulu";
+    if (totalAmount) totalAmount.innerText = `Rp ${window.getCartTotal().toLocaleString("id-ID")}`;
+};
+
+window.closePaymentModal = function() {
+    const modal = document.getElementById("payment-modal");
+    if (!modal) return;
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+};
+
+window.showPaymentMethodSelection = function() {
+    const stepMethod = document.getElementById("payment-step-method");
+    const stepDetails = document.getElementById("payment-step-details");
+    if (!stepMethod || !stepDetails) return;
+    stepMethod.classList.remove("hidden");
+    stepDetails.classList.add("hidden");
+};
+
+window.choosePaymentMethod = function(method) {
+    const stepMethod = document.getElementById("payment-step-method");
+    const stepDetails = document.getElementById("payment-step-details");
+    const paymentMethodInput = document.getElementById("payment-method");
+    const cashDetails = document.getElementById("cash-details");
+    const paymentLabel = document.getElementById("payment-method-label");
+    const submitBtn = document.getElementById("payment-submit-button");
+
+    if (!stepMethod || !stepDetails || !paymentMethodInput || !submitBtn || !paymentLabel) return;
+
+    stepMethod.classList.add("hidden");
+    stepDetails.classList.remove("hidden");
+    paymentMethodInput.value = method;
+    paymentLabel.innerText = method === "cash" ? "Cash" : "Non Cash";
+
+    if (method === "cash") {
+        cashDetails.classList.remove("hidden");
+        submitBtn.innerText = "Bayar Tunai";
+    } else {
+        cashDetails.classList.add("hidden");
+        submitBtn.innerText = "Bayar Non Cash";
+    }
+};
+
+window.submitPayment = function() {
+    const paymentMethod = document.getElementById("payment-method")?.value;
+    if (paymentMethod === "cash") {
+        submitCashPayment();
+    } else if (paymentMethod === "non-cash") {
+        submitNonCashPayment();
+    } else {
+        showPopup("Pilih metode pembayaran terlebih dahulu.");
+    }
+};
+
+window.submitCashPayment = async function() {
+    // FIX: Ambil semua nilai dari form SEBELUM ada operasi async apapun
+    const customerNameEl = document.getElementById("customer-name");
+    const customerPhoneEl = document.getElementById("customer-phone");
+    const cashReceivedEl = document.getElementById("cash-received");
+
+    const customerName = (customerNameEl?.value || "").trim();
+    const customerPhone = (customerPhoneEl?.value || "").trim();
+    const cashReceived = Number(cashReceivedEl?.value || 0);
+    const total = window.getCartTotal();
+
+    if (!customerName) {
+        showPopup("Isi nama customer terlebih dahulu.");
+        return;
+    }
+
+    if (cashReceived < total) {
+        showPopup("Jumlah tunai harus sama atau lebih besar dari total.");
+        return;
+    }
+
+    const orderId = "INV-" + Date.now();
+    const transactionLabel = document.getElementById("transaction-id");
+    if (transactionLabel) transactionLabel.innerText = orderId;
+
+    // FIX: Snapshot cart sebelum apapun diubah
+    const cartSnapshot = cart.map(item => ({ ...item }));
+    const change = cashReceived - total;
+
+    const paymentInfo = {
+        customerName,
+        customerPhone,
+        paymentMethod: "cash",
+        cashReceived,
+        change
+    };
+
+    const salePayload = {
+        orderId,
+        customerName,       // nilai sudah tersimpan di variabel lokal, aman
+        customerPhone,
+        paymentMethod: "cash",
+        cashReceived,
+        change,
+        totalAmount: total,
+        total,              // FIX: kirim juga field 'total' agar admin.js bisa baca keduanya
+        items: cartSnapshot,
+        status: "success"
+    };
+
+    // FIX: Simpan transaksi dulu ke Firestore — TERPISAH dari pengurangan stok
+    // Agar jika stok gagal dikurangi, data transaksi tetap tersimpan
+    let saveSuccess = false;
+    try {
+        await saveSaleRecord(salePayload);
+        saveSuccess = true;
+    } catch (saveError) {
+        console.error("Gagal menyimpan transaksi ke Firestore:", saveError);
+        showPopup("Transaksi gagal disimpan. Coba lagi.");
+        return; // Berhenti total jika simpan gagal
+    }
+
+    // FIX: Tutup modal dan tampilkan struk SETELAH data tersimpan, SEBELUM kurangi stok
+    closePaymentModal();
+    cart = [];
+    renderCart();
+    window.showReceipt(cartSnapshot, orderId, paymentInfo);
+
+    // Kurangi stok secara terpisah — jika gagal, transaksi sudah aman tersimpan
+    try {
+        await reduceProductStockAfterSuccess(cartSnapshot);
+    } catch (stockError) {
+        console.error("Transaksi tersimpan, tapi update stok gagal:", stockError);
+        showPopup(`Transaksi berhasil, namun stok gagal diperbarui: ${stockError.message}`);
+    }
+};
+
+window.submitNonCashPayment = async function() {
+    const customerName = (document.getElementById("customer-name")?.value || "").trim();
+    const customerPhone = (document.getElementById("customer-phone")?.value || "").trim();
+    const total = window.getCartTotal();
+
+    if (!customerName) {
+        showPopup("Isi nama customer terlebih dahulu.");
+        return;
+    }
+
+    const orderId = "INV-" + Date.now();
+    const cartSnapshot = cart.map(item => ({ ...item }));
+    const paymentInfo = {
+        customerName,
+        customerPhone,
+        paymentMethod: "non-cash",
+        cashReceived: 0,
+        change: 0
+    };
+
+    closePaymentModal();
 
     try {
-        const orderId = "INV-" + Date.now();
-
         const response = await fetch("https://lumina-kz2q.onrender.com/create-transaction", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                cart: cart.map(item => ({
+                cart: cartSnapshot.map(item => ({
                     id: item.id,
                     name: item.name,
                     price: item.price,
                     quantity: item.qty
                 })),
                 orderId,
-                userId: auth.currentUser?.uid || "guest"
+                userId: auth.currentUser?.uid || "guest",
+                customerName,
+                customerPhone,
+                paymentMethod: "non-cash"
             }),
         });
 
         const data = await response.json();
 
         if (!data.token) {
-            showPopup("Gagal membuat transaksi");
+            showPopup("Gagal membuat transaksi Midtrans.");
             return;
         }
 
-        // SNAP MIDTRANS
         window.snap.pay(data.token, {
-    onSuccess: async function(result) {
-        console.log("Pembayaran sukses:", result);
-        if (window.snap && typeof window.snap.hide === "function") {
-            try { window.snap.hide(); } catch (e) { console.warn("snap.hide gagal:", e); }
-        }
+            onSuccess: async function(result) {
+                console.log("Pembayaran sukses:", result);
+                if (window.snap && typeof window.snap.hide === "function") {
+                    try { window.snap.hide(); } catch (e) { console.warn("snap.hide gagal:", e); }
+                }
 
-        // tampilkan struk dulu agar tidak ketahan error network/backend
-        const cartSnapshot = cart.map(item => ({ ...item }));
-        if (typeof window.showReceipt === "function") {
-            window.showReceipt(cartSnapshot, orderId);
-        } else {
-            showReceipt(cartSnapshot, orderId);
-        }
+                await saveSaleRecord({
+                    orderId,
+                    customerName,
+                    customerPhone,
+                    paymentMethod: "non-cash",
+                    cashReceived: 0,
+                    change: 0,
+                    totalAmount: total,
+                    items: cartSnapshot,
+                    status: "success"
+                });
 
-        // update status ke backend (non-blocking UI)
-        try {
-            await fetch("https://lumina-kz2q.onrender.com/update-status-by-token", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    token: data.token,
-                    status: "success",
-                }),
-            });
-        } catch (updateErr) {
-            console.error("Gagal update status token:", updateErr);
-        }
+                window.showReceipt(cartSnapshot, orderId, paymentInfo);
 
-        //  kurangi stok produk di Firestore
-        try {
-            await reduceProductStockAfterSuccess(cartSnapshot);
-        } catch (stockErr) {
-            console.error("Gagal update stok produk:", stockErr);
-            showPopup(`Pembayaran sukses, tapi update stok gagal: ${stockErr.message}`);
-        }
+                try {
+                    await fetch("https://lumina-kz2q.onrender.com/update-status-by-token", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            token: data.token,
+                            status: "success",
+                        }),
+                    });
+                } catch (updateErr) {
+                    console.error("Gagal update status token:", updateErr);
+                }
 
-        //  reset keranjang
-        cart = [];
-        renderCart();
-    },
+                try {
+                    await reduceProductStockAfterSuccess(cartSnapshot);
+                } catch (stockErr) {
+                    console.error("Gagal update stok produk:", stockErr);
+                    showPopup(`Pembayaran sukses, tapi update stok gagal: ${stockErr.message}`);
+                }
 
-    onPending: function(result) {
-        console.log("Pending:", result);
-        showPopup("Pembayaran pending");
-    },
-
-    onError: function(result) {
-        console.log("Error:", result);
-        showPopup("Pembayaran gagal");
-    }
-});
-
-        function resetCart() {
-            cart = [];
-            renderCart();
-        }
-
+                cart = [];
+                renderCart();
+            },
+            onPending: function(result) {
+                console.log("Pending:", result);
+                showPopup("Pembayaran pending");
+            },
+            onError: function(result) {
+                console.log("Error:", result);
+                showPopup("Pembayaran gagal");
+            }
+        });
     } catch (error) {
         console.error(error);
-        showPopup("Terjadi kesalahan");
+        showPopup("Terjadi kesalahan saat memproses pembayaran Non Cash.");
     }
 };
-function showReceipt(cart, orderId) {
+function showReceipt(cart, orderId, paymentInfo = {}) {
     let total = 0;
     let rows = "";
 
     cart.forEach(item => {
-        const subtotal = item.price * item.qty;
+        // FIX: Baca qty secara fleksibel jika ada perbedaan nama properti antara cash dan non-cash
+        const itemQty = Number(item.qty) || Number(item.quantity) || 0;
+        const subtotal = Number(item.price) * itemQty;
         total += subtotal;
 
         rows += `
-            <div class="flex justify-between">
-                <span>${item.name} x${item.qty}</span>
-                <span>${subtotal}</span>
+            <div class="flex justify-between text-xs">
+                <span>${item.name} x${itemQty}</span>
+                <span>Rp ${subtotal.toLocaleString("id-ID")}</span>
             </div>
         `;
     });
+
+    const paymentMethodLabel = paymentInfo.paymentMethod === "cash" ? "Cash" : "Non Cash";
+    const cashReceivedLabel = paymentInfo.cashReceived ? `Rp ${Number(paymentInfo.cashReceived).toLocaleString("id-ID")}` : "-";
+    const changeLabel = paymentInfo.paymentMethod === "cash" ? `Rp ${Number(paymentInfo.change || 0).toLocaleString("id-ID")}` : "-";
 
     const html = `
         <div>
             <h3 class="text-center font-bold">LUMINA STORE</h3>
             <p class="text-center">-------------------</p>
 
-            <p>ID: ${orderId}</p>
+            <p><strong>Customer:</strong> ${paymentInfo.customerName || "-"}</p>
+            <p><strong>HP:</strong> ${paymentInfo.customerPhone || "-"}</p>
+            <p><strong>Metode:</strong> ${paymentMethodLabel}</p>
+            <p><strong>ID:</strong> ${orderId}</p>
             <p>${new Date().toLocaleString("id-ID")}</p>
 
             <hr class="my-2">
@@ -1043,9 +1332,17 @@ function showReceipt(cart, orderId) {
 
             <hr class="my-2">
 
-            <div class="flex justify-between font-bold">
+            <div class="flex justify-between font-bold text-sm">
                 <span>Total</span>
-                <span>Rp ${total.toLocaleString()}</span>
+                <span>Rp ${total.toLocaleString("id-ID")}</span>
+            </div>
+            <div class="flex justify-between text-sm text-gray-500 mt-1">
+                <span>Tunai</span>
+                <span>${cashReceivedLabel}</span>
+            </div>
+            <div class="flex justify-between text-sm text-gray-500">
+                <span>Kembalian</span>
+                <span>${changeLabel}</span>
             </div>
 
             <hr class="my-2">
@@ -1202,22 +1499,33 @@ window.handleImageUpload = function(input) {
 document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.getElementById("search-input");
     if (searchInput) searchInput.focus();
+    if (typeof onPaymentMethodChange === "function") onPaymentMethodChange();
+    const trxEl = document.getElementById("transaction-id");
+    if (trxEl) trxEl.innerText = `TRX-${Date.now()}`;
 });
 
 // Fokus kembali ke input setelah modal ditutup atau transaksi selesai
 window.addEventListener("click", (e) => {
-    if (e.target.id === "category-select") {
-        return; // Hentikan perintah pemaksaan fokus di sini
-    }
+    const target = e.target;
 
-    if (e.target.id === "category-select" || e.target.id === "sort-select") {
+    if (target.id === "category-select" || target.id === "sort-select") {
         return; // Jangan lakukan apa-apa jika yang diklik adalah salah satu dropdown
     }
 
-    // Jika tidak sedang mengisi form modal, kembalikan fokus ke input utama
     const modalProduk = document.getElementById("product-modal");
-    if (modalProduk && modalProduk.classList.contains("hidden")) {
-        document.getElementById("search-input").focus();
+    const paymentModal = document.getElementById("payment-modal");
+
+    const isInsideProductModal = modalProduk && !modalProduk.classList.contains("hidden") && modalProduk.contains(target);
+    const isInsidePaymentModal = paymentModal && !paymentModal.classList.contains("hidden") && paymentModal.contains(target);
+
+    if (isInsideProductModal || isInsidePaymentModal) {
+        return; // Biarkan fokus tetap di dalam modal jika klik di modal aktif
+    }
+
+    // Jika tidak sedang membuka modal, kembalikan fokus ke input utama
+    if ((modalProduk && modalProduk.classList.contains("hidden")) && (!paymentModal || paymentModal.classList.contains("hidden"))) {
+        const searchInput = document.getElementById("search-input");
+        if (searchInput) searchInput.focus();
     }
 });
 
@@ -1507,4 +1815,3 @@ window.fetchTransactions = function() {
 
 // Jalankan fetch pertama kali
 fetchTransactions();
-

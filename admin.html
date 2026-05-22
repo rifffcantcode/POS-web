@@ -178,136 +178,150 @@
           <div class="h-[320px] w-full relative overflow-hidden block">
             <canvas id="topProductsChart"></canvas>
           </div>
-          <div id="top-products-legend" class="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-slate-600 font-medium"></div>
+          <div
+            id="top-products-legend"
+            class="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-slate-600 font-medium"
+          ></div>
         </div>
       </div>
-      
 
-        <!-- Tabs Section -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-8">
-          <div class="flex border-b border-slate-200">
-            <button
-              class="flex-1 px-6 py-4 text-center font-bold text-lumina-dark border-b-2 border-lumina-gold bg-lumina-light/30"
-              data-tab="report"
-            >
-              <i class="fas fa-chart-bar mr-2"></i>Laporan Penjualan
-            </button>
-            <button
-              class="flex-1 px-6 py-4 text-center font-bold text-slate-500 hover:text-slate-700 border-b-2 border-transparent transition"
-              data-tab="users"
-            >
-              <i class="fas fa-users mr-2"></i>Manajemen User
-            </button>
-          </div>
-
-          <!-- Report Tab -->
-          <div id="report-tab" class="p-6">
-            <div class="flex items-center justify-between mb-6">
-              <h3 class="text-lg font-bold text-lumina-dark">
-                Daftar Transaksi
-              </h3>
-              <button
-                id="export-pdf-btn"
-                class="px-4 py-2 bg-lumina-dark text-lumina-gold rounded-lg font-bold text-sm hover:bg-[#243447] transition flex items-center gap-2"
-              >
-                <i class="fas fa-file-pdf text-sm"></i> Ekspor PDF
-              </button>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="w-full">
-                <thead>
-                  <tr class="border-b border-slate-200">
-                    <th
-                      class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
-                    >
-                      Waktu
-                    </th>
-                    <th
-                      class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
-                    >
-                      ID Pesanan
-                    </th>
-                    <th
-                      class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
-                    >
-                      Item
-                    </th>
-                    <th
-                      class="px-8 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider"
-                    >
-                      Total
-                    </th>
-                  </tr>
-                </thead>
-                <tbody id="report-table-body">
-                  <tr>
-                    <td
-                      colspan="4"
-                      class="px-8 py-10 text-center text-slate-400 text-sm font-medium"
-                    >
-                      Loading...
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div
-              id="report-pagination"
-              class="mt-6 flex items-center justify-between"
-            ></div>
-          </div>
-
-          <!-- Users Tab -->
-          <div id="users-tab" class="p-6 hidden">
-            <h3 class="text-lg font-bold text-lumina-dark mb-6">
-              Manajemen Role User
-            </h3>
-            <div class="overflow-x-auto">
-              <table class="w-full">
-                <thead>
-                  <tr class="border-b border-slate-200">
-                    <th
-                      class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
-                    >
-                      Nama
-                    </th>
-                    <th
-                      class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
-                    >
-                      Email
-                    </th>
-                    <th
-                      class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
-                    >
-                      Role Saat Ini
-                    </th>
-                    <th
-                      class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
-                    >
-                      Ubah Role
-                    </th>
-                    <th
-                      class="px-8 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider"
-                    >
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody id="role-user-table-body">
-                  <tr>
-                    <td
-                      colspan="5"
-                      class="px-8 py-10 text-center text-slate-400 text-sm font-medium"
-                    >
-                      Loading...
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+      <!-- Tabs Section -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 mb-8">
+        <div class="flex border-b border-slate-200">
+          <button
+            class="flex-1 px-6 py-4 text-center font-bold text-lumina-dark border-b-2 border-lumina-gold bg-lumina-light/30"
+            data-tab="report"
+          >
+            <i class="fas fa-chart-bar mr-2"></i>Laporan Penjualan
+          </button>
+          <button
+            class="flex-1 px-6 py-4 text-center font-bold text-slate-500 hover:text-slate-700 border-b-2 border-transparent transition"
+            data-tab="users"
+          >
+            <i class="fas fa-users mr-2"></i>Manajemen User
+          </button>
         </div>
 
+        <!-- Report Tab -->
+        <div id="report-tab" class="p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-bold text-lumina-dark">Daftar Transaksi</h3>
+            <button
+              id="export-pdf-btn"
+              class="px-4 py-2 bg-lumina-dark text-lumina-gold rounded-lg font-bold text-sm hover:bg-[#243447] transition flex items-center gap-2"
+            >
+              <i class="fas fa-file-pdf text-sm"></i> Ekspor PDF
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-slate-200">
+                  <th
+                    class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
+                  >
+                    Waktu
+                  </th>
+                  <th
+                    class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
+                  >
+                    ID Pesanan
+                  </th>
+                  <th
+                    class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
+                  >
+                    Item
+                  </th>
+                  <th
+                    class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
+                  >
+                    Customer
+                  </th>
+                  <th
+                    class="px-8 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider"
+                  >
+                    Metode Pembayaran
+                  </th>
+                  <th
+                    class="px-8 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider"
+                  >
+                    Kembalian
+                  </th>
+                  <th
+                    class="px-8 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider"
+                  >
+                    Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="report-table-body">
+                <tr>
+                  <td
+                    colspan="6"
+                    class="px-8 py-10 text-center text-slate-400 text-sm font-medium"
+                  >
+                    Loading...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div
+            id="report-pagination"
+            class="mt-6 flex items-center justify-between"
+          ></div>
+        </div>
+
+        <!-- Users Tab -->
+        <div id="users-tab" class="p-6 hidden">
+          <h3 class="text-lg font-bold text-lumina-dark mb-6">
+            Manajemen Role User
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="border-b border-slate-200">
+                  <th
+                    class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
+                  >
+                    Nama
+                  </th>
+                  <th
+                    class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
+                  >
+                    Email
+                  </th>
+                  <th
+                    class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
+                  >
+                    Role Saat Ini
+                  </th>
+                  <th
+                    class="px-8 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider"
+                  >
+                    Ubah Role
+                  </th>
+                  <th
+                    class="px-8 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider"
+                  >
+                    Aksi
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="role-user-table-body">
+                <tr>
+                  <td
+                    colspan="5"
+                    class="px-8 py-10 text-center text-slate-400 text-sm font-medium"
+                  >
+                    Loading...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </main>
 
     <script type="module" src="js/admin.js"></script>

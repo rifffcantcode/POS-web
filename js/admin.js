@@ -235,7 +235,7 @@ function renderReportTablePage() {
     if (!Array.isArray(reportTransactions) || reportTransactions.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="4" class="px-8 py-10 text-center text-slate-400 text-sm font-medium">
+                <td colspan="7" class="px-8 py-10 text-center text-slate-400 text-sm font-medium">
                     Belum ada transaksi sukses pada periode ini.
                 </td>
             </tr>
@@ -256,6 +256,13 @@ function renderReportTablePage() {
             <td class="px-8 py-5 font-semibold">${row.timeLabel}</td>
             <td class="px-8 py-5 font-mono text-[11px]">${row.orderId}</td>
             <td class="px-8 py-5 text-xs text-slate-500">${row.itemsText}</td>
+            <td class="px-8 py-5 text-sm font-medium text-slate-700">${row.customerName}</td>
+            <td class="px-8 py-5 text-xs">
+                <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase ${row.paymentMethod === 'cash' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
+                    ${row.paymentMethod}
+                </span>
+            </td>
+            <td class="px-8 py-5 text-sm text-slate-500">${row.paymentMethod === 'cash' ? 'Rp ' + row.change.toLocaleString('id-ID') : '-'}</td>
             <td class="px-8 py-5 text-right font-black">Rp ${row.total.toLocaleString('id-ID')}</td>
         </tr>
     `).join("");
@@ -467,7 +474,7 @@ function initTopProductsChart(productData) {
 }
 
 // =======================
-// LOAD DATA
+// LOAD DATA (FIXED)
 // =======================
 function loadReport(period = "all") {
     if (unsubscribeSnapshot) unsubscribeSnapshot();
@@ -475,7 +482,6 @@ function loadReport(period = "all") {
     const q = query(collection(db, "sales"), orderBy("createdAt", "asc"));
 
     unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-
         const tbody = document.getElementById("report-table-body");
         const productSales = {};
         const dailyData = {};
@@ -488,40 +494,72 @@ function loadReport(period = "all") {
 
         const startTime = getStartTime(period);
 
-snapshot.forEach((doc) => {
-    const data = doc.data();
-    const ts = data.createdAt?.toDate();
+        snapshot.forEach((doc) => {
+            const data = doc.data();
 
-    // ❗ hanya transaksi sukses
-    if (data.status !== "success") return;
+            // FIX: Skip dokumen yang createdAt-nya masih null
+            // Ini terjadi saat Firestore belum commit serverTimestamp ke server (pending local write)
+            // Tanpa ini, transaksi cash bisa muncul sebentar lalu hilang, atau tidak terbaca dengan benar
+            if (!data.createdAt) {
+                console.warn(`[ADMIN DEBUG] SKIP doc=${doc.id} — createdAt masih null (pending server write)`);
+                return;
+            }
 
-    if (!ts || ts < startTime) return;
+            // 1. Fallback timestamp aman dari pending local write
+            const ts = data.createdAt.toDate();
 
-    totalRev += data.total;
-    totalOrd++;
+            // 2. Hanya memproses transaksi dengan status success
+            if (data.status !== "success") {
+                console.warn(`[ADMIN DEBUG] SKIP doc=${doc.id} karena status="${data.status}" bukan "success"`);
+                return;
+            }
 
-    const dateLabel = ts.toLocaleDateString("id-ID", {
-        day: 'numeric',
-        month: 'short'
-    });
+            // 3. Filter berdasarkan periode waktu
+            if (ts < startTime) return; 
 
-    dailyData[dateLabel] = (dailyData[dateLabel] || 0) + data.total;
+            // DEBUG: log setiap dokumen untuk diagnosa di console browser
+            console.log(`[ADMIN DEBUG] doc=${doc.id} | status="${data.status}" | customerName="${data.customerName}" | paymentMethod="${data.paymentMethod}" | ts=${ts}`);
 
-    data.items.forEach(i => {
-        totalItems += i.quantity;
-        productSales[i.name] = (productSales[i.name] || 0) + i.quantity;
-    });
+            // 4. Standarisasi nominal total belanja (bisa membaca 'total' atau 'totalAmount')
+            const rowTotal = Number(data.totalAmount) || Number(data.total) || 0;
 
-    const itemsText = data.items.map(i => `${i.name} (x${i.quantity})`).join(", ");
+            totalRev += rowTotal;
+            totalOrd++;
 
-    reportTransactions.push({
-        timestamp: ts.getTime(),
-        timeLabel: ts.toLocaleString('id-ID'),
-        orderId: data.orderId,
-        itemsText,
-        total: data.total
-    });
-});
+            const dateLabel = ts.toLocaleDateString("id-ID", {
+                day: 'numeric',
+                month: 'short'
+            });
+
+            dailyData[dateLabel] = (dailyData[dateLabel] || 0) + rowTotal;
+
+            // Guard: pastikan items adalah array yang valid
+            const items = Array.isArray(data.items) ? data.items : [];
+
+            items.forEach(i => {
+                // FIX: Antisipasi jika di database menggunakan properti .qty atau .quantity
+                const itemQty = Number(i.quantity) || Number(i.qty) || 0;
+                
+                totalItems += itemQty;
+                if (i.name) {
+                    productSales[i.name] = (productSales[i.name] || 0) + itemQty;
+                }
+            });
+
+            // FIX: Teks deskripsi item di tabel riwayat
+            const itemsText = items.map(i => `${i.name} (x${Number(i.quantity) || Number(i.qty) || 0})`).join(", ") || "-";
+
+            reportTransactions.push({
+                timestamp: ts.getTime(),
+                timeLabel: ts.toLocaleString('id-ID'),
+                orderId: data.orderId || "-",
+                itemsText,
+                customerName: data.customerName || "-",
+                paymentMethod: data.paymentMethod || "-",
+                change: Number(data.change) || 0,
+                total: rowTotal
+            });
+        });
 
         reportTransactions.sort((a, b) => b.timestamp - a.timestamp);
         renderReportTablePage();
@@ -535,7 +573,6 @@ snapshot.forEach((doc) => {
         // CHART LINE
         // ===================
         const labels = Object.keys(dailyData);
-
         if (labels.length > 0) {
             initChart({ labels, values: Object.values(dailyData) });
         } else {
@@ -566,8 +603,7 @@ snapshot.forEach((doc) => {
             setTimeout(() => { isFirstLoad = false; }, 2000);
         }
     });
-}
-
+} 
 // =======================
 // FILTER WAKTU
 // =======================
@@ -594,57 +630,309 @@ function getStartTime(period) {
 }
 
 // =======================
-// EXPORT PDF
+// EXPORT PDF (PROPER REPORT)
 // =======================
 document.getElementById("export-pdf-btn").addEventListener("click", async () => {
-  try {
     const btn = document.getElementById("export-pdf-btn");
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membuat PDF...';
-    btn.disabled = true;
+    try {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Membuat PDF...';
+        btn.disabled = true;
 
-    const element = document.querySelector("main");
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF("p", "mm", "a4");
 
+        // ── Konstanta layout ──
+        const PAGE_W = 210;
+        const PAGE_H = 297;
+        const MARGIN = 14;
+        const CONTENT_W = PAGE_W - MARGIN * 2;
+        const GOLD = [212, 175, 55];
+        const DARK = [29, 41, 57];
+        const SLATE = [71, 85, 105];
+        const LIGHT = [241, 245, 249];
+        const WHITE = [255, 255, 255];
 
-    const canvas = await html2canvas(element, {
-      scale: 2, 
-      useCORS: true
-    });
+        // ── Ambil data ringkasan dari DOM ──
+        const totalRevenue = document.getElementById("total-revenue")?.innerText || "Rp 0";
+        const totalOrders  = document.getElementById("total-orders")?.innerText  || "0";
+        const totalItems   = document.getElementById("total-items")?.innerText   || "0";
+        const periodLabel  = (() => {
+            const sel = document.getElementById("period-filter");
+            if (!sel) return "Semua Waktu";
+            const map = { today: "Hari Ini", week: "7 Hari Terakhir", month: "30 Hari Terakhir", all: "Semua Waktu" };
+            return map[sel.value] || sel.options[sel.selectedIndex]?.text || "Semua Waktu";
+        })();
+        const printDate = new Date().toLocaleString("id-ID", {
+            day: "2-digit", month: "long", year: "numeric",
+            hour: "2-digit", minute: "2-digit"
+        });
 
-    const imgData = canvas.toDataURL("image/png");
+        // ════════════════════════════════
+        // HELPER: tambah halaman baru + header
+        // ════════════════════════════════
+        let currentPage = 1;
 
-    const { jsPDF } = window.jspdf;
+        function addPageHeader(isFirstPage = false) {
+            if (!isFirstPage) {
+                pdf.addPage();
+                currentPage++;
+            }
 
+            // Background header bar
+            pdf.setFillColor(...DARK);
+            pdf.rect(0, 0, PAGE_W, isFirstPage ? 42 : 22, "F");
 
-    const pdf = new jsPDF("p", "mm", "a4");
+            // Garis emas di bawah header
+            pdf.setFillColor(...GOLD);
+            pdf.rect(0, isFirstPage ? 42 : 22, PAGE_W, 1.2, "F");
 
-    const imgWidth = 210; // A4 width
-    const pageHeight = 297;
+            if (isFirstPage) {
+                // Nama toko
+                pdf.setFont("helvetica", "bold");
+                pdf.setFontSize(18);
+                pdf.setTextColor(...GOLD);
+                pdf.text("LUMINA STORE", MARGIN, 16);
 
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                // Subjudul
+                pdf.setFont("helvetica", "normal");
+                pdf.setFontSize(9);
+                pdf.setTextColor(203, 213, 225);
+                pdf.text("Laporan Penjualan", MARGIN, 23);
 
-    let heightLeft = imgHeight;
-    let position = 0;
+                // Periode & tanggal cetak (kanan)
+                pdf.setFont("helvetica", "bold");
+                pdf.setFontSize(8);
+                pdf.setTextColor(...GOLD);
+                pdf.text(`Periode: ${periodLabel}`, PAGE_W - MARGIN, 16, { align: "right" });
+                pdf.setFont("helvetica", "normal");
+                pdf.setTextColor(203, 213, 225);
+                pdf.text(`Dicetak: ${printDate}`, PAGE_W - MARGIN, 22, { align: "right" });
 
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+                // Divider info
+                pdf.setFont("helvetica", "italic");
+                pdf.setFontSize(7.5);
+                pdf.setTextColor(148, 163, 184);
+                pdf.text("Dokumen ini digenerate otomatis oleh sistem kasir.", MARGIN, 36);
+                pdf.text(`Total ${reportTransactions.length} transaksi ditemukan.`, PAGE_W - MARGIN, 36, { align: "right" });
+            } else {
+                // Header ringkas untuk halaman lanjutan
+                pdf.setFont("helvetica", "bold");
+                pdf.setFontSize(9);
+                pdf.setTextColor(...GOLD);
+                pdf.text("LUMINA STORE", MARGIN, 14);
+                pdf.setFont("helvetica", "normal");
+                pdf.setTextColor(203, 213, 225);
+                pdf.text(`Laporan Penjualan · ${periodLabel}`, PAGE_W - MARGIN, 14, { align: "right" });
+            }
+        }
 
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+        // ════════════════════════════════
+        // HELPER: footer tiap halaman
+        // ════════════════════════════════
+        function addPageFooter(pageNum, totalPages) {
+            pdf.setFillColor(...DARK);
+            pdf.rect(0, PAGE_H - 10, PAGE_W, 10, "F");
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(7);
+            pdf.setTextColor(148, 163, 184);
+            pdf.text("© Lumina Store · Sistem Kasir", MARGIN, PAGE_H - 3.5);
+            pdf.text(`Halaman ${pageNum} dari ${totalPages}`, PAGE_W - MARGIN, PAGE_H - 3.5, { align: "right" });
+        }
+
+        // ════════════════════════════════
+        // HALAMAN 1 – Header + KPI + Tabel
+        // ════════════════════════════════
+        addPageHeader(true);
+
+        // ── Kartu KPI ──
+        let y = 50;
+        const kpiData = [
+            { label: "Total Pendapatan", value: totalRevenue, icon: "Rp" },
+            { label: "Total Transaksi",  value: totalOrders,  icon: "#"  },
+            { label: "Item Terjual",     value: totalItems,   icon: "⊡"  },
+        ];
+        const kpiW = (CONTENT_W - 8) / 3;
+
+        kpiData.forEach((kpi, i) => {
+            const kx = MARGIN + i * (kpiW + 4);
+            // Card background
+            pdf.setFillColor(...LIGHT);
+            pdf.roundedRect(kx, y, kpiW, 22, 2, 2, "F");
+            // Aksen emas kiri
+            pdf.setFillColor(...GOLD);
+            pdf.roundedRect(kx, y, 2.5, 22, 1, 1, "F");
+            // Label
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(7.5);
+            pdf.setTextColor(...SLATE);
+            pdf.text(kpi.label, kx + 7, y + 7);
+            // Value
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(12);
+            pdf.setTextColor(...DARK);
+            pdf.text(String(kpi.value), kx + 7, y + 17);
+        });
+
+        y += 30;
+
+        // ── Judul tabel ──
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(9);
+        pdf.setTextColor(...DARK);
+        pdf.text("Riwayat Transaksi", MARGIN, y);
+        y += 5;
+
+        // ── Header kolom tabel ──
+        const COL = {
+            no:      { x: MARGIN,       w: 8  },
+            waktu:   { x: MARGIN + 8,   w: 28 },
+            orderId: { x: MARGIN + 36,  w: 30 },
+            customer:{ x: MARGIN + 66,  w: 28 },
+            items:   { x: MARGIN + 94,  w: 44 },
+            metode:  { x: MARGIN + 138, w: 18 },
+            total:   { x: MARGIN + 156, w: 26 },
+        };
+
+        function drawTableHeader(yPos) {
+            pdf.setFillColor(...DARK);
+            pdf.rect(MARGIN, yPos, CONTENT_W, 8, "F");
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(7);
+            pdf.setTextColor(...GOLD);
+            pdf.text("No",       COL.no.x + 1,       yPos + 5.5);
+            pdf.text("Waktu",    COL.waktu.x + 1,     yPos + 5.5);
+            pdf.text("Order ID", COL.orderId.x + 1,   yPos + 5.5);
+            pdf.text("Customer", COL.customer.x + 1,  yPos + 5.5);
+            pdf.text("Item",     COL.items.x + 1,     yPos + 5.5);
+            pdf.text("Metode",   COL.metode.x + 1,    yPos + 5.5);
+            pdf.text("Total",    COL.total.x + COL.total.w - 1, yPos + 5.5, { align: "right" });
+        }
+
+        drawTableHeader(y);
+        y += 9;
+
+        // ── Baris data ──
+        const ROW_H = 10;
+        const FOOTER_SAFE = 18; // ruang untuk footer
+        const HEADER_NEXT = 30; // y mulai konten setelah header halaman lanjutan
+
+        // Hitung total halaman (estimasi)
+        const ROWS_PAGE1 = Math.floor((PAGE_H - FOOTER_SAFE - y) / ROW_H);
+        const ROWS_NEXT  = Math.floor((PAGE_H - FOOTER_SAFE - HEADER_NEXT - 13) / ROW_H);
+        let totalPages = 1;
+        if (reportTransactions.length > ROWS_PAGE1) {
+            const remaining = reportTransactions.length - ROWS_PAGE1;
+            totalPages += Math.ceil(remaining / ROWS_NEXT);
+        }
+
+        // Render semua baris
+        reportTransactions.forEach((row, idx) => {
+            // Cek apakah perlu halaman baru
+            if (y + ROW_H > PAGE_H - FOOTER_SAFE) {
+                addPageFooter(currentPage, totalPages);
+                addPageHeader(false);
+                y = HEADER_NEXT;
+                drawTableHeader(y);
+                y += 9;
+            }
+
+            // Stripe baris
+            if (idx % 2 === 0) {
+                pdf.setFillColor(248, 250, 252);
+                pdf.rect(MARGIN, y - 1, CONTENT_W, ROW_H, "F");
+            }
+
+            // Badge metode pembayaran
+            const isCash = row.paymentMethod?.toLowerCase() === "cash";
+            pdf.setFillColor(...(isCash ? [220, 252, 231] : [219, 234, 254]));
+            const badgeX = COL.metode.x + 1;
+            const badgeW = COL.metode.w - 2;
+            pdf.roundedRect(badgeX, y + 1, badgeW, 6, 1, 1, "F");
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(6);
+            pdf.setTextColor(...(isCash ? [21, 128, 61] : [29, 78, 216]));
+            pdf.text((row.paymentMethod || "-").toUpperCase(), badgeX + badgeW / 2, y + 5.3, { align: "center" });
+
+            // Teks baris
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(7);
+            pdf.setTextColor(...SLATE);
+
+            const rowY = y + 6.5;
+            pdf.text(String(idx + 1), COL.no.x + 1, rowY);
+
+            // Waktu (dibagi 2 baris jika perlu)
+            const timeShort = row.timeLabel?.replace(/\.\d+$/, "") || "-";
+            pdf.text(pdf.splitTextToSize(timeShort, COL.waktu.w - 2)[0] || timeShort, COL.waktu.x + 1, rowY);
+
+            pdf.setFont("courier", "normal");
+            pdf.setFontSize(6.5);
+            pdf.text(
+                pdf.splitTextToSize(row.orderId, COL.orderId.w - 2)[0] || row.orderId,
+                COL.orderId.x + 1, rowY
+            );
+
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(7);
+            pdf.text(
+                pdf.splitTextToSize(row.customerName || "-", COL.customer.w - 2)[0],
+                COL.customer.x + 1, rowY
+            );
+            pdf.setFontSize(6.5);
+            pdf.setTextColor(100, 116, 139);
+            pdf.text(
+                pdf.splitTextToSize(row.itemsText || "-", COL.items.w - 2)[0],
+                COL.items.x + 1, rowY
+            );
+
+            // Total (bold, dark, kanan)
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(7.5);
+            pdf.setTextColor(...DARK);
+            pdf.text(
+                `Rp ${row.total.toLocaleString("id-ID")}`,
+                COL.total.x + COL.total.w - 1, rowY,
+                { align: "right" }
+            );
+
+            // Border bawah baris
+            pdf.setDrawColor(226, 232, 240);
+            pdf.setLineWidth(0.2);
+            pdf.line(MARGIN, y + ROW_H - 1, MARGIN + CONTENT_W, y + ROW_H - 1);
+
+            y += ROW_H;
+        });
+
+        // ── Grand Total ──
+        if (y + 14 > PAGE_H - FOOTER_SAFE) {
+            addPageFooter(currentPage, totalPages);
+            addPageHeader(false);
+            y = HEADER_NEXT;
+        }
+        y += 3;
+        pdf.setFillColor(...DARK);
+        pdf.rect(MARGIN, y, CONTENT_W, 10, "F");
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(8);
+        pdf.setTextColor(...GOLD);
+        pdf.text("TOTAL PENDAPATAN", MARGIN + 4, y + 6.5);
+        pdf.text(totalRevenue, MARGIN + CONTENT_W - 2, y + 6.5, { align: "right" });
+
+        // ── Footer semua halaman ──
+        addPageFooter(currentPage, totalPages);
+
+        // ── Simpan file ──
+        const fileName = `laporan-penjualan-${new Date().toISOString().slice(0,10)}.pdf`;
+        pdf.save(fileName);
+        showPopup("Laporan PDF berhasil dibuat!", "success");
+
+    } catch (error) {
+        console.error("Gagal export PDF:", error);
+        showPopup("Gagal membuat laporan PDF.", "error");
+    } finally {
+        btn.innerHTML = '<i class="fas fa-file-pdf text-sm"></i> Ekspor PDF';
+        btn.disabled = false;
     }
-
-    pdf.save("laporan-penjualan.pdf");
-
-  } catch (error) {
-    console.error("Gagal export PDF:", error);
-    showPopup("Gagal export PDF!");
-  } finally {
-    const btn = document.getElementById("export-pdf-btn");
-    btn.innerHTML = '<i class="fas fa-file-pdf text-sm"></i> Ekspor PDF';
-    btn.disabled = false;
-  }
 });
 
 // =======================
