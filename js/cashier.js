@@ -10,6 +10,8 @@ import {
     onSnapshot, 
     query, 
     orderBy, 
+    where,
+    getDocs,
     serverTimestamp,
     Timestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -1183,6 +1185,11 @@ window.submitCashPayment = async function() {
     }
 };
 
+// FIX DUPLIKAT: Set untuk melacak orderId yang sudah pernah disimpan ke Firestore.
+// Ini mencegah saveSaleRecord dipanggil dua kali untuk transaksi yang sama,
+// misalnya jika backend (server Render) sudah menyimpan duluan lalu onSuccess juga menyimpan.
+const _savedOrderIds = new Set();
+
 window.submitNonCashPayment = async function() {
     const customerName = (document.getElementById("customer-name")?.value || "").trim();
     const customerPhone = (document.getElementById("customer-phone")?.value || "").trim();
@@ -1233,6 +1240,13 @@ window.submitNonCashPayment = async function() {
             return;
         }
 
+        // FIX: Cek apakah server sudah menyimpan transaksi ini (field 'saved' dari response)
+        // Jika server mengembalikan { saved: true }, tandai orderId agar tidak disimpan lagi di client
+        if (data.saved === true) {
+            console.log(`[NON-CASH] Server sudah menyimpan orderId=${orderId}, client skip saveSaleRecord.`);
+            _savedOrderIds.add(orderId);
+        }
+
         window.snap.pay(data.token, {
             onSuccess: async function(result) {
                 console.log("Pembayaran sukses:", result);
@@ -1240,17 +1254,10 @@ window.submitNonCashPayment = async function() {
                     try { window.snap.hide(); } catch (e) { console.warn("snap.hide gagal:", e); }
                 }
 
-                await saveSaleRecord({
-                    orderId,
-                    customerName,
-                    customerPhone,
-                    paymentMethod: "non-cash",
-                    cashReceived: 0,
-                    change: 0,
-                    totalAmount: total,
-                    items: cartSnapshot,
-                    status: "success"
-                });
+                // FIX DUPLIKAT: Client TIDAK perlu saveSaleRecord lagi.
+                // Dokumen sudah dibuat lengkap oleh server saat /create-transaction.
+                // Client hanya perlu update statusnya saja via /update-status-by-token.
+                console.log(`[NON-CASH] Pembayaran sukses orderId=${orderId}. Server akan update status via /update-status-by-token.`);
 
                 window.showReceipt(cartSnapshot, orderId, paymentInfo);
 
@@ -1267,6 +1274,32 @@ window.submitNonCashPayment = async function() {
                     });
                 } catch (updateErr) {
                     console.error("Gagal update status token:", updateErr);
+                }
+
+                // PATCH: Update field yang hilang (customerName, paymentMethod, dll) langsung
+                // dari client via Firestore SDK. Ini karena server lama tidak menyimpan field ini.
+                // Aman dijalankan meski server sudah di-redeploy (hanya overwrite dengan nilai sama).
+                try {
+                    const salesSnap = await getDocs(query(collection(db, "sales"), where("orderId", "==", orderId)));
+                    if (!salesSnap.empty) {
+                        await updateDoc(salesSnap.docs[0].ref, {
+                            customerName: customerName || "-",
+                            customerPhone: customerPhone || "-",
+                            paymentMethod: "non-cash",
+                            totalAmount: total,
+                            items: cartSnapshot.map(item => ({
+                                id: item.id,
+                                name: item.name,
+                                price: Number(item.price) || 0,
+                                quantity: Number(item.qty || item.quantity) || 0,
+                                subtotal: Number(item.price) * Number(item.qty || item.quantity || 0),
+                            })),
+                            itemCount: cartSnapshot.length,
+                        });
+                        console.log(`[NON-CASH] Patch customerName & paymentMethod berhasil untuk orderId=${orderId}`);
+                    }
+                } catch (patchErr) {
+                    console.error("[NON-CASH] Gagal patch field:", patchErr);
                 }
 
                 try {

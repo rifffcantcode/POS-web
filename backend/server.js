@@ -48,7 +48,9 @@ app.post("/create-transaction", async (req, res) => {
   try {
     console.log("CREATE TRANSACTION");
 
-    const { cart, orderId, userId } = req.body;
+    // FIX DUPLIKAT: Terima juga customerName & customerPhone dari client
+    // agar dokumen Firestore langsung lengkap sejak awal (tidak perlu ditulis ulang oleh client)
+    const { cart, orderId, userId, customerName, customerPhone, paymentMethod } = req.body;
 
     if (!cart || cart.length === 0) {
       return res.status(400).json({ error: "Cart kosong" });
@@ -75,7 +77,7 @@ app.post("/create-transaction", async (req, res) => {
         name: item.name,
       })),
       customer_details: {
-        first_name: "Customer",
+        first_name: customerName || "Customer",
       },
     };
 
@@ -83,18 +85,36 @@ app.post("/create-transaction", async (req, res) => {
 
     console.log("TX CREATED:", finalOrderId);
 
+    // FIX DUPLIKAT: Simpan dokumen LENGKAP sejak awal dengan status "pending".
+    // Saat pembayaran sukses, client hanya perlu UPDATE status dokumen ini menjadi "success"
+    // via /update-status-by-token — TIDAK perlu addDoc baru dari client.
     await db.collection("sales").add({
       orderId: finalOrderId,
       userId: userId || "guest",
-      items: cart,
+      customerName: customerName || "-",
+      customerPhone: customerPhone || "-",
+      paymentMethod: paymentMethod || "non-cash",
+      cashReceived: 0,
+      change: 0,
+      items: cart.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: Number(item.price) || 0,
+        quantity: Number(item.quantity) || 0,
+        subtotal: Number(item.price) * Number(item.quantity),
+      })),
+      itemCount: cart.length,
+      totalAmount: total,
       total,
       status: "pending",
       snapToken: transaction.token,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      expiredAt: Date.now() + 15 * 60 * 1000, // 15 menit
+      expiredAt: Date.now() + 15 * 60 * 1000,
     });
 
-    res.json({ token: transaction.token });
+    // Beri tahu client bahwa dokumen sudah tersimpan di server
+    // sehingga client bisa skip saveSaleRecord() dan hanya update status
+    res.json({ token: transaction.token, saved: true });
 
   } catch (error) {
     console.error("ERROR CREATE TX:", error);
