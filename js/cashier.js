@@ -47,22 +47,20 @@ async function saveSaleRecord(sale) {
         console.warn("Tidak ada data transaksi yang valid untuk disimpan.");
         return null;
     }
-
-    // FIX: Pastikan customerName diambil dari parameter sale, bukan dari DOM
-    // (DOM bisa sudah di-clear saat fungsi ini dipanggil secara async)
+ 
     const customerName = (sale.customerName || "").trim() || "-";
-
+ 
     try {
         const saleData = {
             orderId: sale.orderId,
             userId: auth.currentUser?.uid || "guest",
-            customerName,                           // FIX: gunakan variabel lokal
+            customerName,
             customerPhone: sale.customerPhone || "-",
             paymentMethod: sale.paymentMethod || "unknown",
             cashReceived: sale.cashReceived || 0,
             change: sale.change || 0,
             totalAmount: sale.totalAmount || sale.total || 0,
-            total: sale.totalAmount || sale.total || 0, // FIX: simpan keduanya agar admin.js bisa baca
+            total: sale.totalAmount || sale.total || 0,
             itemCount: Array.isArray(sale.items) ? sale.items.length : 0,
             items: Array.isArray(sale.items)
                 ? sale.items.map(item => ({
@@ -75,17 +73,19 @@ async function saveSaleRecord(sale) {
                 : [],
             status: sale.status || "success",
             createdAt: serverTimestamp(),
+            // ✅ TAMBAH: tandai semua transaksi dari kasir sebagai offline
+            orderType: "offline",
         };
-
+ 
         console.log("[saveSaleRecord] DATA YANG AKAN DIKIRIM KE FIREBASE:", JSON.stringify({
             ...saleData,
             createdAt: "serverTimestamp()"
         }));
-
+ 
         const docRef = await addDoc(collection(db, "sales"), saleData);
-
+ 
         console.log("[saveSaleRecord] BERHASIL DISIMPAN. Doc ID:", docRef.id, "| customerName:", customerName);
-
+ 
         return docRef.id;
     } catch (error) {
         console.error("[saveSaleRecord] Gagal menyimpan riwayat transaksi:", error);
@@ -93,6 +93,7 @@ async function saveSaleRecord(sale) {
         return null;
     }
 }
+ 
 
 // STATE VARIABLES
 let allProducts = [];

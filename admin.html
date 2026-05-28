@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Penjualan - LUMINA</title>
+    <title>LUMINA | Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -369,5 +369,65 @@
         });
       });
     </script>
+  
+    <!-- Modal Detail Transaksi -->
+    <div id="transaction-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-md mx-4 p-8 relative">
+            <button onclick="closeTransactionDetail()"
+                class="absolute top-5 right-5 text-slate-400 hover:text-slate-700 text-xl transition">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <h3 class="text-lg font-black text-lumina-dark mb-1">Detail Transaksi</h3>
+            <p id="modal-order-id" class="font-mono text-xs text-slate-400 mb-6"></p>
+
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-500">Waktu</span>
+                    <span id="modal-time" class="font-semibold text-right text-xs"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-500">Customer</span>
+                    <span id="modal-customer" class="font-semibold"></span>
+                </div>
+                <div class="flex justify-between items-start gap-4">
+                    <span class="text-slate-500 shrink-0">Item</span>
+                    <span id="modal-items" class="font-semibold text-right text-xs leading-relaxed"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-500">Metode Bayar</span>
+                    <span id="modal-payment"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-500">Kembalian</span>
+                    <span id="modal-change" class="font-semibold"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-500">Tipe Order</span>
+                    <span id="modal-order-type"></span>
+                </div>
+
+                <!-- Hanya muncul kalau orderType === "online" -->
+                <div id="modal-address-section" class="hidden border-t border-slate-100 pt-3 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-500">No. Telepon</span>
+                        <span id="modal-phone" class="font-semibold text-xs"></span>
+                    </div>
+                    <div>
+                        <p class="text-slate-500 mb-1">Alamat Pengiriman</p>
+                        <p id="modal-address"
+                            class="font-semibold text-xs bg-slate-50 rounded-xl p-3 leading-relaxed border border-slate-100">
+                        </p>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-100 pt-3 flex justify-between items-center">
+                    <span class="font-bold text-slate-700">Total</span>
+                    <span id="modal-total" class="font-black text-xl text-lumina-dark"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
   </body>
 </html>

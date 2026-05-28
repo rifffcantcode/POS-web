@@ -861,32 +861,122 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 window.payNow = async function () {
+  const user = auth.currentUser;
+
+  if (!user) {
+    showPopup("Kamu harus login dulu!");
+    return;
+  }
+
+  const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY)) || [];
+  if (cart.length === 0) {
+    showPopup("Keranjang kosong!");
+    return;
+  }
+
+  // Ambil alamat & telepon dari profil user di Firestore
   try {
-    const user = auth.currentUser;
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    const savedAddress = userDoc.exists() ? (userDoc.data().address || "") : "";
+    const savedPhone   = userDoc.exists() ? (userDoc.data().phone   || "") : "";
+    openShippingModal(savedAddress, savedPhone);
+  } catch (err) {
+    console.error("Gagal ambil data profil:", err);
+    openShippingModal("", "");
+  }
+};
 
-    if (!user) {
-      showPopup("Kamu harus login dulu!");
-      return;
-    }
+function openShippingModal(address, phone) {
+  let modal = document.getElementById("shipping-confirm-modal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "shipping-confirm-modal";
+    modal.className = "fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm";
+    modal.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-8">
+        <h3 class="text-lg font-black text-lumina-dark mb-1">
+          <i class="fas fa-map-marker-alt text-lumina-gold mr-2"></i>Konfirmasi Alamat Pengiriman
+        </h3>
+        <p class="text-xs text-gray-400 mb-6">
+          Data diambil dari profil kamu. Kamu bisa ubah khusus untuk pesanan ini.
+        </p>
 
-    const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY)) || [];
+        <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Nomor Telepon</label>
+        <input
+          id="checkout-phone"
+          type="text"
+          placeholder="Contoh: 08123456789"
+          class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm mt-1 mb-4 focus:ring-2 focus:ring-lumina-gold outline-none"
+        />
 
-    if (cart.length === 0) {
-      showPopup("Keranjang kosong!");
-      return;
-    }
+        <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Alamat Lengkap</label>
+        <textarea
+          id="checkout-address"
+          rows="3"
+          placeholder="Jalan, No. Rumah, Kelurahan, Kecamatan, Kota..."
+          class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm mt-1 mb-2 focus:ring-2 focus:ring-lumina-gold outline-none resize-none"
+        ></textarea>
+        <p class="text-[11px] text-gray-400 mb-6 italic">
+          * Perubahan di sini tidak mengubah data profil kamu.
+        </p>
 
-    const orderId = "INV-" + Date.now();
+        <div class="flex gap-3">
+          <button
+            onclick="closeShippingModal()"
+            class="flex-1 border border-gray-200 text-gray-600 py-3 rounded-xl font-bold text-sm hover:bg-gray-50 transition"
+          >
+            Batal
+          </button>
+          <button
+            onclick="confirmAndPay()"
+            class="flex-1 bg-lumina-dark text-lumina-gold py-3 rounded-xl font-bold text-sm hover:bg-[#243447] transition"
+          >
+            <i class="fas fa-lock mr-2 text-xs"></i>Bayar Sekarang
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
 
+  document.getElementById("checkout-phone").value   = phone;
+  document.getElementById("checkout-address").value = address;
+  modal.classList.remove("hidden");
+}
+
+window.closeShippingModal = function () {
+  const modal = document.getElementById("shipping-confirm-modal");
+  if (modal) modal.classList.add("hidden");
+};
+
+window.confirmAndPay = async function () {
+  const address = document.getElementById("checkout-address").value.trim();
+  const phone   = document.getElementById("checkout-phone").value.trim();
+
+  if (!address) {
+    showPopup("Alamat pengiriman wajib diisi!", "error");
+    return;
+  }
+
+  closeShippingModal();
+
+  const user = auth.currentUser;
+  const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY)) || [];
+  const orderId = "INV-" + Date.now();
+  const customerName = user.displayName || "Customer";
+
+  try {
     const response = await fetch("https://lumina-kz2q.onrender.com/create-transaction", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         cart,
         orderId,
         userId: user.uid,
+        customerName,
+        shippingAddress: address,
+        shippingPhone: phone,
+        orderType: "online",
       }),
     });
 
@@ -900,45 +990,24 @@ window.payNow = async function () {
     window.snap.pay(data.token, {
       onSuccess: async function () {
         showPopup("Pembayaran berhasil!");
-
-        // UPDATE STATUS KE FIRESTORE
         await fetch("https://lumina-kz2q.onrender.com/update-status-by-token", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            token: data.token, 
-            status: "success",
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: data.token, status: "success" }),
         });
-
         localStorage.removeItem(CART_STORAGE_KEY);
         location.reload();
       },
-
       onPending: async function () {
         await fetch("https://lumina-kz2q.onrender.com/update-status-by-token", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            token: data.token,
-            status: "pending",
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: data.token, status: "pending" }),
         });
-
         showPopup("Menunggu pembayaran...");
       },
-
-      onError: function () {
-        showPopup("Pembayaran gagal!");
-      },
-
-      onClose: function () {
-        showPopup("Kamu menutup pembayaran.");
-      },
+      onError:  function () { showPopup("Pembayaran gagal!"); },
+      onClose:  function () { showPopup("Kamu menutup pembayaran."); },
     });
 
   } catch (err) {

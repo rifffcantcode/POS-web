@@ -251,8 +251,8 @@ function renderReportTablePage() {
     const end = start + REPORT_PAGE_SIZE;
     const pageItems = reportTransactions.slice(start, end);
 
-    tbody.innerHTML = pageItems.map((row) => `
-        <tr class="hover:bg-slate-50 border-b border-slate-50">
+    tbody.innerHTML = pageItems.map((row, i) => `
+        <tr class="hover:bg-slate-50 border-b border-slate-50 cursor-pointer" onclick="openTransactionDetail(${start + i})">
             <td class="px-8 py-5 font-semibold">${row.timeLabel}</td>
             <td class="px-8 py-5 font-mono text-[11px]">${row.orderId}</td>
             <td class="px-8 py-5 text-xs text-slate-500">${row.itemsText}</td>
@@ -557,7 +557,10 @@ function loadReport(period = "all") {
                 customerName: data.customerName || "-",
                 paymentMethod: data.paymentMethod || "-",
                 change: Number(data.change) || 0,
-                total: rowTotal
+                total: rowTotal,
+                orderType: data.orderType || "offline",
+                shippingAddress: data.shippingAddress || null,
+                shippingPhone: data.shippingPhone || null,
             });
         });
 
@@ -950,6 +953,52 @@ function initAdminPage() {
     loadReport();
     initUsersRoleManager();
 }
+
+// =======================
+// DETAIL TRANSAKSI MODAL
+// =======================
+window.openTransactionDetail = function(index) {
+    const row = reportTransactions[index];
+    if (!row) return;
+
+    const isOnline = row.orderType === "online";
+
+    document.getElementById("modal-order-id").textContent  = row.orderId;
+    document.getElementById("modal-time").textContent      = row.timeLabel;
+    document.getElementById("modal-customer").textContent  = row.customerName;
+    document.getElementById("modal-items").textContent     = row.itemsText;
+    document.getElementById("modal-total").textContent     = "Rp " + row.total.toLocaleString("id-ID");
+    document.getElementById("modal-change").textContent    = row.paymentMethod === "cash"
+        ? "Rp " + row.change.toLocaleString("id-ID") : "-";
+
+    const methodEl = document.getElementById("modal-payment");
+    const isCash = row.paymentMethod === "cash";
+    methodEl.innerHTML = `
+        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${isCash ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
+            ${row.paymentMethod}
+        </span>
+    `;
+
+    const typeEl = document.getElementById("modal-order-type");
+    typeEl.innerHTML = isOnline
+        ? `<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-purple-100 text-purple-700">Online</span>`
+        : `<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-600">Offline</span>`;
+
+    const addressSection = document.getElementById("modal-address-section");
+    if (isOnline && row.shippingAddress) {
+        addressSection.classList.remove("hidden");
+        document.getElementById("modal-address").textContent = row.shippingAddress;
+        document.getElementById("modal-phone").textContent   = row.shippingPhone || "-";
+    } else {
+        addressSection.classList.add("hidden");
+    }
+
+    document.getElementById("transaction-modal").classList.remove("hidden");
+};
+
+window.closeTransactionDetail = function() {
+    document.getElementById("transaction-modal").classList.add("hidden");
+};
 
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
