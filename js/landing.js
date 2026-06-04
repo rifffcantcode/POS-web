@@ -954,19 +954,15 @@ window.closeShippingModal = function () {
 window.confirmAndPay = async function () {
   const address = document.getElementById("checkout-address").value.trim();
   const phone   = document.getElementById("checkout-phone").value.trim();
-
   if (!address) {
     showPopup("Alamat pengiriman wajib diisi!", "error");
     return;
   }
-
   closeShippingModal();
-
   const user = auth.currentUser;
   const cart = JSON.parse(localStorage.getItem(CART_STORAGE_KEY)) || [];
   const orderId = "INV-" + Date.now();
   const customerName = user.displayName || "Customer";
-
   try {
     const response = await fetch("https://lumina-kz2q.onrender.com/create-transaction", {
       method: "POST",
@@ -979,38 +975,33 @@ window.confirmAndPay = async function () {
         shippingAddress: address,
         shippingPhone: phone,
         orderType: "online",
+        paymentMethod: "non-cash",  // 
       }),
     });
-
     const data = await response.json();
-
     if (!data.token) {
       showPopup("Gagal mendapatkan token pembayaran!");
       return;
     }
-
     window.snap.pay(data.token, {
-onSuccess: async function () {
-  showPopup("Pembayaran berhasil!");
-  
-  // Update status order
-  await fetch("https://lumina-kz2q.onrender.com/update-status-by-token", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token: data.token, status: "success" }),
-  });
-
-  // Kurangi stok di Firestore untuk setiap item yang dibeli
-  const updatePromises = cart.map(item =>
-    updateDoc(doc(db, "products", item.id), {
-      stock: increment(-item.quantity)
-    })
-  );
-  await Promise.all(updatePromises);
-
-  localStorage.removeItem(CART_STORAGE_KEY);
-  location.reload();
-},
+      onSuccess: async function () {
+        showPopup("Pembayaran berhasil!");
+        // Update status order
+        await fetch("https://lumina-kz2q.onrender.com/update-status-by-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: data.token, status: "success" }),
+        });
+        // Kurangi stok di Firestore untuk setiap item yang dibeli
+        const updatePromises = cart.map(item =>
+          updateDoc(doc(db, "products", item.id), {
+            stock: increment(-item.quantity)
+          })
+        );
+        await Promise.all(updatePromises);
+        localStorage.removeItem(CART_STORAGE_KEY);
+        location.reload();
+      },
       onPending: async function () {
         await fetch("https://lumina-kz2q.onrender.com/update-status-by-token", {
           method: "POST",
@@ -1022,12 +1013,12 @@ onSuccess: async function () {
       onError:  function () { showPopup("Pembayaran gagal!"); },
       onClose:  function () { showPopup("Kamu menutup pembayaran."); },
     });
-
   } catch (err) {
     console.error("ERROR PAY:", err);
     showPopup("Gagal connect ke server!");
   }
 };
+ 
 // ============================================================
 // 10. EVENT LISTENERS & STARTUP
 // ============================================================

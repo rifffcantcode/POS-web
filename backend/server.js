@@ -100,6 +100,8 @@ app.post("/create-transaction", async (req, res) => {
       shippingAddress: shippingAddress || null,
       shippingPhone: shippingPhone || null,
       orderType: orderType || "online",
+      paymentMethod: req.body.paymentMethod || "non-cash",
+      change: req.body.change || 0,
     });
 
     res.json({ token: transaction.token });
@@ -115,18 +117,22 @@ app.post("/update-status-by-token", async (req, res) => {
   try {
     const { token, status } = req.body;
 
+    console.log(`[UPDATE STATUS BY TOKEN] token=${token?.substring(0, 20)}... status=${status}`);
+
     const snapshot = await db
       .collection("sales")
       .where("snapToken", "==", token)
       .get();
 
     if (snapshot.empty) {
+      console.warn(`[WARNING] Token tidak ditemukan: ${token?.substring(0, 20)}...`);
       return res.status(404).json({ error: "Token tidak ditemukan" });
     }
 
     const batch = db.batch();
 
     snapshot.forEach((doc) => {
+      console.log(`[UPDATING BY TOKEN] doc=${doc.id} to status=${status}`);
       batch.update(doc.ref, {
         status,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -135,10 +141,53 @@ app.post("/update-status-by-token", async (req, res) => {
 
     await batch.commit();
 
-    res.json({ success: true });
+    console.log(`[SUCCESS BY TOKEN] ${snapshot.size} documents updated to status=${status}`);
+    res.json({ success: true, docsUpdated: snapshot.size });
 
   } catch (error) {
-    console.error(" ERROR UPDATE STATUS:", error);
+    console.error("[ERROR] UPDATE STATUS BY TOKEN:", error);
+    res.status(500).json({ error: "Gagal update status" });
+  }
+});
+
+// ================= UPDATE STATUS BY ORDER ID (FALLBACK) =================
+app.post("/update-status-by-order", async (req, res) => {
+  try {
+    const { orderId, status } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({ error: "orderId diperlukan" });
+    }
+
+    console.log(`[UPDATE STATUS BY ORDER] orderId=${orderId} status=${status}`);
+
+    const snapshot = await db
+      .collection("sales")
+      .where("orderId", "==", orderId)
+      .get();
+
+    if (snapshot.empty) {
+      console.warn(`[WARNING] Order tidak ditemukan: ${orderId}`);
+      return res.status(404).json({ error: "Order tidak ditemukan" });
+    }
+
+    const batch = db.batch();
+
+    snapshot.forEach((doc) => {
+      console.log(`[UPDATING BY ORDER] doc=${doc.id} to status=${status}`);
+      batch.update(doc.ref, {
+        status,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+
+    await batch.commit();
+
+    console.log(`[SUCCESS BY ORDER] ${snapshot.size} documents updated to status=${status}`);
+    res.json({ success: true, docsUpdated: snapshot.size });
+
+  } catch (error) {
+    console.error("[ERROR] UPDATE STATUS BY ORDER:", error);
     res.status(500).json({ error: "Gagal update status" });
   }
 });
@@ -151,7 +200,7 @@ app.post("/midtrans-webhook", async (req, res) => {
     const orderId = notif.order_id;
     const status = notif.transaction_status;
 
-    console.log(" WEBHOOK:", orderId, status);
+    console.log(`[WEBHOOK] orderId=${orderId} | transactionStatus=${status}`);
 
     let finalStatus = "pending";
 
@@ -163,9 +212,15 @@ app.post("/midtrans-webhook", async (req, res) => {
       .where("orderId", "==", orderId)
       .get();
 
+    if (snapshot.empty) {
+      console.warn(`[WEBHOOK WARNING] Order tidak ditemukan: ${orderId}`);
+      return res.sendStatus(200); // Still return 200 to Midtrans
+    }
+
     const batch = db.batch();
 
     snapshot.forEach((doc) => {
+      console.log(`[WEBHOOK UPDATE] doc=${doc.id} to status=${finalStatus}`);
       batch.update(doc.ref, {
         status: finalStatus,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -174,10 +229,11 @@ app.post("/midtrans-webhook", async (req, res) => {
 
     await batch.commit();
 
+    console.log(`[WEBHOOK SUCCESS] ${snapshot.size} documents updated`);
     res.sendStatus(200);
 
   } catch (error) {
-    console.error("WEBHOOK ERROR:", error);
+    console.error("[WEBHOOK ERROR]:", error);
     res.sendStatus(500);
   }
 });

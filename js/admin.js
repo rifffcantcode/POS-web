@@ -508,9 +508,14 @@ function loadReport(period = "all") {
             // 1. Fallback timestamp aman dari pending local write
             const ts = data.createdAt.toDate();
 
-            // 2. Hanya memproses transaksi dengan status success
-            if (data.status !== "success") {
-                console.warn(`[ADMIN DEBUG] SKIP doc=${doc.id} karena status="${data.status}" bukan "success"`);
+            // 2. Hanya memproses transaksi dengan status success ATAU orderType=online dengan total > 0
+            // FIX: Online transactions dari landing page boleh ditampilkan meski status=pending 
+            // (jika sudah memiliki total dan orderType=online, berarti sudah dibuat dari checkout)
+            const isOnlineTransaction = data.orderType === "online" && Number(data.total) > 0;
+            const isSuccessTransaction = data.status === "success";
+            
+            if (!isOnlineTransaction && !isSuccessTransaction) {
+                console.warn(`[ADMIN DEBUG] SKIP doc=${doc.id} status="${data.status}" orderType="${data.orderType}" total=${data.total}`);
                 return;
             }
 
