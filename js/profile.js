@@ -204,23 +204,14 @@ function renderOrderHistoryPage() {
     return;
   }
 
-  const pageButtons = Array.from({ length: totalPages }, (_, i) => {
-    const page = i + 1;
-    const isActive = page === currentOrderHistoryPage;
-    return `
-      <button onclick="changeOrderHistoryPage(${page})"
-        class="w-9 h-9 rounded-lg text-xs font-bold border transition ${isActive ? "bg-lumina-dark text-lumina-gold border-lumina-dark" : "bg-white text-gray-600 border-gray-200 hover:border-lumina-dark hover:text-lumina-dark"}">
-        ${page}
-      </button>
-    `;
-  }).join("");
+  const pageButtons = generateCompactPagination(totalPages, currentOrderHistoryPage);
 
   paginationContainer.innerHTML = `
     <div class="flex flex-wrap items-center justify-between gap-3">
       <p class="text-xs text-gray-400 font-medium">
         Menampilkan ${start + 1}-${Math.min(end, orderHistoryTransactions.length)} dari ${orderHistoryTransactions.length} transaksi
       </p>
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <button onclick="changeOrderHistoryPage(${currentOrderHistoryPage - 1})"
           class="h-9 px-3 rounded-lg text-xs font-bold border border-gray-200 bg-white text-gray-600 hover:border-lumina-dark hover:text-lumina-dark transition ${currentOrderHistoryPage === 1 ? "opacity-50 pointer-events-none" : ""}">
           Prev
@@ -236,9 +227,57 @@ function renderOrderHistoryPage() {
 }
 
 window.changeOrderHistoryPage = function(page) {
-  currentOrderHistoryPage = page;
+  const totalPages = Math.max(Math.ceil(orderHistoryTransactions.length / ORDER_HISTORY_PAGE_SIZE), 1);
+  currentOrderHistoryPage = Math.min(Math.max(page, 1), totalPages);
   renderOrderHistoryPage();
 };
+
+function generateCompactPagination(totalPages, currentPage) {
+  const createButton = (page, isActive = false) => `
+    <button onclick="changeOrderHistoryPage(${page})"
+      class="w-9 h-9 rounded-lg text-xs font-bold border transition ${isActive ? "bg-lumina-dark text-lumina-gold border-lumina-dark" : "bg-white text-gray-600 border-gray-200 hover:border-lumina-dark hover:text-lumina-dark"}">
+      ${page}
+    </button>
+  `;
+
+  const buttons = [];
+
+  if (totalPages <= 7) {
+    for (let page = 1; page <= totalPages; page += 1) {
+      buttons.push(createButton(page, page === currentPage));
+    }
+    return buttons.join("");
+  }
+
+  const pushEllipsis = () => buttons.push(`<span class="px-2 text-xs text-gray-400">...</span>`);
+
+  if (currentPage <= 4) {
+    for (let page = 1; page <= 5; page += 1) {
+      buttons.push(createButton(page, page === currentPage));
+    }
+    pushEllipsis();
+    buttons.push(createButton(totalPages));
+    return buttons.join("");
+  }
+
+  if (currentPage >= totalPages - 3) {
+    buttons.push(createButton(1));
+    pushEllipsis();
+    for (let page = totalPages - 4; page <= totalPages; page += 1) {
+      buttons.push(createButton(page, page === currentPage));
+    }
+    return buttons.join("");
+  }
+
+  buttons.push(createButton(1));
+  pushEllipsis();
+  for (let page = currentPage - 1; page <= currentPage + 1; page += 1) {
+    buttons.push(createButton(page, page === currentPage));
+  }
+  pushEllipsis();
+  buttons.push(createButton(totalPages));
+  return buttons.join("");
+}
 
 // ================= BAYAR LAGI =================
 window.payAgain = function (token) {
@@ -268,8 +307,12 @@ window.payAgain = function (token) {
 
       localStorage.removeItem("lumina_cart");
 
-      cart = [];
-      renderCart();
+      if (typeof cart !== "undefined") {
+        cart = [];
+      }
+      if (typeof renderCart === "function") {
+        renderCart();
+      }
 
       location.reload();
     },

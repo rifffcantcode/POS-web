@@ -6,7 +6,10 @@
     <title>Profil Saya | LUMINA</title>
     <link rel="stylesheet" href="css/profile.css" />
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="Mid-client-JS8rUMSRvri9Llb-"></script>
+    <script
+      src="https://app.sandbox.midtrans.com/snap/snap.js"
+      data-client-key="Mid-client-JS8rUMSRvri9Llb-"
+    ></script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -55,7 +58,8 @@
         class="container mx-auto px-6 flex justify-between items-center w-full"
       >
         <h1
-          class="flex items-center gap-2 text-2xl font-black tracking-[0.1em] text-lumina-gold uppercase"onclick="location.reload()"
+          class="flex items-center gap-2 text-2xl font-black tracking-[0.1em] text-lumina-gold uppercase"
+          onclick="location.reload()"
         >
           <i class="fa-solid fa-couch text-xxl"></i>
           <span>LUMINA</span>
@@ -79,42 +83,44 @@
             class="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=1632&auto=format&fit=crop')] bg-cover bg-center"
           ></div>
         </div>
-        <div class="px-8 pb-8 pt-0 flex flex-col md:flex-row items-center md:items-end gap-6 relative -mt-16">
-  <div
-    id="profile-initial"
-    class="w-32 h-32 bg-lumina-gold text-lumina-dark text-5xl font-black rounded-full border-4 border-white flex items-center justify-center shadow-lg relative z-10"
-  >
-    <i class="fas fa-spinner fa-spin text-2xl"></i>
-  </div>
+        <div
+          class="px-8 pb-8 pt-0 flex flex-col md:flex-row items-center md:items-end gap-6 relative -mt-16"
+        >
+          <div
+            id="profile-initial"
+            class="w-32 h-32 bg-lumina-gold text-lumina-dark text-5xl font-black rounded-full border-4 border-white flex items-center justify-center shadow-lg relative z-10"
+          >
+            <i class="fas fa-spinner fa-spin text-2xl"></i>
+          </div>
 
-  <div class="flex-1 text-center md:text-left pt-16 md:pt-0 pb-2">
-    <h2 id="profile-name" class="text-3xl font-bold text-gray-800">
-      Memuat Data...
-    </h2>
-    <p id="profile-email" class="text-gray-500 font-medium"></p>
-  </div>
+          <div class="flex-1 text-center md:text-left pt-16 md:pt-0 pb-2">
+            <h2 id="profile-name" class="text-3xl font-bold text-gray-800">
+              Memuat Data...
+            </h2>
+            <p id="profile-email" class="text-gray-500 font-medium"></p>
+          </div>
 
-  <div class="flex items-center gap-3 pb-2">
-    <button
-      onclick="openEditModal()"
-      class="flex items-center gap-2 px-5 py-2 text-sm font-bold text-lumina-gold hover:bg-lumina-gold/10 rounded-full transition border border-lumina-gold/20"
-    >
-      <i class="fas fa-edit"></i> Edit Profil
-    </button>
+          <div class="flex items-center gap-3 pb-2">
+            <button
+              type="button"
+              class="flex items-center gap-2 px-5 py-2 text-sm font-bold text-lumina-gold hover:bg-lumina-gold/10 rounded-full transition border border-lumina-gold/20"
+            >
+              <i class="fas fa-edit"></i> Edit Profil
+            </button>
 
-    <button
-      onclick="handleLogout()"
-      class="bg-red-50 text-red-600 px-6 py-2 rounded-full font-bold hover:bg-red-600 hover:text-white transition shadow-sm border border-red-100 flex items-center gap-2 text-sm"
-    >
-      <i class="fas fa-sign-out-alt"></i> Logout
-    </button>
-  </div>
-</div>
+            <button
+              onclick="handleLogout()"
+              class="bg-red-50 text-red-600 px-6 py-2 rounded-full font-bold hover:bg-red-600 hover:text-white transition shadow-sm border border-red-100 flex items-center gap-2 text-sm"
+            >
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div class="md:col-span-1">
-          <div class="bg-white rounded-3xl shadow-xl p-8 ">
+          <div class="bg-white rounded-3xl shadow-xl p-8">
             <h3
               class="text-lg font-black tracking-tight text-lumina-dark uppercase mb-6 flex items-center gap-2"
             >
@@ -196,6 +202,7 @@
             <i class="fas fa-user-edit text-lumina-gold mr-2"></i> Edit Profil
           </h3>
           <button
+            type="button"
             onclick="toggleEditModal()"
             class="text-gray-400 hover:text-white transition"
           >

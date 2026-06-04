@@ -7,7 +7,9 @@ import {
     onSnapshot, 
     doc, 
     setDoc,
-    getDoc
+    getDoc,
+    updateDoc,
+    increment
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 2. Grouping Auth (Otentikasi)
@@ -988,16 +990,27 @@ window.confirmAndPay = async function () {
     }
 
     window.snap.pay(data.token, {
-      onSuccess: async function () {
-        showPopup("Pembayaran berhasil!");
-        await fetch("https://lumina-kz2q.onrender.com/update-status-by-token", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token: data.token, status: "success" }),
-        });
-        localStorage.removeItem(CART_STORAGE_KEY);
-        location.reload();
-      },
+onSuccess: async function () {
+  showPopup("Pembayaran berhasil!");
+  
+  // Update status order
+  await fetch("https://lumina-kz2q.onrender.com/update-status-by-token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: data.token, status: "success" }),
+  });
+
+  // Kurangi stok di Firestore untuk setiap item yang dibeli
+  const updatePromises = cart.map(item =>
+    updateDoc(doc(db, "products", item.id), {
+      stock: increment(-item.quantity)
+    })
+  );
+  await Promise.all(updatePromises);
+
+  localStorage.removeItem(CART_STORAGE_KEY);
+  location.reload();
+},
       onPending: async function () {
         await fetch("https://lumina-kz2q.onrender.com/update-status-by-token", {
           method: "POST",
