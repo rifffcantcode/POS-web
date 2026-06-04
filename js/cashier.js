@@ -73,7 +73,6 @@ async function saveSaleRecord(sale) {
                 : [],
             status: sale.status || "success",
             createdAt: serverTimestamp(),
-            // ✅ TAMBAH: tandai semua transaksi dari kasir sebagai offline
             orderType: "offline",
         };
  
@@ -1230,7 +1229,8 @@ window.submitNonCashPayment = async function() {
                 userId: auth.currentUser?.uid || "guest",
                 customerName,
                 customerPhone,
-                paymentMethod: "non-cash"
+                paymentMethod: "non-cash",
+                orderType: "offline"
             }),
         });
 
@@ -1287,6 +1287,7 @@ window.submitNonCashPayment = async function() {
                             customerName: customerName || "-",
                             customerPhone: customerPhone || "-",
                             paymentMethod: "non-cash",
+                            orderType: "offline",
                             totalAmount: total,
                             items: cartSnapshot.map(item => ({
                                 id: item.id,
