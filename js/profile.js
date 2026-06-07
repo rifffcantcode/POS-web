@@ -18,6 +18,7 @@ const auth = getAuth(app);
 const ORDER_HISTORY_PAGE_SIZE = 5;
 let orderHistoryTransactions = [];
 let currentOrderHistoryPage = 1;
+let currentSelectedTransaction = null;
 
 // ================= AUTH =================
 onAuthStateChanged(auth, async (user) => {
@@ -153,7 +154,7 @@ function buildTransactionCard(sale) {
   }
 
   return `
-    <div class="p-4 border border-gray-100 rounded-2xl hover:shadow-md transition bg-white">
+    <div class="p-4 border border-gray-100 rounded-2xl hover:shadow-md transition bg-white cursor-pointer" onclick="openTransactionDetail('${sale.id}')">
       <div class="flex justify-between items-start mb-3 border-b border-gray-50 pb-3">
         <div>
           <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
@@ -409,6 +410,85 @@ document.getElementById('edit-profile-form').addEventListener('submit', async (e
     location.reload();
 });
 
+// ================= TRANSACTION DETAIL =================
+window.toggleTransactionModal = () => {
+    const modal = document.getElementById('transaction-detail-modal');
+    if (modal) {
+        modal.classList.toggle('hidden');
+        modal.classList.toggle('flex');
+    }
+};
+
+window.openTransactionDetail = (transactionId) => {
+    const transaction = orderHistoryTransactions.find(t => t.id === transactionId);
+    
+    if (!transaction) {
+        showPopup("Transaksi tidak ditemukan");
+        return;
+    }
+
+    currentSelectedTransaction = transaction;
+    
+    // Format date
+    let dateStr = "Tanggal tidak diketahui";
+    if (transaction.createdAt && transaction.createdAt.toDate) {
+        dateStr = transaction.createdAt.toDate().toLocaleString("id-ID");
+    } else if (typeof transaction.createdAt === "string") {
+        const parsed = new Date(transaction.createdAt);
+        if (!Number.isNaN(parsed.getTime())) {
+            dateStr = parsed.toLocaleString("id-ID");
+        }
+    }
+
+    // Format amount
+    const totalBayar = transaction.total ? `Rp ${Number(transaction.total).toLocaleString("id-ID")}` : "Rp 0";
+
+    // Status badge
+    let statusClass = "bg-gray-100 text-gray-700";
+    let statusText = "Tidak Diketahui";
+    
+    if (transaction.status === "success") {
+        statusClass = "bg-green-100 text-green-700";
+        statusText = "Berhasil";
+    } else if (transaction.status === "pending") {
+        statusClass = "bg-yellow-100 text-yellow-700";
+        statusText = "Menunggu Pembayaran";
+    } else if (transaction.status === "failed") {
+        statusClass = "bg-red-100 text-red-700";
+        statusText = "Gagal";
+    }
+
+    // Items details
+    let itemsHTML = "";
+    if (transaction.items && Array.isArray(transaction.items) && transaction.items.length > 0) {
+        itemsHTML = transaction.items.map((item, idx) => `
+            <div class="flex justify-between items-start pb-3 border-b border-gray-100 last:border-b-0 last:pb-0">
+                <div>
+                    <p class="text-sm font-medium text-gray-800">${item.name || "Produk"}</p>
+                    <p class="text-xs text-gray-500">Qty: ${item.quantity || 1}</p>
+                </div>
+                <p class="text-sm font-bold text-lumina-dark">Rp ${Number(item.price || 0).toLocaleString("id-ID")}</p>
+            </div>
+        `).join("");
+    } else {
+        itemsHTML = '<p class="text-sm text-gray-500">Tidak ada detail item</p>';
+    }
+
+    // Populate modal
+    document.getElementById('detail-transaction-id').innerText = transaction.id;
+    document.getElementById('detail-transaction-date').innerText = dateStr;
+    document.getElementById('detail-transaction-status').innerHTML = `<span class="px-3 py-1 rounded-full text-xs font-bold ${statusClass}">${statusText.toUpperCase()}</span>`;
+    document.getElementById('detail-transaction-items').innerHTML = itemsHTML;
+    document.getElementById('detail-transaction-total').innerText = totalBayar;
+
+    // Handle payment methods if available
+    if (transaction.paymentMethod) {
+        document.getElementById('detail-payment-method').innerText = transaction.paymentMethod;
+    }
+
+    toggleTransactionModal();
+};
+
 async function updateExpiredTransactions(transactions) {
   const now = Date.now();
 
@@ -433,4 +513,3 @@ async function updateExpiredTransactions(transactions) {
 window.handleLogout = async () => {
     await signOut(auth);
 };
-

@@ -103,6 +103,7 @@
           <div class="flex items-center gap-3 pb-2">
             <button
               type="button"
+              onclick="openEditModal()"
               class="flex items-center gap-2 px-5 py-2 text-sm font-bold text-lumina-gold hover:bg-lumina-gold/10 rounded-full transition border border-lumina-gold/20"
             >
               <i class="fas fa-edit"></i> Edit Profil
@@ -262,6 +263,107 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <div
+      id="transaction-detail-modal"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden items-center justify-center p-4"
+    >
+      <div
+        class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in"
+      >
+        <div
+          class="bg-lumina-dark p-6 text-white flex justify-between items-center"
+        >
+          <h3 class="text-xl font-bold tracking-tight">
+            <i class="fas fa-receipt text-lumina-gold mr-2"></i> Detail Transaksi
+          </h3>
+          <button
+            type="button"
+            onclick="toggleTransactionModal()"
+            class="text-gray-400 hover:text-white transition"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-8 space-y-6">
+          <!-- Transaction ID -->
+          <div>
+            <label
+              class="block text-[10px] font-bold text-gray-400 uppercase mb-2"
+              >ID Transaksi</label
+            >
+            <p id="detail-transaction-id" class="text-sm font-mono bg-gray-50 p-3 rounded-lg border border-gray-200">
+              -
+            </p>
+          </div>
+
+          <!-- Date -->
+          <div>
+            <label
+              class="block text-[10px] font-bold text-gray-400 uppercase mb-2"
+              >Tanggal & Waktu</label
+            >
+            <div class="flex items-center gap-2 text-gray-700">
+              <i class="fas fa-calendar-alt text-lumina-gold"></i>
+              <span id="detail-transaction-date" class="text-sm">-</span>
+            </div>
+          </div>
+
+          <!-- Status -->
+          <div>
+            <label
+              class="block text-[10px] font-bold text-gray-400 uppercase mb-2"
+              >Status</label
+            >
+            <div id="detail-transaction-status">
+              <span class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700">
+                TIDAK DIKETAHUI
+              </span>
+            </div>
+          </div>
+
+          <!-- Items -->
+          <div>
+            <label
+              class="block text-[10px] font-bold text-gray-400 uppercase mb-2"
+              >Daftar Belanja</label
+            >
+            <div id="detail-transaction-items" class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
+              <p class="text-sm text-gray-500">Memuat...</p>
+            </div>
+          </div>
+
+          <!-- Payment Method (optional) -->
+          <div>
+            <label
+              class="block text-[10px] font-bold text-gray-400 uppercase mb-2"
+              >Metode Pembayaran</label
+            >
+            <div class="flex items-center gap-2 text-gray-700">
+              <i class="fas fa-credit-card text-lumina-gold"></i>
+              <span id="detail-payment-method" class="text-sm">-</span>
+            </div>
+          </div>
+
+          <!-- Total -->
+          <div class="border-t border-gray-200 pt-4">
+            <div class="flex justify-between items-center">
+              <span class="text-sm font-medium text-gray-600">Total Belanja</span>
+              <span id="detail-transaction-total" class="text-2xl font-black text-lumina-dark">Rp 0</span>
+            </div>
+          </div>
+
+          <!-- Close Button -->
+          <button
+            type="button"
+            onclick="toggleTransactionModal()"
+            class="w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-xl text-sm font-bold hover:bg-gray-200 transition"
+          >
+            Tutup
+          </button>
+        </div>
       </div>
     </div>
 
